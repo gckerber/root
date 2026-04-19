@@ -1,5 +1,6 @@
 # .github/workflows/deploy-water-portal.yml
-# Deploys Site 2 (Water Payment Portal) to Azure Static Web Apps + Azure Functions
+# Deploys Site 2 — Water Payment Portal
+# Functions live in apps/water-portal/api (SWA managed, zero quota needed)
 
 name: Deploy Water Portal
 
@@ -8,42 +9,14 @@ on:
     branches: [main]
     paths:
       - 'apps/water-portal/**'
-      - 'functions/water-api/**'
       - 'infrastructure/**'
       - '.github/workflows/deploy-water-portal.yml'
   workflow_dispatch:
 
-env:
-  AZURE_FUNCTIONAPP_NAME: func-water-prod-${{ secrets.UNIQUE_SUFFIX }}
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: functions/water-api
-  NODE_VERSION: '18.x'
-
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install & lint frontend
-        working-directory: apps/water-portal
-        run: |
-          npm ci
-          npm run lint --if-present
-
-      - name: Install function dependencies
-        working-directory: functions/water-api
-        run: npm ci
-
   deploy-infrastructure:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    needs: test
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -60,13 +33,13 @@ jobs:
           region: eastus2
           template: infrastructure/main.bicep
           parameters: >
-            infrastructure/main.bicepparam
+            environment=prod
             adminEmail=${{ secrets.ADMIN_EMAIL }}
             contactEmail=${{ secrets.CONTACT_EMAIL }}
           failOnStdErr: false
 
-  deploy-frontend:
-    name: Deploy Water Portal Frontend
+  deploy-site:
+    name: Build & Deploy Water Portal
     runs-on: ubuntu-latest
     needs: deploy-infrastructure
     steps:
@@ -75,15 +48,17 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '18.x'
 
-      - name: Install & Build Frontend
+      - name: Install frontend dependencies
+        working-directory: apps/water-portal
+        run: npm ci
+
+      - name: Build frontend
         working-directory: apps/water-portal
         env:
-          VITE_API_BASE_URL: ${{ secrets.WATER_API_BASE_URL }}
-        run: |
-          npm ci
-          npm run build
+          VITE_API_BASE_URL: ''
+        run: npm run build
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
@@ -92,50 +67,18 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: apps/water-portal
+          api_location: apps/water-portal/api       # SWA managed functions
           output_location: dist
-          skip_api_build: true
-
-  deploy-functions:
-    name: Deploy Water Functions
-    runs-on: ubuntu-latest
-    needs: deploy-infrastructure
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install function dependencies
-        working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-        run: npm ci --production
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v1
-        with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          respect-funcignore: true
 
   smoke-test:
     name: Smoke Test
     runs-on: ubuntu-latest
-    needs: [deploy-frontend, deploy-functions]
+    needs: deploy-site
     steps:
       - name: Wait for propagation
         run: sleep 30
-
-      - name: Check water portal is up
+      - name: Check portal is live
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.WATER_HOSTNAME }})
-          if [ "$STATUS" != "200" ]; then
-            echo "Water portal returned HTTP $STATUS"
-            exit 1
-          fi
-          echo "Water portal is live — HTTP 200 OK"
+          echo "HTTP status: $STATUS"
+          [ "$STATUS" = "200" ] && echo "✅ Water portal is live" || (echo "❌ Unexpected status $STATUS" && exit 1)

@@ -1,6 +1,11 @@
 // ============================================================
 // Saint Louisville Ohio — Azure Infrastructure
-// Root Bicep Orchestrator
+// Root Bicep Orchestrator — SWA Managed Functions Edition
+//
+// ARCHITECTURE CHANGE: Removed separate Azure Function Apps
+// (which require App Service quota). Functions now run as
+// SWA Managed Functions inside each Static Web App — zero
+// quota required, still serverless, still free tier.
 // ============================================================
 
 targetScope = 'subscription'
@@ -42,7 +47,7 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
-// ─── Cosmos DB (Free Tier — one per subscription) ──────────
+// ─── Cosmos DB ─────────────────────────────────────────────
 module cosmos 'modules/cosmosDb.bicep' = {
   name: 'cosmosDb'
   scope: rg
@@ -75,88 +80,40 @@ module communication 'modules/communication.bicep' = {
   }
 }
 
-// ─── Site 1: Village Site ──────────────────────────────────
-module villageFunctionApp 'modules/functionApp.bicep' = {
-  name: 'villageFunctionApp'
-  scope: rg
-  params: {
-    location: location
-    appName: 'village'
-    uniqueSuffix: uniqueSuffix
-    environment: environment
-    storageAccountName: storage.outputs.storageAccountName
-    cosmosConnectionString: cosmos.outputs.connectionString
-    keyVaultUri: keyVault.outputs.keyVaultUri
-    communicationConnectionString: communication.outputs.connectionString
-    contactEmail: contactEmail
-    adminEmail: adminEmail
-  }
-}
-
+// ─── Site 1: Village Static Web App ────────────────────────
+// SWA Standard tier enables managed functions + Key Vault integration
 module villageStaticApp 'modules/staticWebApp.bicep' = {
   name: 'villageStaticApp'
   scope: rg
   params: {
-    location: 'eastus2'
+    location: location
     appName: 'village'
     uniqueSuffix: uniqueSuffix
     environment: environment
-    backendFunctionAppResourceId: villageFunctionApp.outputs.functionAppResourceId
-  }
-}
-
-// ─── Site 2: Water Portal ─────────────────────────────────
-module waterFunctionApp 'modules/functionApp.bicep' = {
-  name: 'waterFunctionApp'
-  scope: rg
-  params: {
-    location: location
-    appName: 'water'
-    uniqueSuffix: uniqueSuffix
-    environment: environment
-    storageAccountName: storage.outputs.storageAccountName
     cosmosConnectionString: cosmos.outputs.connectionString
     keyVaultUri: keyVault.outputs.keyVaultUri
     communicationConnectionString: communication.outputs.connectionString
     contactEmail: contactEmail
     adminEmail: adminEmail
+    storageConnectionString: storage.outputs.connectionString
   }
 }
 
+// ─── Site 2: Water Portal Static Web App ───────────────────
 module waterStaticApp 'modules/staticWebApp.bicep' = {
   name: 'waterStaticApp'
   scope: rg
   params: {
-    location: 'eastus2'
+    location: location
     appName: 'water'
     uniqueSuffix: uniqueSuffix
     environment: environment
-    backendFunctionAppResourceId: waterFunctionApp.outputs.functionAppResourceId
-  }
-}
-
-// ─── Grant Key Vault Access to Function Apps ──────────────
-module keyVaultAccessVillage 'modules/keyVault.bicep' = {
-  name: 'kvAccessVillage'
-  scope: rg
-  params: {
-    location: location
-    uniqueSuffix: uniqueSuffix
-    environment: environment
-    principalId: villageFunctionApp.outputs.managedIdentityPrincipalId
-    grantAccess: true
-  }
-}
-
-module keyVaultAccessWater 'modules/keyVault.bicep' = {
-  name: 'kvAccessWater'
-  scope: rg
-  params: {
-    location: location
-    uniqueSuffix: uniqueSuffix
-    environment: environment
-    principalId: waterFunctionApp.outputs.managedIdentityPrincipalId
-    grantAccess: true
+    cosmosConnectionString: cosmos.outputs.connectionString
+    keyVaultUri: keyVault.outputs.keyVaultUri
+    communicationConnectionString: communication.outputs.connectionString
+    contactEmail: contactEmail
+    adminEmail: adminEmail
+    storageConnectionString: storage.outputs.connectionString
   }
 }
 

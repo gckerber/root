@@ -69,3 +69,6 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2022-09-01'
 output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output blobEndpoint string = storageAccount.properties.primaryEndpoints.blob
+
+// Connection string output for SWA app settings
+output connectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'

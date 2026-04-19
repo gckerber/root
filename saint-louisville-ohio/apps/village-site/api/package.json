@@ -1,0 +1,14 @@
+{
+  "name": "village-site-api",
+  "version": "1.0.0",
+  "description": "SWA managed API functions for Saint Louisville Village Site",
+  "main": "index.js",
+  "dependencies": {
+    "@azure/cosmos": "^4.0.0",
+    "@azure/communication-email": "^1.0.0",
+    "@azure/identity": "^4.3.0",
+    "@azure/keyvault-secrets": "^4.8.0",
+    "@azure/storage-blob": "^12.24.0",
+    "uuid": "^9.0.1"
+  }
+}
