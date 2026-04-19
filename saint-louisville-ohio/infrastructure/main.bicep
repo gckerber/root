@@ -1,29 +1,18 @@
 // ============================================================
 // Saint Louisville Ohio — Azure Infrastructure
 // Root Bicep Orchestrator — SWA Managed Functions Edition
-//
-// ARCHITECTURE CHANGE: Removed separate Azure Function Apps
-// (which require App Service quota). Functions now run as
-// SWA Managed Functions inside each Static Web App — zero
-// quota required, still serverless, still free tier.
 // ============================================================
 
 targetScope = 'subscription'
 
-@description('Environment name (dev, prod)')
 param environment string = 'prod'
-
-@description('Azure region for all resources')
 param location string = 'eastus2'
-
-@description('Unique suffix to avoid global name collisions')
 param uniqueSuffix string = uniqueString(subscription().subscriptionId)
-
-@description('Admin email for alerts')
 param adminEmail string
-
-@description('Notification email for village contact form')
 param contactEmail string
+
+@description('Object ID of the user running the bootstrap script. Grants them Key Vault Secrets Officer so secrets can be written immediately. Get with: az ad signed-in-user show --query id -o tsv')
+param deployerObjectId string = ''
 
 // ─── Resource Group ────────────────────────────────────────
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -59,6 +48,8 @@ module cosmos 'modules/cosmosDb.bicep' = {
 }
 
 // ─── Key Vault ─────────────────────────────────────────────
+// deployerObjectId grants the CLI user write access at deploy time
+// so the bootstrap script can immediately store secrets.
 module keyVault 'modules/keyVault.bicep' = {
   name: 'keyVault'
   scope: rg
@@ -66,6 +57,7 @@ module keyVault 'modules/keyVault.bicep' = {
     location: location
     uniqueSuffix: uniqueSuffix
     environment: environment
+    deployerObjectId: deployerObjectId
   }
 }
 
@@ -81,7 +73,6 @@ module communication 'modules/communication.bicep' = {
 }
 
 // ─── Site 1: Village Static Web App ────────────────────────
-// SWA Standard tier enables managed functions + Key Vault integration
 module villageStaticApp 'modules/staticWebApp.bicep' = {
   name: 'villageStaticApp'
   scope: rg
