@@ -27,13 +27,17 @@ if [ -n "$SUBSCRIPTION_ID" ]; then
   az account set --subscription "$SUBSCRIPTION_ID"
 fi
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-
-# Get the current user's object ID — needed to grant Key Vault access
-CURRENT_USER_OID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || \
-  az account show --query "user.name" -o tsv)
+CURRENT_USER_OID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || echo "")
 
 echo "✅ Subscription : $SUBSCRIPTION_ID"
 echo "✅ Logged in as : $(az account show --query user.name -o tsv)"
+
+# ── Install required CLI extensions (non-interactive) ────────
+echo ""
+echo "📦 Installing required Azure CLI extensions..."
+az extension add --name communication --yes 2>/dev/null || true
+az extension add --name staticwebapp --yes 2>/dev/null || true
+echo "   ✅ Extensions ready"
 
 # ── Register required providers ──────────────────────────────
 echo ""
@@ -56,7 +60,12 @@ echo "📦 Deploying infrastructure — this takes 3-5 minutes..."
 
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@saintlouisvilleohio.gov}"
 CONTACT_EMAIL="${CONTACT_EMAIL:-info@saintlouisvilleohio.gov}"
-DEPLOY_NAME="saint-louisville-${ENVIRONMENT}-$(date +%Y%m%d%H%M%S)"
+DEPLOY_NAME="slv-${ENVIRONMENT}-$(date +%Y%m%d%H%M%S)"
+
+DEPLOYER_PARAM=""
+if [ -n "$CURRENT_USER_OID" ]; then
+  DEPLOYER_PARAM="deployerObjectId=$CURRENT_USER_OID"
+fi
 
 az deployment sub create \
   --name "$DEPLOY_NAME" \
@@ -67,33 +76,24 @@ az deployment sub create \
     location="$LOCATION" \
     adminEmail="$ADMIN_EMAIL" \
     contactEmail="$CONTACT_EMAIL" \
-    deployerObjectId="$CURRENT_USER_OID" \
+    $DEPLOYER_PARAM \
   --output none
 
 echo "✅ Infrastructure deployed"
 
-# ── Read outputs via CLI queries ─────────────────────────────
+# ── Read outputs ─────────────────────────────────────────────
 echo ""
 echo "📋 Reading deployment outputs..."
 
-VILLAGE_URL=$(az deployment sub show \
-  --name "$DEPLOY_NAME" \
+VILLAGE_URL=$(az deployment sub show --name "$DEPLOY_NAME" \
   --query "properties.outputs.villageStaticAppUrl.value" -o tsv)
-
-WATER_URL=$(az deployment sub show \
-  --name "$DEPLOY_NAME" \
+WATER_URL=$(az deployment sub show --name "$DEPLOY_NAME" \
   --query "properties.outputs.waterStaticAppUrl.value" -o tsv)
-
-KV_NAME=$(az deployment sub show \
-  --name "$DEPLOY_NAME" \
+KV_NAME=$(az deployment sub show --name "$DEPLOY_NAME" \
   --query "properties.outputs.keyVaultName.value" -o tsv)
-
-COSMOS_NAME=$(az deployment sub show \
-  --name "$DEPLOY_NAME" \
+COSMOS_NAME=$(az deployment sub show --name "$DEPLOY_NAME" \
   --query "properties.outputs.cosmosAccountName.value" -o tsv)
-
-STORAGE_NAME=$(az deployment sub show \
-  --name "$DEPLOY_NAME" \
+STORAGE_NAME=$(az deployment sub show --name "$DEPLOY_NAME" \
   --query "properties.outputs.storageAccountName.value" -o tsv)
 
 echo "   Village Site : https://$VILLAGE_URL"
@@ -102,30 +102,26 @@ echo "   Key Vault    : $KV_NAME"
 echo "   Cosmos DB    : $COSMOS_NAME"
 echo "   Storage      : $STORAGE_NAME"
 
-# ── Grant YOUR user account Key Vault Secrets Officer role ───
-# The Bicep grants Managed Identities access but NOT the CLI user running
-# this script. We must grant ourselves access before we can set secrets.
+# ── Grant deployer Key Vault Secrets Officer (safety net) ────
 echo ""
-echo "🔑 Granting your account Key Vault Secrets Officer role..."
+echo "🔑 Ensuring your account can write Key Vault secrets..."
 
 KV_ID=$(az keyvault show \
   --name "$KV_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --query id -o tsv)
 
-# Key Vault Secrets Officer role definition ID (built-in, same in all tenants)
-KV_SECRETS_OFFICER_ROLE="b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
-
-az role assignment create \
-  --role "$KV_SECRETS_OFFICER_ROLE" \
-  --assignee-object-id "$CURRENT_USER_OID" \
-  --assignee-principal-type User \
-  --scope "$KV_ID" \
-  --output none 2>/dev/null || echo "   (role already assigned — continuing)"
-
-echo "   ✅ Key Vault Secrets Officer granted to your account"
-echo "   ⏳ Waiting 20 seconds for role assignment to propagate..."
-sleep 20
+if [ -n "$CURRENT_USER_OID" ]; then
+  az role assignment create \
+    --role "b86a8fe4-44ce-4948-aee5-eccb2c155cd7" \
+    --assignee-object-id "$CURRENT_USER_OID" \
+    --assignee-principal-type User \
+    --scope "$KV_ID" \
+    --output none 2>/dev/null && echo "   ✅ Key Vault Secrets Officer granted" \
+    || echo "   ✅ Role already assigned"
+  echo "   ⏳ Waiting 25 seconds for role propagation..."
+  sleep 25
+fi
 
 # ── Store secrets in Key Vault ───────────────────────────────
 echo ""
@@ -137,49 +133,46 @@ COSMOS_CONN=$(az cosmosdb keys list \
   --type connection-strings \
   --query "connectionStrings[0].connectionString" -o tsv)
 
-az keyvault secret set \
-  --vault-name "$KV_NAME" \
-  --name "cosmos-connection-string" \
-  --value "$COSMOS_CONN" \
-  --output none
+az keyvault secret set --vault-name "$KV_NAME" \
+  --name "cosmos-connection-string" --value "$COSMOS_CONN" --output none
 echo "   ✅ cosmos-connection-string"
 
-# Communication Services
-COMM_NAME=$(az communication list \
+# Communication Services — install extension first, then query
+# Use REST API fallback if extension is unavailable
+COMM_NAME=$(az resource list \
   --resource-group "$RESOURCE_GROUP" \
+  --resource-type "Microsoft.Communication/communicationServices" \
   --query "[0].name" -o tsv 2>/dev/null || echo "")
 
-if [ -n "$COMM_NAME" ] && [ "$COMM_NAME" != "None" ]; then
-  COMM_CONN=$(az communication list-key \
-    --name "$COMM_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --query "primaryConnectionString" -o tsv)
-  az keyvault secret set \
-    --vault-name "$KV_NAME" \
-    --name "communication-connection-string" \
-    --value "$COMM_CONN" \
-    --output none
-  echo "   ✅ communication-connection-string"
+if [ -n "$COMM_NAME" ] && [ "$COMM_NAME" != "None" ] && [ "$COMM_NAME" != "null" ]; then
+  echo "   Found Communication Services: $COMM_NAME"
+  # Use REST API to get keys — avoids needing the CLI extension
+  COMM_KEYS=$(az rest \
+    --method post \
+    --url "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Communication/communicationServices/${COMM_NAME}/listKeys?api-version=2023-03-31" \
+    --query "primaryConnectionString" -o tsv 2>/dev/null || echo "")
+
+  if [ -n "$COMM_KEYS" ] && [ "$COMM_KEYS" != "None" ]; then
+    az keyvault secret set --vault-name "$KV_NAME" \
+      --name "communication-connection-string" --value "$COMM_KEYS" --output none
+    echo "   ✅ communication-connection-string"
+  else
+    echo "   ⚠️  Could not retrieve Communication Services key — add manually (see below)"
+  fi
 else
   echo "   ⚠️  Communication Services not found — add communication-connection-string to Key Vault manually"
 fi
 
-# SSN encryption key (AES-256: 32 random bytes as hex)
+# SSN encryption key (AES-256)
 SSN_KEY=$(openssl rand -hex 32)
-az keyvault secret set \
-  --vault-name "$KV_NAME" \
-  --name "ssn-encryption-key" \
-  --value "$SSN_KEY" \
-  --output none
+az keyvault secret set --vault-name "$KV_NAME" \
+  --name "ssn-encryption-key" --value "$SSN_KEY" --output none
 echo "   ✅ ssn-encryption-key (auto-generated)"
 
-# Admin API key for content management endpoints
+# Admin API key
 ADMIN_KEY=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 40)
-az keyvault secret set \
-  --vault-name "$KV_NAME" \
-  --name "admin-api-key" \
-  --value "$ADMIN_KEY" \
-  --output none
+az keyvault secret set --vault-name "$KV_NAME" \
+  --name "admin-api-key" --value "$ADMIN_KEY" --output none
 echo "   ✅ admin-api-key (auto-generated)"
 
 # ── Get SWA deployment tokens ────────────────────────────────
@@ -189,7 +182,6 @@ echo "🔑 Getting Static Web App deployment tokens..."
 VILLAGE_SWA=$(az staticwebapp list \
   --resource-group "$RESOURCE_GROUP" \
   --query "[?contains(name,'village')].name" -o tsv | head -1)
-
 WATER_SWA=$(az staticwebapp list \
   --resource-group "$RESOURCE_GROUP" \
   --query "[?contains(name,'water')].name" -o tsv | head -1)
@@ -203,7 +195,6 @@ if [ -n "$VILLAGE_SWA" ]; then
     --resource-group "$RESOURCE_GROUP" \
     --query "properties.apiKey" -o tsv 2>/dev/null || echo "NOT_FOUND")
 fi
-
 if [ -n "$WATER_SWA" ]; then
   WATER_TOKEN=$(az staticwebapp secrets list \
     --name "$WATER_SWA" \
@@ -211,7 +202,24 @@ if [ -n "$WATER_SWA" ]; then
     --query "properties.apiKey" -o tsv 2>/dev/null || echo "NOT_FOUND")
 fi
 
-# ── Print GitHub Secrets summary ─────────────────────────────
+# ── If Communication Services key was missing, print manual steps ─
+echo ""
+if [ -z "$COMM_KEYS" ] || [ "$COMM_KEYS" = "None" ]; then
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  ⚠️  Manual step: Add Communication Services key to Key Vault"
+  echo ""
+  echo "  1. Go to portal.azure.com → Resource Groups → $RESOURCE_GROUP"
+  echo "  2. Click your Communication Services resource"
+  echo "  3. Left menu → Keys → copy Primary Connection String"
+  echo "  4. Run:"
+  echo "     az keyvault secret set \\"
+  echo "       --vault-name $KV_NAME \\"
+  echo "       --name communication-connection-string \\"
+  echo "       --value 'YOUR_CONNECTION_STRING'"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+fi
+
+# ── GitHub Secrets summary ───────────────────────────────────
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"
 echo "║  GitHub → Settings → Secrets → Actions → New repository secret  ║"
@@ -228,7 +236,7 @@ echo "  AZURE_CREDENTIALS            → (generate with command below)"
 echo ""
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
-echo "Generate AZURE_CREDENTIALS (copy the entire JSON it outputs):"
+echo "Generate AZURE_CREDENTIALS (copy the entire JSON output):"
 echo ""
 echo "  az ad sp create-for-rbac \\"
 echo "    --name 'saint-louisville-github' \\"

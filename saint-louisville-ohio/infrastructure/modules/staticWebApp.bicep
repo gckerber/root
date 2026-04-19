@@ -1,31 +1,27 @@
 // infrastructure/modules/staticWebApp.bicep
-//
-// Uses SWA Standard tier which supports:
-//   - Managed Functions in the /api folder (no App Service plan needed)
-//   - Application settings (env vars for functions)
-//   - Custom domains + free SSL
-//   - No VM quota required whatsoever
-//
-// Cost: Standard tier = $9/month per SWA. Two sites = $18/month.
-// This is cheaper than B1 Basic ($26/month) and requires zero quota.
+// SWA Standard tier — supports managed functions + app settings.
+// Connection strings come from Key Vault (set by deploy.sh).
+// App settings here reference Key Vault URI so functions can
+// retrieve secrets at runtime using the SWA's managed identity.
 
 param location string
 param appName string
 param uniqueSuffix string
 param environment string
-param cosmosConnectionString string
 param keyVaultUri string
-param communicationConnectionString string
 param contactEmail string
 param adminEmail string
 param storageConnectionString string
+
+// These params exist for interface compatibility but values come from KV at runtime
+param cosmosConnectionString string = ''
+param communicationConnectionString string = ''
 
 var siteName = 'stapp-${appName}-${environment}-${take(uniqueSuffix, 8)}'
 
 resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   name: siteName
   location: location
-  // Standard tier required for managed functions + app settings
   sku: {
     name: 'Standard'
     tier: 'Standard'
@@ -42,14 +38,13 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   }
 }
 
-// App settings are available to SWA managed functions as environment variables
-// These replace the Function App app settings from the old architecture
+// App settings available to managed functions as process.env.*
+// Sensitive values (Cosmos, Comm) are read from Key Vault by the
+// function code itself using DefaultAzureCredential + SecretClient.
 resource swaAppSettings 'Microsoft.Web/staticSites/config@2022-09-01' = {
   name: 'appsettings'
   parent: staticWebApp
   properties: {
-    COSMOS_CONNECTION_STRING: cosmosConnectionString
-    COMMUNICATION_CONNECTION_STRING: communicationConnectionString
     KEY_VAULT_URI: keyVaultUri
     CONTACT_EMAIL: contactEmail
     ADMIN_EMAIL: adminEmail
