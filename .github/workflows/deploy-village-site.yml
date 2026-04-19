@@ -9,16 +9,14 @@ on:
       - '.github/workflows/deploy-village-site.yml'
   workflow_dispatch:
 
-# Prevent concurrent Bicep deployments colliding on the same subscription
-concurrency:
-  group: azure-infrastructure
-  cancel-in-progress: false
-
 jobs:
   deploy-infrastructure:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: azure-infrastructure
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
 
