@@ -1,15 +1,11 @@
-# .github/workflows/deploy-water-portal.yml
-# Deploys Site 2 — Water Payment Portal
-# Functions live in apps/water-portal/api (SWA managed, zero quota needed)
-
 name: Deploy Water Portal
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/water-portal/**'
-      - 'infrastructure/**'
+      - 'saint-louisville-ohio/apps/water-portal/**'
+      - 'saint-louisville-ohio/infrastructure/**'
       - '.github/workflows/deploy-water-portal.yml'
   workflow_dispatch:
 
@@ -31,7 +27,7 @@ jobs:
         with:
           scope: subscription
           region: eastus2
-          template: infrastructure/main.bicep
+          template: saint-louisville-ohio/infrastructure/main.bicep
           parameters: >
             environment=prod
             adminEmail=${{ secrets.ADMIN_EMAIL }}
@@ -51,14 +47,18 @@ jobs:
           node-version: '18.x'
 
       - name: Install frontend dependencies
-        working-directory: apps/water-portal
-        run: npm ci
+        working-directory: saint-louisville-ohio/apps/water-portal
+        run: npm install
 
       - name: Build frontend
-        working-directory: apps/water-portal
+        working-directory: saint-louisville-ohio/apps/water-portal
         env:
           VITE_API_BASE_URL: ''
         run: npm run build
+
+      - name: Install API dependencies
+        working-directory: saint-louisville-ohio/apps/water-portal/api
+        run: npm install
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
@@ -66,8 +66,8 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.WATER_STATIC_WEB_APP_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: apps/water-portal
-          api_location: apps/water-portal/api       # SWA managed functions
+          app_location: saint-louisville-ohio/apps/water-portal
+          api_location: saint-louisville-ohio/apps/water-portal/api
           output_location: dist
 
   smoke-test:
@@ -81,4 +81,4 @@ jobs:
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.WATER_HOSTNAME }})
           echo "HTTP status: $STATUS"
-          [ "$STATUS" = "200" ] && echo "✅ Water portal is live" || (echo "❌ Unexpected status $STATUS" && exit 1)
+          [ "$STATUS" = "200" ] && echo "✅ Water portal is live" || (echo "❌ Status $STATUS" && exit 1)

@@ -1,15 +1,11 @@
-# .github/workflows/deploy-village-site.yml
-# Deploys Site 1 — Village Site
-# Functions live in apps/village-site/api (SWA managed, zero quota needed)
-
 name: Deploy Village Site
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/village-site/**'
-      - 'infrastructure/**'
+      - 'saint-louisville-ohio/apps/village-site/**'
+      - 'saint-louisville-ohio/infrastructure/**'
       - '.github/workflows/deploy-village-site.yml'
   workflow_dispatch:
 
@@ -31,7 +27,7 @@ jobs:
         with:
           scope: subscription
           region: eastus2
-          template: infrastructure/main.bicep
+          template: saint-louisville-ohio/infrastructure/main.bicep
           parameters: >
             environment=prod
             adminEmail=${{ secrets.ADMIN_EMAIL }}
@@ -51,14 +47,18 @@ jobs:
           node-version: '18.x'
 
       - name: Install frontend dependencies
-        working-directory: apps/village-site
-        run: npm ci
+        working-directory: saint-louisville-ohio/apps/village-site
+        run: npm install
 
       - name: Build frontend
-        working-directory: apps/village-site
+        working-directory: saint-louisville-ohio/apps/village-site
         env:
           VITE_API_BASE_URL: ''
         run: npm run build
+
+      - name: Install API dependencies
+        working-directory: saint-louisville-ohio/apps/village-site/api
+        run: npm install
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
@@ -66,8 +66,8 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.VILLAGE_STATIC_WEB_APP_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: apps/village-site
-          api_location: apps/village-site/api      # SWA managed functions
+          app_location: saint-louisville-ohio/apps/village-site
+          api_location: saint-louisville-ohio/apps/village-site/api
           output_location: dist
 
   smoke-test:
@@ -81,4 +81,4 @@ jobs:
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.VILLAGE_HOSTNAME }})
           echo "HTTP status: $STATUS"
-          [ "$STATUS" = "200" ] && echo "✅ Village site is live" || (echo "❌ Unexpected status $STATUS" && exit 1)
+          [ "$STATUS" = "200" ] && echo "✅ Village site is live" || (echo "❌ Status $STATUS" && exit 1)
