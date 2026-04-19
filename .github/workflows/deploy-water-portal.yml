@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'saint-louisville-ohio/apps/water-portal/**'
-      - 'saint-louisville-ohio/infrastructure/**'
+      - 'apps/water-portal/**'
+      - 'infrastructure/**'
       - '.github/workflows/deploy-water-portal.yml'
   workflow_dispatch:
 
@@ -27,7 +27,7 @@ jobs:
         with:
           scope: subscription
           region: eastus2
-          template: saint-louisville-ohio/infrastructure/main.bicep
+          template: infrastructure/main.bicep
           parameters: >
             environment=prod
             adminEmail=${{ secrets.ADMIN_EMAIL }}
@@ -47,17 +47,17 @@ jobs:
           node-version: '18.x'
 
       - name: Install frontend dependencies
-        working-directory: saint-louisville-ohio/apps/water-portal
+        working-directory: apps/water-portal
         run: npm install
 
       - name: Build frontend
-        working-directory: saint-louisville-ohio/apps/water-portal
+        working-directory: apps/water-portal
         env:
           VITE_API_BASE_URL: ''
         run: npm run build
 
       - name: Install API dependencies
-        working-directory: saint-louisville-ohio/apps/water-portal/api
+        working-directory: apps/water-portal/api
         run: npm install
 
       - name: Deploy to Azure Static Web Apps
@@ -66,8 +66,8 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.WATER_STATIC_WEB_APP_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: saint-louisville-ohio/apps/water-portal
-          api_location: saint-louisville-ohio/apps/water-portal/api
+          app_location: apps/water-portal
+          api_location: apps/water-portal/api
           output_location: dist
 
   smoke-test:
