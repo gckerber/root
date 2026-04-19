@@ -1,0 +1,156 @@
+# .github/workflows/deploy-village-site.yml
+# Deploys Site 1 (Village Site) to Azure Static Web Apps + Azure Functions
+# Triggered on push to main branch
+
+name: Deploy Village Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/village-site/**'
+      - 'functions/village-api/**'
+      - 'infrastructure/**'
+      - '.github/workflows/deploy-village-site.yml'
+  workflow_dispatch:   # Allow manual triggers from GitHub UI
+
+env:
+  AZURE_FUNCTIONAPP_NAME: func-village-prod-${{ secrets.UNIQUE_SUFFIX }}
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: functions/village-api
+  NODE_VERSION: '18.x'
+
+jobs:
+  # ── Job 1: Run Tests ────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: apps/village-site/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: apps/village-site
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: apps/village-site
+        run: npm run lint --if-present
+
+      - name: Install function dependencies
+        working-directory: functions/village-api
+        run: npm ci
+
+  # ── Job 2: Deploy Infrastructure (Bicep) ───────────────
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      village-hostname: ${{ steps.bicep.outputs.villageStaticAppUrl }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep Infrastructure
+        id: bicep
+        uses: azure/arm-deploy@v2
+        with:
+          scope: subscription
+          region: eastus2
+          template: infrastructure/main.bicep
+          parameters: >
+            infrastructure/main.bicepparam
+            adminEmail=${{ secrets.ADMIN_EMAIL }}
+            contactEmail=${{ secrets.CONTACT_EMAIL }}
+          failOnStdErr: false
+
+  # ── Job 3: Build & Deploy Frontend ─────────────────────
+  deploy-frontend:
+    name: Deploy Village Frontend
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install & Build Frontend
+        working-directory: apps/village-site
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VILLAGE_API_BASE_URL }}
+          VITE_STORAGE_URL: ${{ secrets.AZURE_STORAGE_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.VILLAGE_STATIC_WEB_APP_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: apps/village-site
+          api_location: ''        # API handled by Function App, not SWA built-in
+          output_location: dist
+          skip_api_build: true
+
+  # ── Job 4: Deploy Azure Functions ──────────────────────
+  deploy-functions:
+    name: Deploy Village Functions
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install function dependencies
+        working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        run: npm ci --production
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          respect-funcignore: true
+
+  # ── Job 5: Smoke Test ──────────────────────────────────
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, deploy-functions]
+    steps:
+      - name: Wait for propagation
+        run: sleep 30
+
+      - name: Check site is up
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.VILLAGE_HOSTNAME }})
+          if [ "$STATUS" != "200" ]; then
+            echo "Site returned HTTP $STATUS — possible deployment issue"
+            exit 1
+          fi
+          echo "Village site is live — HTTP 200 OK"
