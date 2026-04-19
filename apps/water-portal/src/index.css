@@ -1,9 +1,13 @@
-/* apps/water-portal/src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html { scroll-behavior: smooth; }
-  body { @apply text-gray-800 antialiased; }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply text-gray-800 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
 }
