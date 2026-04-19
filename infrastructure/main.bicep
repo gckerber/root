@@ -1,8 +1,4 @@
-// ============================================================
-// Saint Louisville Ohio — Azure Infrastructure
-// Root Bicep Orchestrator — SWA Managed Functions Edition
-// ============================================================
-
+// infrastructure/main.bicep
 targetScope = 'subscription'
 
 param environment string = 'prod'
@@ -11,10 +7,9 @@ param uniqueSuffix string = uniqueString(subscription().subscriptionId)
 param adminEmail string
 param contactEmail string
 
-@description('Object ID of the user running the bootstrap script. Grants them Key Vault Secrets Officer so secrets can be written immediately. Get with: az ad signed-in-user show --query id -o tsv')
+@description('Object ID of the user running the bootstrap script — grants Key Vault write access.')
 param deployerObjectId string = ''
 
-// ─── Resource Group ────────────────────────────────────────
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: 'rg-saintlouisville-${environment}'
   location: location
@@ -25,7 +20,6 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   }
 }
 
-// ─── Shared Storage ────────────────────────────────────────
 module storage 'modules/storage.bicep' = {
   name: 'storage'
   scope: rg
@@ -36,7 +30,6 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
-// ─── Cosmos DB ─────────────────────────────────────────────
 module cosmos 'modules/cosmosDb.bicep' = {
   name: 'cosmosDb'
   scope: rg
@@ -47,9 +40,6 @@ module cosmos 'modules/cosmosDb.bicep' = {
   }
 }
 
-// ─── Key Vault ─────────────────────────────────────────────
-// deployerObjectId grants the CLI user write access at deploy time
-// so the bootstrap script can immediately store secrets.
 module keyVault 'modules/keyVault.bicep' = {
   name: 'keyVault'
   scope: rg
@@ -61,7 +51,6 @@ module keyVault 'modules/keyVault.bicep' = {
   }
 }
 
-// ─── Azure Communication Services ──────────────────────────
 module communication 'modules/communication.bicep' = {
   name: 'communication'
   scope: rg
@@ -72,7 +61,6 @@ module communication 'modules/communication.bicep' = {
   }
 }
 
-// ─── Site 1: Village Static Web App ────────────────────────
 module villageStaticApp 'modules/staticWebApp.bicep' = {
   name: 'villageStaticApp'
   scope: rg
@@ -81,16 +69,13 @@ module villageStaticApp 'modules/staticWebApp.bicep' = {
     appName: 'village'
     uniqueSuffix: uniqueSuffix
     environment: environment
-    cosmosConnectionString: cosmos.outputs.connectionString
     keyVaultUri: keyVault.outputs.keyVaultUri
-    communicationConnectionString: communication.outputs.connectionString
     contactEmail: contactEmail
     adminEmail: adminEmail
     storageConnectionString: storage.outputs.connectionString
   }
 }
 
-// ─── Site 2: Water Portal Static Web App ───────────────────
 module waterStaticApp 'modules/staticWebApp.bicep' = {
   name: 'waterStaticApp'
   scope: rg
@@ -99,16 +84,13 @@ module waterStaticApp 'modules/staticWebApp.bicep' = {
     appName: 'water'
     uniqueSuffix: uniqueSuffix
     environment: environment
-    cosmosConnectionString: cosmos.outputs.connectionString
     keyVaultUri: keyVault.outputs.keyVaultUri
-    communicationConnectionString: communication.outputs.connectionString
     contactEmail: contactEmail
     adminEmail: adminEmail
     storageConnectionString: storage.outputs.connectionString
   }
 }
 
-// ─── Outputs ──────────────────────────────────────────────
 output villageStaticAppUrl string = villageStaticApp.outputs.defaultHostname
 output waterStaticAppUrl string = waterStaticApp.outputs.defaultHostname
 output resourceGroupName string = rg.name

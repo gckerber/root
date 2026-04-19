@@ -9,6 +9,11 @@ on:
       - '.github/workflows/deploy-water-portal.yml'
   workflow_dispatch:
 
+# Same concurrency group as village — only one Bicep deployment at a time
+concurrency:
+  group: azure-infrastructure
+  cancel-in-progress: false
+
 jobs:
   deploy-infrastructure:
     name: Deploy Infrastructure
@@ -27,6 +32,7 @@ jobs:
         with:
           scope: subscription
           region: eastus2
+          deploymentName: water-${{ github.run_id }}
           template: infrastructure/main.bicep
           parameters: >
             environment=prod

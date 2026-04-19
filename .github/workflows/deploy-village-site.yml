@@ -9,6 +9,11 @@ on:
       - '.github/workflows/deploy-village-site.yml'
   workflow_dispatch:
 
+# Prevent concurrent Bicep deployments colliding on the same subscription
+concurrency:
+  group: azure-infrastructure
+  cancel-in-progress: false
+
 jobs:
   deploy-infrastructure:
     name: Deploy Infrastructure
@@ -27,6 +32,7 @@ jobs:
         with:
           scope: subscription
           region: eastus2
+          deploymentName: village-${{ github.run_id }}
           template: infrastructure/main.bicep
           parameters: >
             environment=prod
