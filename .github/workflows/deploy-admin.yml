@@ -23,7 +23,7 @@ jobs:
         env:
           VITE_API_BASE_URL: ''
           VITE_ADMIN_USERNAME: admin
-          VITE_ADMIN_PASSWORD: TestPassword123
+          VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
           VITE_VILLAGE_URL: https://${{ secrets.VILLAGE_HOSTNAME }}
         run: |
           npm install
@@ -35,5 +35,6 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.ADMIN_STATIC_WEB_APP_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: apps/admin
-          output_location: dist
+          app_location: apps/admin/dist   # point directly at the built output
+          output_location: ''             # already built — nothing to output
+          skip_app_build: true            # DO NOT rebuild — use our build above
