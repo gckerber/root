@@ -62,7 +62,7 @@ git push origin main
 
 ## Officials
 
-- **Mayor:** Zack Allen
+- **Mayor:** Dave Allen
 - **Village Council:** 5 members (see About page)
 - **Tech Czar:** George Kerber
 
