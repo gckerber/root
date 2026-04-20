@@ -1,22 +1,11 @@
-// functions/village-api/bulletin/index.js
-// GET    /api/bulletin?category=event&search=text&limit=10  → list bulletins
-// POST   /api/bulletin                                       → create (admin)
-// DELETE /api/bulletin?id=xxx&category=xxx                  → delete (admin)
-
+// apps/village-site/api/bulletin/index.js
 const { CosmosClient } = require('@azure/cosmos')
-const { DefaultAzureCredential } = require('@azure/identity')
-const { SecretClient } = require('@azure/keyvault-secrets')
 const { v4: uuidv4 } = require('uuid')
 
 let _client = null
 
-async function getContainer(context) {
-  if (!_client) {
-    const cred = new DefaultAzureCredential()
-    const kv = new SecretClient(process.env.KEY_VAULT_URI, cred)
-    const secret = await kv.getSecret('cosmos-connection-string')
-    _client = new CosmosClient(secret.value)
-  }
+function getContainer() {
+  if (!_client) _client = new CosmosClient(process.env.COSMOS_CONNECTION_STRING)
   return _client.database('villagedb').container('bulletins')
 }
 
@@ -27,101 +16,67 @@ function isAdmin(req) {
 const VALID_CATEGORIES = ['notice', 'event', 'urgent', 'general']
 
 module.exports = async function (context, req) {
-  const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+  const h = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
 
   if (req.method === 'OPTIONS') {
-    context.res = { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'GET,POST,DELETE', 'Access-Control-Allow-Headers': 'Content-Type,x-admin-key' } }
+    context.res = { status: 204, headers: { ...h, 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE', 'Access-Control-Allow-Headers': 'Content-Type,x-admin-key' } }
     return
   }
 
   try {
-    const container = await getContainer(context)
+    const container = getContainer()
 
-    // ── GET ─────────────────────────────────────────────────
     if (req.method === 'GET') {
       const category = req.query.category
-      const search = req.query.search?.toLowerCase()
       const limit = Math.min(parseInt(req.query.limit) || 20, 50)
-
-      let query = 'SELECT TOP @limit * FROM c'
-      const params = [{ name: '@limit', value: limit }]
-
+      let query = `SELECT TOP ${limit} * FROM c`
+      const params = []
       if (category && VALID_CATEGORIES.includes(category)) {
-        query = `SELECT TOP @limit * FROM c WHERE c.category = @category`
-        params.push({ name: '@category', value: category })
+        query = `SELECT TOP ${limit} * FROM c WHERE c.category = @cat`
+        params.push({ name: '@cat', value: category })
       }
-
       query += ' ORDER BY c.pinned DESC, c.date DESC'
-
       const { resources } = await container.items.query({ query, parameters: params }).fetchAll()
-
-      let items = resources
-      if (search) {
-        items = items.filter(
-          (b) =>
-            b.title?.toLowerCase().includes(search) ||
-            b.body?.toLowerCase().includes(search)
-        )
-      }
-
-      context.res = { status: 200, headers, body: { items, total: items.length } }
+      const search = req.query.search?.toLowerCase()
+      const items = search ? resources.filter(b => b.title?.toLowerCase().includes(search) || b.body?.toLowerCase().includes(search)) : resources
+      context.res = { status: 200, headers: h, body: { items, total: items.length } }
       return
     }
 
-    // ── POST — create (admin) ───────────────────────────────
     if (req.method === 'POST') {
-      if (!isAdmin(req)) {
-        context.res = { status: 401, headers, body: { message: 'Unauthorized' } }
-        return
-      }
-
+      if (!isAdmin(req)) { context.res = { status: 401, headers: h, body: { message: 'Unauthorized' } }; return }
       const { title, body, category, pinned, link } = req.body || {}
-
-      if (!title?.trim() || !body?.trim()) {
-        context.res = { status: 400, headers, body: { message: 'title and body are required' } }
-        return
-      }
-      if (category && !VALID_CATEGORIES.includes(category)) {
-        context.res = { status: 400, headers, body: { message: `category must be one of: ${VALID_CATEGORIES.join(', ')}` } }
-        return
-      }
-
-      const record = {
-        id: uuidv4(),
-        title: title.trim().slice(0, 200),
-        body: body.trim().slice(0, 5000),
-        category: category || 'notice',
-        pinned: Boolean(pinned),
-        link: link?.trim() || null,
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      }
-
+      if (!title?.trim() || !body?.trim()) { context.res = { status: 400, headers: h, body: { message: 'title and body are required' } }; return }
+      const record = { id: uuidv4(), title: title.trim().slice(0, 200), body: body.trim().slice(0, 5000), category: category || 'notice', pinned: Boolean(pinned), link: link?.trim() || null, date: new Date().toISOString(), createdAt: new Date().toISOString() }
       const { resource } = await container.items.create(record)
-      context.log(`Created bulletin ${resource.id}: "${record.title}"`)
-      context.res = { status: 201, headers, body: resource }
+      context.res = { status: 201, headers: h, body: resource }
       return
     }
 
-    // ── DELETE ──────────────────────────────────────────────
+    if (req.method === 'PUT') {
+      if (!isAdmin(req)) { context.res = { status: 401, headers: h, body: { message: 'Unauthorized' } }; return }
+      const { id } = req.query
+      if (!id) { context.res = { status: 400, headers: h, body: { message: 'id required' } }; return }
+      const body = req.body || {}
+      const { resource: existing } = await container.item(id, body.category || 'notice').read()
+      const updated = { ...existing, ...body, id, updatedAt: new Date().toISOString() }
+      const { resource } = await container.item(id, updated.category).replace(updated)
+      context.res = { status: 200, headers: h, body: resource }
+      return
+    }
+
     if (req.method === 'DELETE') {
-      if (!isAdmin(req)) {
-        context.res = { status: 401, headers, body: { message: 'Unauthorized' } }
-        return
-      }
+      if (!isAdmin(req)) { context.res = { status: 401, headers: h, body: { message: 'Unauthorized' } }; return }
       const { id, category } = req.query
-      if (!id || !category) {
-        context.res = { status: 400, headers, body: { message: 'id and category required' } }
-        return
-      }
+      if (!id || !category) { context.res = { status: 400, headers: h, body: { message: 'id and category required' } }; return }
       await container.item(id, category).delete()
-      context.res = { status: 200, headers, body: { success: true } }
+      context.res = { status: 200, headers: h, body: { success: true } }
       return
     }
 
-    context.res = { status: 405, headers, body: { message: 'Method not allowed' } }
+    context.res = { status: 405, headers: h, body: { message: 'Method not allowed' } }
   } catch (err) {
     context.log.error('Bulletin error:', err.message)
-    context.res = { status: 500, headers, body: { message: 'Internal server error' } }
+    context.res = { status: 500, headers: h, body: { message: err.message || 'Internal server error' } }
   }
 }
