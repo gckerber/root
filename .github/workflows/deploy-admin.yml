@@ -8,10 +8,6 @@ on:
       - '.github/workflows/deploy-admin.yml'
   workflow_dispatch:
 
-concurrency:
-  group: azure-infrastructure
-  cancel-in-progress: false
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -26,10 +22,8 @@ jobs:
         working-directory: apps/admin
         env:
           VITE_API_BASE_URL: ''
-          VITE_ADMIN_USERNAME: admin
-          # Uses ADMIN_API_KEY which is already in your GitHub Secrets
-          # from the bootstrap script — no new secret needed
-          VITE_ADMIN_PASSWORD: ${{ secrets.ADMIN_API_KEY }}
+          VITE_ADMIN_USERNAME: ${{ secrets.VITE_ADMIN_USERNAME }}
+          VITE_ADMIN_PASSWORD: ${{ secrets.VITE_ADMIN_PASSWORD }}
           VITE_VILLAGE_URL: https://${{ secrets.VILLAGE_HOSTNAME }}
         run: |
           npm install
