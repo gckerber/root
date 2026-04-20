@@ -1,12 +1,12 @@
 // src/pages/Login.jsx
+// TEMPORARY DEBUG VERSION — shows what credentials were baked in at build time
+// Delete the debug box once login is working, then redeploy
+
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth, useToast } from '../utils/context'
 import { Lock, Eye, EyeOff, Shield } from 'lucide-react'
 
-// Admin credentials are stored as GitHub Secrets / env vars.
-// Username is fixed as 'admin' — password is the ADMIN_API_KEY.
-// In production, replace with Azure Static Web Apps authentication.
 const ADMIN_USERNAME = import.meta.env.VITE_ADMIN_USERNAME || 'admin'
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || ''
 
@@ -23,14 +23,11 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
+    await new Promise((r) => setTimeout(r, 300))
 
-    await new Promise((r) => setTimeout(r, 400)) // small delay feels more secure
-
-    const pwToCheck = ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_API_KEY || ''
-
-    if (username === ADMIN_USERNAME && password === pwToCheck) {
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       login(password)
-      toast('Welcome back, ' + username + '!', 'success')
+      toast('Welcome back!', 'success')
       navigate('/', { replace: true })
     } else {
       setShake(true)
@@ -42,14 +39,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      {/* Background pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-slate-800/20 rounded-full blur-3xl" />
       </div>
 
-      <div className={`relative w-full max-w-sm transition-all ${shake ? 'animate-bounce' : ''}`}
-        style={shake ? { animation: 'shake 0.5s ease-in-out' } : {}}>
+      <div className="relative w-full max-w-sm">
         <style>{`
           @keyframes shake {
             0%,100%{transform:translateX(0)}
@@ -61,7 +55,6 @@ export default function Login() {
           .shake { animation: shake 0.5s ease-in-out; }
         `}</style>
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600/20 border border-blue-500/30 rounded-2xl mb-4">
             <Shield size={28} className="text-blue-400" />
@@ -69,6 +62,17 @@ export default function Login() {
           <h1 className="text-2xl font-semibold text-white">Admin Panel</h1>
           <p className="text-slate-500 text-sm mt-1">Village of Saint Louisville, Ohio</p>
         </div>
+
+        {/* ── TEMPORARY DEBUG BOX — remove after login works ── */}
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4 text-xs font-mono">
+          <div className="text-yellow-400 font-bold mb-2">🔍 Debug — what was baked in at build time:</div>
+          <div className="text-slate-300 space-y-1">
+            <div>VITE_ADMIN_USERNAME = <span className="text-green-400">"{ADMIN_USERNAME}"</span></div>
+            <div>VITE_ADMIN_PASSWORD = <span className="text-green-400">"{ADMIN_PASSWORD ? '***(' + ADMIN_PASSWORD.length + ' chars)' : '(EMPTY — secret missing!)'}"</span></div>
+          </div>
+          <div className="text-yellow-600 mt-2 text-xs">Delete this box from Login.jsx once you can log in.</div>
+        </div>
+        {/* ── END DEBUG BOX ── */}
 
         <div className={`card p-6 ${shake ? 'shake' : ''}`}>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,7 +89,6 @@ export default function Login() {
                 autoFocus
               />
             </div>
-
             <div>
               <label className="label">Password</label>
               <div className="relative">
@@ -107,21 +110,16 @@ export default function Login() {
                 </button>
               </div>
             </div>
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
             >
               <Lock size={15} />
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
         </div>
-
-        <p className="text-center text-slate-600 text-xs mt-6">
-          Saint Louisville, Ohio · Secure Admin Access
-        </p>
       </div>
     </div>
   )
