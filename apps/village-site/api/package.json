@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "SWA managed API functions for Saint Louisville Village Site",
   "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@azure/cosmos": "^4.0.0",
     "@azure/communication-email": "^1.0.0",
