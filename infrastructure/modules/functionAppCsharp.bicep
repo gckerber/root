@@ -1,6 +1,4 @@
 // infrastructure/modules/functionAppCsharp.bicep
-// C# Azure Function App on Flex Consumption plan
-
 param location string
 param uniqueSuffix string
 param environment string
@@ -12,8 +10,27 @@ param contactEmail string
 param adminEmail string
 
 var functionAppName = 'func-village-${environment}'
-var appInsightsName = 'ai-village-csharp-${environment}-${take(uniqueSuffix, 8)}'
+var appInsightsName = 'ai-village-cs-${environment}-${take(uniqueSuffix, 8)}'
 var flexPlanName = 'asp-village-flex-${environment}'
+
+// Reference existing storage account
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
+  name: storageAccountName
+}
+
+// Create dedicated deployments container for Flex Consumption
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' existing = {
+  name: 'default'
+  parent: storageAccount
+}
+
+resource deploymentsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  name: 'deployments'
+  parent: blobService
+  properties: {
+    publicAccess: 'None'
+  }
+}
 
 // Classic App Insights
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
@@ -26,10 +43,6 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     IngestionMode: 'ApplicationInsights'
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'
-  }
-  tags: {
-    project: 'saint-louisville-ohio'
-    environment: environment
   }
 }
 
@@ -47,7 +60,11 @@ resource flexPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   }
 }
 
-// C# Function App with required functionAppConfig for Flex Consumption
+// Build the blob container URI for deployment storage
+// Format: https://<account>.blob.core.windows.net/deployments
+var blobContainerUri = '${storageAccount.properties.primaryEndpoints.blob}deployments'
+
+// C# Function App
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: functionAppName
   location: location
@@ -55,15 +72,15 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   identity: {
     type: 'SystemAssigned'
   }
+  dependsOn: [deploymentsContainer]
   properties: {
     serverFarmId: flexPlan.id
     httpsOnly: true
-    // Required for Flex Consumption
     functionAppConfig: {
       deployment: {
         storage: {
           type: 'blobContainer'
-          value: '${storageConnectionString};ContainerName=deployments'
+          value: blobContainerUri
           authentication: {
             type: 'StorageAccountConnectionString'
             storageAccountConnectionStringName: 'AzureWebJobsStorage'
@@ -120,10 +137,6 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         supportCredentials: false
       }
     }
-  }
-  tags: {
-    project: 'saint-louisville-ohio'
-    environment: environment
   }
 }
 
