@@ -10,7 +10,7 @@
     "logLevel": {
       "default": "Warning",
       "Host.Results": "Error",
-      "Function": "Error",
+      "Function": "Warning",
       "Host.Aggregator": "Trace"
     }
   },
@@ -18,6 +18,5 @@
     "http": {
       "routePrefix": "api"
     }
-  },
-  "functionTimeout": "00:05:00"
+  }
 }
