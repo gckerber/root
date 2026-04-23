@@ -1,6 +1,3 @@
-# .github/workflows/deploy-functions.yml
-# Builds and deploys the C# Azure Function App (village API)
-
 name: Deploy Village API (C#)
 
 on:
@@ -12,14 +9,17 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_NAME: func-village-prod
   DOTNET_VERSION: '8.0.x'
-  FUNCTION_APP_PATH: functions/village-api
+  FUNCTION_APP_NAME: func-village-prod
 
 jobs:
   build-and-deploy:
     name: Build & Deploy C# Functions
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions/village-api
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,16 +29,13 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        working-directory: ${{ env.FUNCTION_APP_PATH }}
-        run: dotnet restore
+        run: dotnet restore village-api.csproj
 
       - name: Build
-        working-directory: ${{ env.FUNCTION_APP_PATH }}
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build village-api.csproj --configuration Release --no-restore
 
       - name: Publish
-        working-directory: ${{ env.FUNCTION_APP_PATH }}
-        run: dotnet publish --configuration Release --no-build --output ./publish
+        run: dotnet publish village-api.csproj --configuration Release --no-build --output ./publish
 
       - name: Azure Login
         uses: azure/login@v2
@@ -48,6 +45,5 @@ jobs:
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: ${{ env.FUNCTION_APP_PATH }}/publish
-          respect-funcignore: true
+          app-name: ${{ env.FUNCTION_APP_NAME }}
+          package: functions/village-api/publish
