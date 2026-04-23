@@ -28,14 +28,17 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Verify project file exists
+        run: ls -la *.csproj
+
       - name: Restore dependencies
-        run: dotnet restore village-api.csproj
+        run: dotnet restore
 
       - name: Build
-        run: dotnet build village-api.csproj --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore
 
       - name: Publish
-        run: dotnet publish village-api.csproj --configuration Release --no-build --output ./publish
+        run: dotnet publish --configuration Release --no-build --output ./publish
 
       - name: Azure Login
         uses: azure/login@v2
