@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { BookOpen, Download, Search, ChevronRight } from 'lucide-react'
 import axios from 'axios'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 const CATEGORIES = [
   { id: 'all', label: 'All Ordinances' },

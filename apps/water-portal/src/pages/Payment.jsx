@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CreditCard, CheckCircle, Bell, ArrowLeft, ShieldCheck } from 'lucide-react'
 import axios from 'axios'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 function formatCard(val) {
   return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()

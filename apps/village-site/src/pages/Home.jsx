@@ -5,7 +5,7 @@ import { FileText, Megaphone, BookOpen, Calendar, Camera, Droplets } from 'lucid
 import HeroSection from '../components/HeroSection'
 import axios from 'axios'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 const quickLinks = [
   { to: '/about', icon: FileText, label: 'Meet Our Officials', color: 'bg-blue-100 text-blue-700' },

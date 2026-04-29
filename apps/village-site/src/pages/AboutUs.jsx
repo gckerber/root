@@ -5,9 +5,9 @@ import ContactForm from '../components/ContactForm'
 
 const officials = [
   {
-    name: 'Zack Allen',
+    name: 'Dave Allen',
     title: 'Mayor',
-    bio: 'Mayor Zack Allen has served the Village of Saint Louisville with dedication, focusing on infrastructure improvements and community engagement.',
+    bio: 'Mayor Dave Allen has served the Village of Saint Louisville with dedication, focusing on infrastructure improvements and community engagement.',
     email: 'mayor@saintlouisvilleohio.gov',
     highlight: true,
   },

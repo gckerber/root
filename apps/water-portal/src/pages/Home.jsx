@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, AlertCircle, ShieldCheck, Eye, EyeOff, Droplets } from 'lucide-react'
 import axios from 'axios'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 const LOOKUP_METHODS = [
   { id: 'address', label: 'Service Address' },

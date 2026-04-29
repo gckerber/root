@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, MapPin, Clock } from 'lucide-react'
 import axios from 'axios'
 import { format, parseISO, isSameMonth, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isToday } from 'date-fns'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 function useEvents(month) {
   return useQuery({

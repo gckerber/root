@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Send, CheckCircle, AlertCircle } from 'lucide-react'
 import axios from 'axios'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 export default function ContactForm() {
   const [form, setForm] = useState({

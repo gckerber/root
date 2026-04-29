@@ -5,7 +5,7 @@ import { FileText, Download, Search, Filter, ChevronDown } from 'lucide-react'
 import axios from 'axios'
 import { format, parseISO } from 'date-fns'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 function useMinutes(year, search) {
   return useQuery({

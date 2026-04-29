@@ -5,7 +5,7 @@ import { Megaphone, Calendar, AlertTriangle, Info, Search } from 'lucide-react'
 import axios from 'axios'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: Megaphone },
