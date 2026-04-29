@@ -31,22 +31,27 @@ public class BulletinFunctions : FunctionBase
             var search = req.Query["search"]?.ToLower();
             var limit = int.TryParse(req.Query["limit"], out var l) ? Math.Min(l, 50) : 20;
 
-            // Cosmos serverless requires TOP when using ORDER BY
+            // Fetch all then sort in memory — avoids composite index requirement
             QueryDefinition query;
             if (!string.IsNullOrEmpty(category) && ValidCategories.Contains(category))
-                query = new QueryDefinition(
-                    $"SELECT TOP {limit} * FROM c WHERE c.category = @cat ORDER BY c.pinned DESC, c.date DESC")
+                query = new QueryDefinition("SELECT * FROM c WHERE c.category = @cat")
                     .WithParameter("@cat", category);
             else
-                query = new QueryDefinition(
-                    $"SELECT TOP {limit} * FROM c ORDER BY c.pinned DESC, c.date DESC");
+                query = new QueryDefinition("SELECT * FROM c");
 
             var items = await _cosmos.QueryAsync<Bulletin>(Container, query);
 
+            // Sort and filter in memory
             if (!string.IsNullOrEmpty(search))
                 items = items.Where(b =>
                     b.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     b.Body.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            items = items
+                .OrderByDescending(b => b.Pinned)
+                .ThenByDescending(b => b.Date)
+                .Take(limit)
+                .ToList();
 
             return await OkJson(req, new ApiResponse<Bulletin> { Items = items });
         }

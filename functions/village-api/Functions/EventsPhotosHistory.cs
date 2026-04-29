@@ -29,14 +29,14 @@ public class EventsFunctions : FunctionBase
             var month = req.Query["month"];
             QueryDefinition query;
             if (!string.IsNullOrEmpty(month))
-                query = new QueryDefinition(
-                    "SELECT TOP 100 * FROM c WHERE c.month = @month ORDER BY c.date ASC")
+                query = new QueryDefinition("SELECT * FROM c WHERE c.month = @month")
                     .WithParameter("@month", month);
             else
-                query = new QueryDefinition(
-                    "SELECT TOP 200 * FROM c ORDER BY c.date ASC");
+                query = new QueryDefinition("SELECT * FROM c");
 
             var items = await _cosmos.QueryAsync<CalendarEvent>(Container, query);
+            // Sort in memory
+            items = items.OrderBy(e => e.Date).ToList();
             return await OkJson(req, new ApiResponse<CalendarEvent> { Items = items });
         }
         catch (Exception ex)
@@ -79,7 +79,7 @@ public class EventsFunctions : FunctionBase
 
     [Function("UpdateEvent")]
     public async Task<HttpResponseData> Put(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "events")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "ordinances")] HttpRequestData req)
     {
         if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
         if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
@@ -138,7 +138,9 @@ public class PhotosFunctions : FunctionBase
         try
         {
             var items = await _cosmos.QueryAsync<Photo>(Container,
-                new QueryDefinition("SELECT TOP 200 * FROM c ORDER BY c.year ASC"));
+                new QueryDefinition("SELECT * FROM c"));
+            // Sort in memory by year
+            items = items.OrderBy(p => p.Year ?? 9999).ToList();
             return await OkJson(req, new ApiResponse<Photo> { Items = items });
         }
         catch (Exception ex)
