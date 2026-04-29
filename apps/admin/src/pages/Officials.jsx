@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Save, X, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 const DEFAULT_OFFICIALS = [
   { id: '1', name: 'Zack Allen', title: 'Mayor', bio: '', email: 'mayor@saintlouisvilleohio.gov', order: 0 },

@@ -3,7 +3,7 @@ import { useState, useRef } from 'react'
 import { Upload, Image, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 export default function HeroEditor() {
   const { auth } = useAuth()

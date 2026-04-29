@@ -4,7 +4,7 @@ import { Plus, Trash2, FileText, Upload, X, CheckCircle, Download, Paperclip } f
 import { useAuth, useToast } from '../utils/context'
 import { format, parseISO } from 'date-fns'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 function AddMinutesForm({ onSave, onCancel, adminKey }) {
   const toast = useToast()

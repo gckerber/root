@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Plus, Pencil, Trash2, Save, X, Upload, Download, BookOpen, Paperclip } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 const CATEGORIES = ['zoning', 'general', 'traffic', 'health', 'utilities']
 
 function OrdForm({ item, onSave, onCancel, adminKey }) {

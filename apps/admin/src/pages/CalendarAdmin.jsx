@@ -4,7 +4,7 @@ import { Plus, Trash2, Save, X, Calendar, Clock, MapPin } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 import { format, parseISO } from 'date-fns'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 function EventForm({ item, onSave, onCancel }) {
   const [form, setForm] = useState(item || { title: '', date: '', time: '', location: 'Village Hall', description: '' })

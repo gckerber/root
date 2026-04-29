@@ -4,7 +4,7 @@ import { Plus, Pencil, Trash2, Save, X, Pin, Megaphone } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 const CATEGORIES = ['notice', 'event', 'urgent', 'general']
 const CAT_COLORS = {

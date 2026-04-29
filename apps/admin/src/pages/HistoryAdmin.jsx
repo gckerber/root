@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Save, Plus, Trash2, Upload, Image, Camera, X } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
-const API = import.meta.env.VITE_API_BASE_URL || ''
+const API = 'https://func-village-prod.azurewebsites.net'
 
 export default function HistoryAdmin() {
   const { auth } = useAuth()
