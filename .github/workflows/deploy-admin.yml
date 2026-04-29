@@ -18,6 +18,13 @@ jobs:
         with:
           node-version: '18.x'
 
+      - name: Debug API URL
+        env:
+          VITE_API_BASE_URL: https://${{ secrets.VITE_API_BASE_URL }}
+        run: |
+          echo "API URL length: ${#VITE_API_BASE_URL}"
+          echo "API URL: $VITE_API_BASE_URL"
+
       - name: Install & Build
         working-directory: apps/admin
         env:
