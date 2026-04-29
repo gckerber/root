@@ -31,7 +31,6 @@ public class BulletinFunctions : FunctionBase
             var search = req.Query["search"]?.ToLower();
             var limit = int.TryParse(req.Query["limit"], out var l) ? Math.Min(l, 50) : 20;
 
-            // Fetch all then sort in memory — avoids composite index requirement
             QueryDefinition query;
             if (!string.IsNullOrEmpty(category) && ValidCategories.Contains(category))
                 query = new QueryDefinition("SELECT * FROM c WHERE c.category = @cat")
@@ -41,7 +40,6 @@ public class BulletinFunctions : FunctionBase
 
             var items = await _cosmos.QueryAsync<Bulletin>(Container, query);
 
-            // Sort and filter in memory
             if (!string.IsNullOrEmpty(search))
                 items = items.Where(b =>
                     b.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
@@ -104,9 +102,38 @@ public class BulletinFunctions : FunctionBase
         if (body == null || string.IsNullOrEmpty(body.Category))
             return await ErrorJson(req, HttpStatusCode.BadRequest, "category required in body");
 
-        var existing = await _cosmos.ReadAsync<Bulletin>(Container, id, new PartitionKey(body.Category));
+        var newCategory = ValidCategories.Contains(body.Category) ? body.Category : "notice";
+
+        // Find existing document — search all categories since category may have changed
+        Bulletin? existing = null;
+        foreach (var cat in ValidCategories)
+        {
+            existing = await _cosmos.ReadAsync<Bulletin>(Container, id, new PartitionKey(cat));
+            if (existing != null) break;
+        }
+
         if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
 
+        // If category changed, delete old and create new (partition key is immutable in Cosmos)
+        if (existing.Category != newCategory)
+        {
+            await _cosmos.DeleteAsync(Container, id, new PartitionKey(existing.Category));
+            var newItem = new Bulletin
+            {
+                Id = id,
+                Title = body.Title?.Trim() ?? existing.Title,
+                Body = body.Body?.Trim() ?? existing.Body,
+                Category = newCategory,
+                Pinned = body.Pinned,
+                Link = body.Link?.Trim(),
+                Date = existing.Date,
+                CreatedAt = existing.CreatedAt
+            };
+            var created = await _cosmos.CreateAsync(Container, newItem, new PartitionKey(newCategory));
+            return await OkJson(req, created);
+        }
+
+        // Same category — just replace
         existing.Title = body.Title?.Trim() ?? existing.Title;
         existing.Body = body.Body?.Trim() ?? existing.Body;
         existing.Pinned = body.Pinned;
@@ -125,8 +152,21 @@ public class BulletinFunctions : FunctionBase
 
         var id = req.Query["id"];
         var category = req.Query["category"];
-        if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(category))
-            return await ErrorJson(req, HttpStatusCode.BadRequest, "id and category required");
+
+        // If no category provided, search all partitions
+        if (string.IsNullOrEmpty(category))
+        {
+            foreach (var cat in ValidCategories)
+            {
+                var item = await _cosmos.ReadAsync<Bulletin>(Container, id, new PartitionKey(cat));
+                if (item != null)
+                {
+                    await _cosmos.DeleteAsync(Container, id, new PartitionKey(cat));
+                    return await OkJson(req, new { success = true });
+                }
+            }
+            return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
+        }
 
         await _cosmos.DeleteAsync(Container, id, new PartitionKey(category));
         return await OkJson(req, new { success = true });

@@ -1,4 +1,4 @@
-// src/pages/HeroEditor.jsx
+// apps/admin/src/pages/HeroEditor.jsx
 import { useState, useRef } from 'react'
 import { Upload, Image, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
@@ -13,6 +13,7 @@ export default function HeroEditor() {
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [done, setDone] = useState(false)
+  const [publicUrl, setPublicUrl] = useState(null)
 
   function handleFilePick(e) {
     const f = e.target.files[0]
@@ -28,32 +29,51 @@ export default function HeroEditor() {
     setFile(f)
     setPreview(URL.createObjectURL(f))
     setDone(false)
+    setPublicUrl(null)
   }
 
   async function handleUpload() {
     if (!file) return
     setUploading(true)
     try {
-      // Get a SAS upload URL from the API
+      // Step 1: Get SAS upload URL from function app
       const res = await fetch(`${API}/api/upload-url`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
-        body: JSON.stringify({ container: 'hero', filename: 'hero.jpg', contentType: file.type }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': auth.key
+        },
+        body: JSON.stringify({
+          container: 'hero',
+          filename: 'hero.jpg',
+          contentType: file.type
+        }),
       })
-      if (!res.ok) throw new Error('Could not get upload URL')
-      const { uploadUrl } = await res.json()
 
-      // Upload directly to Azure Blob Storage
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.message || `Failed to get upload URL: ${res.status}`)
+      }
+
+      const { uploadUrl, publicUrl: blobUrl } = await res.json()
+
+      // Step 2: Upload directly to Azure Blob Storage using SAS URL
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
-        headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type },
+        headers: {
+          'x-ms-blob-type': 'BlockBlob',
+          'Content-Type': file.type,
+        },
         body: file,
       })
-      if (!uploadRes.ok) throw new Error('Upload failed')
 
+      if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`)
+
+      setPublicUrl(blobUrl)
       setDone(true)
-      toast('Hero image updated! It will appear on the site within a minute.', 'success')
+      toast('Hero image uploaded! It will appear on the site within a minute.', 'success')
     } catch (err) {
+      console.error('Upload error:', err)
       toast(err.message || 'Upload failed — please try again', 'error')
     }
     setUploading(false)
@@ -62,12 +82,13 @@ export default function HeroEditor() {
   return (
     <div className="max-w-2xl">
       <div className="card p-6 mb-4">
-        <h2 className="text-white font-semibold mb-1">Current Hero Image</h2>
+        <h2 className="text-white font-semibold mb-1">Hero Image</h2>
         <p className="text-slate-500 text-sm mb-5">
-          This is the large photo residents see at the top of the homepage. Use a wide landscape shot of the village — aerial views, Main Street, or a landmark work best.
+          This is the large photo residents see at the top of the homepage.
+          Use a wide landscape shot of the village — aerial views or Main Street work best.
         </p>
 
-        {/* Current image preview */}
+        {/* Image preview / drop zone */}
         <div
           className="relative w-full aspect-video bg-slate-800 rounded-xl overflow-hidden border-2 border-dashed border-slate-700 mb-5 flex items-center justify-center cursor-pointer group"
           onClick={() => fileRef.current?.click()}
@@ -111,6 +132,12 @@ export default function HeroEditor() {
           </div>
         )}
 
+        {done && publicUrl && (
+          <div className="bg-green-600/10 border border-green-600/20 rounded-xl p-3 mb-4 text-sm text-green-400">
+            ✓ Uploaded to: <a href={publicUrl} target="_blank" rel="noreferrer" className="underline truncate">{publicUrl}</a>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button onClick={() => fileRef.current?.click()} className="btn-ghost">
             <Upload size={15} /> Choose Photo
@@ -122,6 +149,11 @@ export default function HeroEditor() {
               ) : (
                 <><Upload size={15} /> Save as Hero Image</>
               )}
+            </button>
+          )}
+          {done && (
+            <button onClick={() => { setFile(null); setPreview(null); setDone(false) }} className="btn-ghost">
+              Upload Another
             </button>
           )}
         </div>

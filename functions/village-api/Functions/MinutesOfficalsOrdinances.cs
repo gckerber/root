@@ -34,16 +34,13 @@ public class MinutesFunctions : FunctionBase
                 query = new QueryDefinition("SELECT * FROM c");
 
             var items = await _cosmos.QueryAsync<Minutes>(Container, query);
-
             var search = req.Query["search"]?.ToLower();
             if (!string.IsNullOrEmpty(search))
                 items = items.Where(m =>
                     m.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     m.Type.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            // Sort in memory
             items = items.OrderByDescending(m => m.MeetingDate).ToList();
-
             return await OkJson(req, new ApiResponse<Minutes> { Items = items });
         }
         catch (Exception ex)
@@ -67,12 +64,16 @@ public class MinutesFunctions : FunctionBase
         if (!DateTime.TryParse(body.MeetingDate, out var date))
             return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid meetingDate format");
 
+        var title = !string.IsNullOrWhiteSpace(body.Title)
+            ? body.Title.Trim()
+            : $"{date:MMMM d, yyyy} Council Meeting";
+
         var item = new Minutes
         {
             Id = Guid.NewGuid().ToString(),
             MeetingDate = date.ToString("o"),
             Year = date.Year,
-            Title = $"{date:MMMM d, yyyy} Council Meeting",
+            Title = title,
             Type = body.Type ?? "Regular Session",
             Approved = body.Approved,
             FileUrl = body.FileUrl,
@@ -83,6 +84,36 @@ public class MinutesFunctions : FunctionBase
 
         var created = await _cosmos.CreateAsync(Container, item, new PartitionKey(item.Year));
         return await CreatedJson(req, created);
+    }
+
+    [Function("UpdateMinutes")]
+    public async Task<HttpResponseData> Put(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "minutes")] HttpRequestData req)
+    {
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+
+        var id = req.Query["id"];
+        if (string.IsNullOrEmpty(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+
+        var body = await ReadBodyAsync<Minutes>(req);
+        if (body == null) return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid body");
+
+        if (!DateTime.TryParse(body.MeetingDate, out var date))
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid meetingDate");
+
+        var existing = await _cosmos.ReadAsync<Minutes>(Container, id, new PartitionKey(date.Year));
+        if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
+
+        existing.Title = !string.IsNullOrWhiteSpace(body.Title) ? body.Title.Trim() : existing.Title;
+        existing.Type = body.Type ?? existing.Type;
+        existing.Approved = body.Approved;
+        existing.FileUrl = body.FileUrl ?? existing.FileUrl;
+        existing.FileName = body.FileName ?? existing.FileName;
+        existing.FileSize = body.FileSize ?? existing.FileSize;
+
+        var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Year));
+        return await OkJson(req, updated);
     }
 
     [Function("DeleteMinutes")]
@@ -118,9 +149,7 @@ public class OfficialsFunctions : FunctionBase
             return await OkJson(req, new ApiResponse<Official> { Items = DemoData.Officials });
         try
         {
-            var items = await _cosmos.QueryAsync<Official>(Container,
-                new QueryDefinition("SELECT * FROM c"));
-            // Sort by order in memory
+            var items = await _cosmos.QueryAsync<Official>(Container, new QueryDefinition("SELECT * FROM c"));
             items = items.OrderBy(o => o.Order).ToList();
             return await OkJson(req, new ApiResponse<Official>
             {
@@ -229,7 +258,6 @@ public class OrdinancesFunctions : FunctionBase
                 query = new QueryDefinition("SELECT * FROM c");
 
             var items = await _cosmos.QueryAsync<Ordinance>(Container, query);
-
             var search = req.Query["search"]?.ToLower();
             if (!string.IsNullOrEmpty(search))
                 items = items.Where(o =>
@@ -237,9 +265,7 @@ public class OrdinancesFunctions : FunctionBase
                     o.Number.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     (o.Summary?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
-            // Sort in memory
             items = items.OrderByDescending(o => o.Year).ThenByDescending(o => o.Number).ToList();
-
             return await OkJson(req, new ApiResponse<Ordinance> { Items = items });
         }
         catch (Exception ex)
@@ -291,13 +317,40 @@ public class OrdinancesFunctions : FunctionBase
         if (body == null || string.IsNullOrEmpty(body.Category))
             return await ErrorJson(req, HttpStatusCode.BadRequest, "category required in body");
 
-        var existing = await _cosmos.ReadAsync<Ordinance>(Container, id, new PartitionKey(body.Category));
+        // Try to find the existing document — search all categories since it may have changed
+        Ordinance? existing = null;
+        foreach (var cat in ValidCategories)
+        {
+            existing = await _cosmos.ReadAsync<Ordinance>(Container, id, new PartitionKey(cat));
+            if (existing != null) break;
+        }
+
         if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
 
+        // If category changed, delete old and create new (Cosmos partition key is immutable)
+        if (existing.Category != body.Category)
+        {
+            await _cosmos.DeleteAsync(Container, id, new PartitionKey(existing.Category));
+            var newItem = new Ordinance
+            {
+                Id = id,
+                Number = body.Number?.Trim() ?? existing.Number,
+                Title = body.Title?.Trim() ?? existing.Title,
+                Category = body.Category,
+                Summary = body.Summary?.Trim(),
+                FileUrl = body.FileUrl?.Trim() ?? existing.FileUrl,
+                Year = body.Year > 0 ? body.Year : existing.Year,
+                CreatedAt = existing.CreatedAt
+            };
+            var created = await _cosmos.CreateAsync(Container, newItem, new PartitionKey(newItem.Category));
+            return await OkJson(req, created);
+        }
+
+        // Same category — just replace
         existing.Number = body.Number?.Trim() ?? existing.Number;
         existing.Title = body.Title?.Trim() ?? existing.Title;
         existing.Summary = body.Summary?.Trim();
-        existing.FileUrl = body.FileUrl?.Trim();
+        existing.FileUrl = body.FileUrl?.Trim() ?? existing.FileUrl;
         existing.Year = body.Year > 0 ? body.Year : existing.Year;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Category));

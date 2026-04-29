@@ -1,28 +1,35 @@
-// src/pages/MinutesAdmin.jsx
+// apps/admin/src/pages/MinutesAdmin.jsx
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, FileText, Upload, X, CheckCircle, Download, Paperclip } from 'lucide-react'
+import { Plus, Trash2, FileText, Upload, X, CheckCircle, Download, Paperclip, Pencil, Save } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 import { format, parseISO } from 'date-fns'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
-function AddMinutesForm({ onSave, onCancel, adminKey }) {
+function MinuteForm({ meeting, onSave, onCancel, adminKey, isEdit }) {
   const toast = useToast()
   const fileRef = useRef()
-  const [form, setForm] = useState({ meetingDate: '', type: 'Regular Session', approved: false })
-  const [file, setFile] = useState(null)
+  const [form, setForm] = useState(meeting || {
+    meetingDate: '',
+    title: '',
+    type: 'Regular Session',
+    approved: false,
+    fileUrl: meeting?.fileUrl || null,
+    fileName: meeting?.fileName || null,
+  })
+  const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
 
   async function handleSubmit() {
     if (!form.meetingDate) { toast('Please enter a meeting date', 'error'); return }
     setUploading(true)
     try {
-      let fileUrl = null
-      let fileSize = null
-      let fileName = null
+      let fileUrl = form.fileUrl
+      let fileName = form.fileName
 
-      if (file) {
-        // Get SAS upload URL
+      // Upload new files if any
+      if (files.length > 0) {
+        const file = files[0]
         const urlRes = await fetch(`${API}/api/upload-url`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
@@ -30,35 +37,45 @@ function AddMinutesForm({ onSave, onCancel, adminKey }) {
         })
         if (!urlRes.ok) throw new Error('Could not get upload URL')
         const { uploadUrl, publicUrl } = await urlRes.json()
-
         await fetch(uploadUrl, {
           method: 'PUT',
           headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type },
           body: file,
         })
         fileUrl = publicUrl
-        fileSize = file.size
         fileName = file.name
       }
 
-      await onSave({ ...form, fileUrl, fileSize, fileName })
+      // Generate title from date if not provided
+      const date = new Date(form.meetingDate)
+      const title = form.title?.trim() ||
+        `${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} Council Meeting`
+
+      await onSave({ ...form, fileUrl, fileName, title })
     } catch (err) {
-      toast(err.message || 'Upload failed', 'error')
+      toast(err.message || 'Save failed', 'error')
     }
     setUploading(false)
   }
 
   return (
     <div className="card p-5 border-green-600/20 bg-green-600/5 space-y-4">
-      <h3 className="text-white font-medium flex items-center gap-2"><FileText size={16} className="text-green-400" /> New Meeting Record</h3>
+      <h3 className="text-white font-medium flex items-center gap-2">
+        <FileText size={16} className="text-green-400" />
+        {isEdit ? 'Edit Meeting Record' : 'New Meeting Record'}
+      </h3>
+
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label className="label">Meeting Date</label>
-          <input type="date" className="input" value={form.meetingDate} onChange={(e) => setForm((p) => ({ ...p, meetingDate: e.target.value }))} />
+          <input type="date" className="input"
+            value={form.meetingDate?.slice(0, 10) || ''}
+            onChange={(e) => setForm((p) => ({ ...p, meetingDate: e.target.value }))} />
         </div>
         <div>
           <label className="label">Session Type</label>
-          <select className="input" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
+          <select className="input" value={form.type}
+            onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
             <option>Regular Session</option>
             <option>Special Session</option>
             <option>Work Session</option>
@@ -66,40 +83,65 @@ function AddMinutesForm({ onSave, onCancel, adminKey }) {
           </select>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <input type="checkbox" id="approved" checked={form.approved} onChange={(e) => setForm((p) => ({ ...p, approved: e.target.checked }))} className="w-4 h-4 rounded" />
-        <label htmlFor="approved" className="text-slate-300 text-sm cursor-pointer">Minutes have been approved by Council</label>
+
+      <div>
+        <label className="label">Title (optional — auto-generated from date if blank)</label>
+        <input className="input" value={form.title || ''}
+          onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+          placeholder="e.g. April 2025 Regular Council Meeting" />
       </div>
 
-      {/* File attachment */}
+      <div className="flex items-center gap-3">
+        <input type="checkbox" id="approved" checked={form.approved}
+          onChange={(e) => setForm((p) => ({ ...p, approved: e.target.checked }))}
+          className="w-4 h-4 rounded" />
+        <label htmlFor="approved" className="text-slate-300 text-sm cursor-pointer">
+          Minutes have been approved by Council
+        </label>
+      </div>
+
+      {/* File attachments */}
       <div>
-        <label className="label">Attach File (PDF, MP3, MP4, Word doc…)</label>
+        <label className="label">
+          Attach Files (PDF, Audio, Video, Word)
+          {form.fileName && <span className="text-slate-500 ml-2 normal-case">— current: {form.fileName}</span>}
+        </label>
         <div
-          className="border-2 border-dashed border-slate-700 rounded-xl p-4 text-center cursor-pointer hover:border-slate-600 transition-colors"
+          className="border-2 border-dashed border-slate-700 rounded-xl p-4 cursor-pointer hover:border-slate-600 transition-colors"
           onClick={() => fileRef.current?.click()}
         >
-          {file ? (
-            <div className="flex items-center justify-center gap-3 text-sm">
-              <Paperclip size={16} className="text-green-400" />
-              <span className="text-white font-medium">{file.name}</span>
-              <span className="text-slate-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
-              <button onClick={(e) => { e.stopPropagation(); setFile(null) }} className="text-slate-500 hover:text-red-400 transition-colors"><X size={14} /></button>
+          {files.length > 0 ? (
+            <div className="space-y-2">
+              {files.map((f, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm">
+                  <Paperclip size={14} className="text-green-400" />
+                  <span className="text-white font-medium">{f.name}</span>
+                  <span className="text-slate-500">({(f.size / 1024 / 1024).toFixed(1)} MB)</span>
+                  <button onClick={(e) => { e.stopPropagation(); setFiles(files.filter((_, j) => j !== i)) }}
+                    className="text-slate-500 hover:text-red-400 ml-auto"><X size={14} /></button>
+                </div>
+              ))}
+              <p className="text-slate-500 text-xs">Click to add more files</p>
             </div>
           ) : (
-            <div>
+            <div className="text-center">
               <Upload size={20} className="text-slate-600 mx-auto mb-2" />
-              <p className="text-slate-500 text-sm">Click to attach a PDF, audio, or document</p>
+              <p className="text-slate-500 text-sm">Click to attach PDF, audio, or document</p>
             </div>
           )}
         </div>
-        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.mp3,.mp4,.m4a,.wav" onChange={(e) => setFile(e.target.files[0])} className="hidden" />
+        <input ref={fileRef} type="file"
+          accept=".pdf,.doc,.docx,.mp3,.mp4,.m4a,.wav"
+          multiple
+          onChange={(e) => setFiles([...files, ...Array.from(e.target.files)])}
+          className="hidden" />
       </div>
 
       <div className="flex gap-2">
         <button onClick={handleSubmit} disabled={uploading} className="btn-primary">
           {uploading
             ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving…</>
-            : <><CheckCircle size={14} /> Save Meeting</>}
+            : <><Save size={14} /> {isEdit ? 'Update Meeting' : 'Save Meeting'}</>}
         </button>
         <button onClick={onCancel} className="btn-ghost"><X size={14} /> Cancel</button>
       </div>
@@ -113,6 +155,7 @@ export default function MinutesAdmin() {
   const [minutes, setMinutes] = useState([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [filterYear, setFilterYear] = useState('')
 
   const years = [...new Set(minutes.map((m) => new Date(m.meetingDate).getFullYear()))].sort((a, b) => b - a)
@@ -127,18 +170,23 @@ export default function MinutesAdmin() {
 
   async function handleSave(data) {
     try {
-      const res = await fetch(`${API}/api/minutes`, {
-        method: 'POST',
+      const isEdit = !!data.id
+      const url = isEdit ? `${API}/api/minutes?id=${data.id}&year=${new Date(data.meetingDate).getFullYear()}` : `${API}/api/minutes`
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
         body: JSON.stringify(data),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) throw new Error(await res.text())
       const saved = await res.json()
-      setMinutes((prev) => [saved, ...prev])
+      setMinutes((prev) => isEdit
+        ? prev.map((m) => m.id === saved.id ? saved : m)
+        : [saved, ...prev])
       setAdding(false)
-      toast('Meeting minutes saved!', 'success')
-    } catch {
-      toast('Save failed — please try again', 'error')
+      setEditingId(null)
+      toast(isEdit ? 'Meeting updated!' : 'Meeting saved!', 'success')
+    } catch (err) {
+      toast('Save failed — ' + err.message, 'error')
     }
   }
 
@@ -156,7 +204,9 @@ export default function MinutesAdmin() {
     }
   }
 
-  const filtered = filterYear ? minutes.filter((m) => new Date(m.meetingDate).getFullYear() === parseInt(filterYear)) : minutes
+  const filtered = filterYear
+    ? minutes.filter((m) => new Date(m.meetingDate).getFullYear() === parseInt(filterYear))
+    : minutes
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -164,7 +214,8 @@ export default function MinutesAdmin() {
         <p className="text-slate-400 text-sm">Upload meeting minutes and attach PDFs or audio recordings.</p>
         <div className="flex gap-2">
           {years.length > 0 && (
-            <select className="input py-2 w-32" value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+            <select className="input py-2 w-32" value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}>
               <option value="">All years</option>
               {years.map((y) => <option key={y}>{y}</option>)}
             </select>
@@ -175,7 +226,9 @@ export default function MinutesAdmin() {
         </div>
       </div>
 
-      {adding && <AddMinutesForm onSave={handleSave} onCancel={() => setAdding(false)} adminKey={auth.key} />}
+      {adding && (
+        <MinuteForm onSave={handleSave} onCancel={() => setAdding(false)} adminKey={auth.key} />
+      )}
 
       {loading ? (
         <div className="text-slate-500 text-sm">Loading minutes…</div>
@@ -183,34 +236,54 @@ export default function MinutesAdmin() {
         <div className="card p-10 text-center text-slate-600">No meetings found. Click "Add Meeting" to get started.</div>
       ) : (
         filtered.map((m) => (
-          <div key={m.id} className="card p-4 flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-600/20 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
-              <span className="text-green-400 text-xs font-medium leading-none">{format(parseISO(m.meetingDate), 'MMM')}</span>
-              <span className="text-white font-bold text-lg leading-none">{format(parseISO(m.meetingDate), 'd')}</span>
-            </div>
-            <div className="flex-grow min-w-0">
-              <div className="text-white font-medium">{format(parseISO(m.meetingDate), 'MMMM d, yyyy')}</div>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span className="text-slate-500 text-xs">{m.type}</span>
-                {m.approved && <span className="badge bg-green-600/20 text-green-400">Approved</span>}
-                {m.fileName && (
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <Paperclip size={11} /> {m.fileName}
-                  </span>
+          editingId === m.id ? (
+            <MinuteForm
+              key={m.id}
+              meeting={m}
+              isEdit={true}
+              onSave={handleSave}
+              onCancel={() => setEditingId(null)}
+              adminKey={auth.key}
+            />
+          ) : (
+            <div key={m.id} className="card p-4 flex items-center gap-4">
+              <div className="w-12 h-12 bg-green-600/20 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
+                <span className="text-green-400 text-xs font-medium leading-none">
+                  {format(parseISO(m.meetingDate), 'MMM')}
+                </span>
+                <span className="text-white font-bold text-lg leading-none">
+                  {format(parseISO(m.meetingDate), 'd')}
+                </span>
+              </div>
+              <div className="flex-grow min-w-0">
+                <div className="text-white font-medium">
+                  {m.title || format(parseISO(m.meetingDate), 'MMMM d, yyyy') + ' Council Meeting'}
+                </div>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span className="text-slate-500 text-xs">{m.type}</span>
+                  {m.approved && <span className="badge bg-green-600/20 text-green-400">Approved</span>}
+                  {m.fileName && (
+                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <Paperclip size={11} /> {m.fileName}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                {m.fileUrl && (
+                  <a href={m.fileUrl} target="_blank" rel="noreferrer" className="btn-ghost py-1.5 px-3">
+                    <Download size={13} />
+                  </a>
                 )}
+                <button onClick={() => setEditingId(m.id)} className="btn-ghost py-1.5 px-3">
+                  <Pencil size={13} /> Edit
+                </button>
+                <button onClick={() => handleDelete(m)} className="btn-danger py-1.5 px-3">
+                  <Trash2 size={13} />
+                </button>
               </div>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
-              {m.fileUrl && (
-                <a href={m.fileUrl} target="_blank" rel="noreferrer" className="btn-ghost py-1.5 px-3">
-                  <Download size={13} />
-                </a>
-              )}
-              <button onClick={() => handleDelete(m)} className="btn-danger py-1.5 px-3">
-                <Trash2 size={13} />
-              </button>
-            </div>
-          </div>
+          )
         ))
       )}
     </div>
