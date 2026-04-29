@@ -15,10 +15,7 @@ env:
 jobs:
   build-and-deploy:
     name: Build & Deploy C# Functions
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: functions/village-api
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -28,17 +25,17 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Verify project file exists
-        run: ls -la *.csproj
-
       - name: Restore dependencies
-        run: dotnet restore
+        shell: pwsh
+        run: dotnet restore functions/village-api/village-api.csproj
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        shell: pwsh
+        run: dotnet build functions/village-api/village-api.csproj --configuration Release --no-restore
 
       - name: Publish
-        run: dotnet publish --configuration Release --no-build --output ./publish
+        shell: pwsh
+        run: dotnet publish functions/village-api/village-api.csproj --configuration Release --no-build --output functions/village-api/publish
 
       - name: Azure Login
         uses: azure/login@v2
