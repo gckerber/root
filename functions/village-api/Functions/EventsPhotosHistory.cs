@@ -29,17 +29,19 @@ public class EventsFunctions : FunctionBase
             var month = req.Query["month"];
             QueryDefinition query;
             if (!string.IsNullOrEmpty(month))
-                query = new QueryDefinition("SELECT * FROM c WHERE c.month = @month ORDER BY c.date ASC")
+                query = new QueryDefinition(
+                    "SELECT TOP 100 * FROM c WHERE c.month = @month ORDER BY c.date ASC")
                     .WithParameter("@month", month);
             else
-                query = new QueryDefinition("SELECT * FROM c ORDER BY c.date ASC");
+                query = new QueryDefinition(
+                    "SELECT TOP 200 * FROM c ORDER BY c.date ASC");
 
             var items = await _cosmos.QueryAsync<CalendarEvent>(Container, query);
             return await OkJson(req, new ApiResponse<CalendarEvent> { Items = items });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetEvents error");
+            _logger.LogError(ex, "GetEvents error: {msg}", ex.Message);
             return await OkJson(req, new ApiResponse<CalendarEvent> { Items = DemoData.Events });
         }
     }
@@ -136,12 +138,12 @@ public class PhotosFunctions : FunctionBase
         try
         {
             var items = await _cosmos.QueryAsync<Photo>(Container,
-                new QueryDefinition("SELECT * FROM c ORDER BY c.year ASC"));
+                new QueryDefinition("SELECT TOP 200 * FROM c ORDER BY c.year ASC"));
             return await OkJson(req, new ApiResponse<Photo> { Items = items });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetPhotos error");
+            _logger.LogError(ex, "GetPhotos error: {msg}", ex.Message);
             return await OkJson(req, new ApiResponse<Photo> { Items = DemoData.Photos });
         }
     }
@@ -209,7 +211,7 @@ public class HistoryFunctions : FunctionBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetHistory error");
+            _logger.LogError(ex, "GetHistory error: {msg}", ex.Message);
             return await OkJson(req, new { text = DemoData.HistoryText });
         }
     }

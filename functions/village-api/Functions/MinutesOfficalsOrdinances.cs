@@ -28,10 +28,12 @@ public class MinutesFunctions : FunctionBase
         {
             QueryDefinition query;
             if (int.TryParse(req.Query["year"], out var year))
-                query = new QueryDefinition("SELECT * FROM c WHERE c.year = @year ORDER BY c.meetingDate DESC")
+                query = new QueryDefinition(
+                    "SELECT TOP 100 * FROM c WHERE c.year = @year ORDER BY c.meetingDate DESC")
                     .WithParameter("@year", year);
             else
-                query = new QueryDefinition("SELECT * FROM c ORDER BY c.meetingDate DESC");
+                query = new QueryDefinition(
+                    "SELECT TOP 100 * FROM c ORDER BY c.meetingDate DESC");
 
             var items = await _cosmos.QueryAsync<Minutes>(Container, query);
             var search = req.Query["search"]?.ToLower();
@@ -44,7 +46,7 @@ public class MinutesFunctions : FunctionBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetMinutes error");
+            _logger.LogError(ex, "GetMinutes error: {msg}", ex.Message);
             return await OkJson(req, new ApiResponse<Minutes> { Items = DemoData.Minutes });
         }
     }
@@ -114,8 +116,9 @@ public class OfficialsFunctions : FunctionBase
             return await OkJson(req, new ApiResponse<Official> { Items = DemoData.Officials });
         try
         {
+            // No ORDER BY without TOP in Cosmos serverless
             var items = await _cosmos.QueryAsync<Official>(Container,
-                new QueryDefinition("SELECT * FROM c ORDER BY c.order ASC"));
+                new QueryDefinition("SELECT TOP 50 * FROM c ORDER BY c.order ASC"));
             return await OkJson(req, new ApiResponse<Official>
             {
                 Items = items.Count > 0 ? items : DemoData.Officials
@@ -123,7 +126,7 @@ public class OfficialsFunctions : FunctionBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetOfficials error");
+            _logger.LogError(ex, "GetOfficials error: {msg}", ex.Message);
             return await OkJson(req, new ApiResponse<Official> { Items = DemoData.Officials });
         }
     }
@@ -217,10 +220,12 @@ public class OrdinancesFunctions : FunctionBase
             var category = req.Query["category"];
             QueryDefinition query;
             if (!string.IsNullOrEmpty(category) && ValidCategories.Contains(category))
-                query = new QueryDefinition("SELECT * FROM c WHERE c.category = @cat ORDER BY c.year DESC, c.number DESC")
+                query = new QueryDefinition(
+                    "SELECT TOP 100 * FROM c WHERE c.category = @cat ORDER BY c.year DESC, c.number DESC")
                     .WithParameter("@cat", category);
             else
-                query = new QueryDefinition("SELECT * FROM c ORDER BY c.year DESC, c.number DESC");
+                query = new QueryDefinition(
+                    "SELECT TOP 100 * FROM c ORDER BY c.year DESC, c.number DESC");
 
             var items = await _cosmos.QueryAsync<Ordinance>(Container, query);
             var search = req.Query["search"]?.ToLower();
@@ -234,7 +239,7 @@ public class OrdinancesFunctions : FunctionBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetOrdinances error");
+            _logger.LogError(ex, "GetOrdinances error: {msg}", ex.Message);
             return await OkJson(req, new ApiResponse<Ordinance> { Items = DemoData.Ordinances });
         }
     }

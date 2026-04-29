@@ -23,22 +23,23 @@ public class BulletinFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "bulletin")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-
         if (!_cosmos.IsAvailable)
             return await OkJson(req, new ApiResponse<Bulletin> { Items = DemoData.Bulletins });
-
         try
         {
             var category = req.Query["category"];
             var search = req.Query["search"]?.ToLower();
             var limit = int.TryParse(req.Query["limit"], out var l) ? Math.Min(l, 50) : 20;
 
+            // Cosmos serverless requires TOP when using ORDER BY
             QueryDefinition query;
             if (!string.IsNullOrEmpty(category) && ValidCategories.Contains(category))
-                query = new QueryDefinition($"SELECT TOP {limit} * FROM c WHERE c.category = @cat ORDER BY c.pinned DESC, c.date DESC")
+                query = new QueryDefinition(
+                    $"SELECT TOP {limit} * FROM c WHERE c.category = @cat ORDER BY c.pinned DESC, c.date DESC")
                     .WithParameter("@cat", category);
             else
-                query = new QueryDefinition($"SELECT TOP {limit} * FROM c ORDER BY c.pinned DESC, c.date DESC");
+                query = new QueryDefinition(
+                    $"SELECT TOP {limit} * FROM c ORDER BY c.pinned DESC, c.date DESC");
 
             var items = await _cosmos.QueryAsync<Bulletin>(Container, query);
 
@@ -51,7 +52,7 @@ public class BulletinFunctions : FunctionBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "GetBulletins error");
+            _logger.LogError(ex, "GetBulletins error: {msg}", ex.Message);
             return await OkJson(req, new ApiResponse<Bulletin> { Items = DemoData.Bulletins });
         }
     }

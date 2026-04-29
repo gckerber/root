@@ -49,8 +49,6 @@ public class CosmosService
         return _db.GetContainer(name);
     }
 
-    // ── Generic helpers ───────────────────────────────────
-
     public async Task<List<T>> QueryAsync<T>(string containerName, QueryDefinition query)
     {
         var container = GetContainer(containerName);
