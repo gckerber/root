@@ -1,16 +1,18 @@
 // apps/village-site/src/pages/History.jsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import axios from 'axios'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
+const DEFAULT_HISTORY = 'Saint Louisville was established in 1833 in Licking County, Ohio, as a small but proud community in the heart of the state. Through more than 190 years of history, Saint Louisville has maintained its close-knit character, welcoming generations of families who have called this special place home.'
+
 function usePhotos() {
   return useQuery({
     queryKey: ['photos'],
     queryFn: () => axios.get(`${API}/api/photos`).then((r) => r.data),
-    placeholderData: { items: samplePhotos },
+    placeholderData: { items: [] },
   })
 }
 
@@ -52,8 +54,16 @@ function Lightbox({ photos, index, onClose, onPrev, onNext }) {
 
 export default function History() {
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [historyText, setHistoryText] = useState(DEFAULT_HISTORY)
   const { data } = usePhotos()
-  const photos = data?.items || samplePhotos
+  const photos = data?.items || []
+
+  useEffect(() => {
+    fetch(`${API}/api/history`)
+      .then((r) => r.json())
+      .then((d) => { if (d.text) setHistoryText(d.text) })
+      .catch(() => {/* use default */})
+  }, [])
 
   function handlePrev() {
     setLightboxIndex((i) => (i > 0 ? i - 1 : photos.length - 1))
@@ -64,11 +74,10 @@ export default function History() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Header */}
       <div className="mb-10">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Village History &amp; Heritage</h1>
         <p className="text-gray-500 max-w-2xl">
-          Saint Louisville was established in 1833 in Licking County, Ohio. Browse our historical photo gallery celebrating the people, places, and events that shaped our community.
+          {historyText}
         </p>
       </div>
 
@@ -86,33 +95,39 @@ export default function History() {
         ))}
       </div>
 
-      {/* Photo gallery */}
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Historical Photo Gallery</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {photos.map((photo, i) => (
-          <button
-            key={photo.id}
-            onClick={() => setLightboxIndex(i)}
-            className="group relative aspect-square overflow-hidden rounded-xl bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <img
-              src={photo.url}
-              alt={photo.caption}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
-              onError={(e) => {
-                e.target.src = `https://placehold.co/400x400/1e3a5f/white?text=${encodeURIComponent(photo.year || 'Historic')}`
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-              <div className="text-white text-left">
-                <p className="text-xs font-medium line-clamp-2">{photo.caption}</p>
-                {photo.year && <p className="text-white/60 text-xs">~{photo.year}</p>}
+
+      {photos.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          No photos yet. Add some from the admin panel.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {photos.map((photo, i) => (
+            <button
+              key={photo.id}
+              onClick={() => setLightboxIndex(i)}
+              className="group relative aspect-square overflow-hidden rounded-xl bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <img
+                src={photo.url}
+                alt={photo.caption}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => {
+                  e.target.src = `https://placehold.co/400x400/1e3a5f/white?text=${encodeURIComponent(photo.year || 'Historic')}`
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                <div className="text-white text-left">
+                  <p className="text-xs font-medium line-clamp-2">{photo.caption}</p>
+                  {photo.year && <p className="text-white/60 text-xs">~{photo.year}</p>}
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <Lightbox
         photos={photos}
@@ -131,10 +146,3 @@ export default function History() {
     </div>
   )
 }
-
-const samplePhotos = Array.from({ length: 8 }, (_, i) => ({
-  id: String(i + 1),
-  caption: ['Village Hall, early days', 'Main Street looking north', 'Community gathering', 'Church and schoolhouse', 'Founding families reunion', 'Harvest festival', 'Village water tower', 'Railroad depot'][i],
-  year: [1910, 1925, 1938, 1902, 1955, 1948, 1965, 1920][i],
-  url: `https://placehold.co/400x400/1e3a5f/white?text=Photo+${i + 1}`,
-}))
