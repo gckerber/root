@@ -70,7 +70,7 @@ export function ToastProvider({ children }) {
 export const useToast = () => useContext(ToastContext)
 
 // ── API helper ────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = 'https://func-village-prod.azurewebsites.net'
 
 export async function apiCall(method, path, body, adminKey) {
   const res = await fetch(`${API_BASE}/api${path}`, {
