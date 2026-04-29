@@ -1,4 +1,4 @@
-// Functions/MinutesFunctions.cs
+// Functions/MinutesOfficalsOrdinances.cs
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -22,10 +22,8 @@ public class MinutesFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "minutes")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-
         if (!_cosmos.IsAvailable)
-            return OkJson(req, new ApiResponse<Minutes> { Items = DemoData.Minutes });
-
+            return await OkJson(req, new ApiResponse<Minutes> { Items = DemoData.Minutes });
         try
         {
             QueryDefinition query;
@@ -36,19 +34,18 @@ public class MinutesFunctions : FunctionBase
                 query = new QueryDefinition("SELECT * FROM c ORDER BY c.meetingDate DESC");
 
             var items = await _cosmos.QueryAsync<Minutes>(Container, query);
-
             var search = req.Query["search"]?.ToLower();
             if (!string.IsNullOrEmpty(search))
                 items = items.Where(m =>
                     m.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     m.Type.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            return OkJson(req, new ApiResponse<Minutes> { Items = items });
+            return await OkJson(req, new ApiResponse<Minutes> { Items = items });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetMinutes error");
-            return OkJson(req, new ApiResponse<Minutes> { Items = DemoData.Minutes });
+            return await OkJson(req, new ApiResponse<Minutes> { Items = DemoData.Minutes });
         }
     }
 
@@ -56,15 +53,15 @@ public class MinutesFunctions : FunctionBase
     public async Task<HttpResponseData> Post(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "minutes")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var body = await ReadBodyAsync<Minutes>(req);
         if (body == null || string.IsNullOrWhiteSpace(body.MeetingDate))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "meetingDate is required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "meetingDate is required");
 
         if (!DateTime.TryParse(body.MeetingDate, out var date))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "Invalid meetingDate format");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid meetingDate format");
 
         var item = new Minutes
         {
@@ -81,26 +78,24 @@ public class MinutesFunctions : FunctionBase
         };
 
         var created = await _cosmos.CreateAsync(Container, item, new PartitionKey(item.Year));
-        return CreatedJson(req, created);
+        return await CreatedJson(req, created);
     }
 
     [Function("DeleteMinutes")]
     public async Task<HttpResponseData> Delete(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "minutes")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
         if (!int.TryParse(req.Query["year"], out var year) || string.IsNullOrEmpty(id))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "id and year required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "id and year required");
 
         await _cosmos.DeleteAsync(Container, id, new PartitionKey(year));
-        return OkJson(req, new { success = true });
+        return await OkJson(req, new { success = true });
     }
 }
-
-// ── Officials ──────────────────────────────────────────────────────────────
 
 public class OfficialsFunctions : FunctionBase
 {
@@ -115,16 +110,13 @@ public class OfficialsFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "officials")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-
         if (!_cosmos.IsAvailable)
-            return OkJson(req, new ApiResponse<Official> { Items = DemoData.Officials });
-
+            return await OkJson(req, new ApiResponse<Official> { Items = DemoData.Officials });
         try
         {
             var items = await _cosmos.QueryAsync<Official>(Container,
                 new QueryDefinition("SELECT * FROM c ORDER BY c.order ASC"));
-
-            return OkJson(req, new ApiResponse<Official>
+            return await OkJson(req, new ApiResponse<Official>
             {
                 Items = items.Count > 0 ? items : DemoData.Officials
             });
@@ -132,7 +124,7 @@ public class OfficialsFunctions : FunctionBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetOfficials error");
-            return OkJson(req, new ApiResponse<Official> { Items = DemoData.Officials });
+            return await OkJson(req, new ApiResponse<Official> { Items = DemoData.Officials });
         }
     }
 
@@ -140,12 +132,12 @@ public class OfficialsFunctions : FunctionBase
     public async Task<HttpResponseData> Post(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "officials")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var body = await ReadBodyAsync<Official>(req);
         if (body == null || string.IsNullOrWhiteSpace(body.Name) || string.IsNullOrWhiteSpace(body.Title))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "name and title are required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "name and title are required");
 
         var id = Guid.NewGuid().ToString();
         var item = new Official
@@ -160,24 +152,24 @@ public class OfficialsFunctions : FunctionBase
         };
 
         var created = await _cosmos.CreateAsync(Container, item, new PartitionKey(id));
-        return CreatedJson(req, created);
+        return await CreatedJson(req, created);
     }
 
     [Function("UpdateOfficial")]
     public async Task<HttpResponseData> Put(
         [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "officials")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
-        if (string.IsNullOrEmpty(id)) return ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+        if (string.IsNullOrEmpty(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
 
         var body = await ReadBodyAsync<Official>(req);
-        if (body == null) return ErrorJson(req, HttpStatusCode.BadRequest, "Invalid body");
+        if (body == null) return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid body");
 
         var existing = await _cosmos.ReadAsync<Official>(Container, id, new PartitionKey(id));
-        if (existing == null) return ErrorJson(req, HttpStatusCode.NotFound, "Not found");
+        if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
 
         existing.Name = body.Name?.Trim() ?? existing.Name;
         existing.Title = body.Title?.Trim() ?? existing.Title;
@@ -186,25 +178,23 @@ public class OfficialsFunctions : FunctionBase
         existing.Order = body.Order;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(id));
-        return OkJson(req, updated);
+        return await OkJson(req, updated);
     }
 
     [Function("DeleteOfficial")]
     public async Task<HttpResponseData> Delete(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "officials")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
-        if (string.IsNullOrEmpty(id)) return ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+        if (string.IsNullOrEmpty(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
 
         await _cosmos.DeleteAsync(Container, id, new PartitionKey(id));
-        return OkJson(req, new { success = true });
+        return await OkJson(req, new { success = true });
     }
 }
-
-// ── Ordinances ─────────────────────────────────────────────────────────────
 
 public class OrdinancesFunctions : FunctionBase
 {
@@ -220,15 +210,12 @@ public class OrdinancesFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "ordinances")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-
         if (!_cosmos.IsAvailable)
-            return OkJson(req, new ApiResponse<Ordinance> { Items = DemoData.Ordinances });
-
+            return await OkJson(req, new ApiResponse<Ordinance> { Items = DemoData.Ordinances });
         try
         {
             var category = req.Query["category"];
             QueryDefinition query;
-
             if (!string.IsNullOrEmpty(category) && ValidCategories.Contains(category))
                 query = new QueryDefinition("SELECT * FROM c WHERE c.category = @cat ORDER BY c.year DESC, c.number DESC")
                     .WithParameter("@cat", category);
@@ -236,7 +223,6 @@ public class OrdinancesFunctions : FunctionBase
                 query = new QueryDefinition("SELECT * FROM c ORDER BY c.year DESC, c.number DESC");
 
             var items = await _cosmos.QueryAsync<Ordinance>(Container, query);
-
             var search = req.Query["search"]?.ToLower();
             if (!string.IsNullOrEmpty(search))
                 items = items.Where(o =>
@@ -244,12 +230,12 @@ public class OrdinancesFunctions : FunctionBase
                     o.Number.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     (o.Summary?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
-            return OkJson(req, new ApiResponse<Ordinance> { Items = items });
+            return await OkJson(req, new ApiResponse<Ordinance> { Items = items });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetOrdinances error");
-            return OkJson(req, new ApiResponse<Ordinance> { Items = DemoData.Ordinances });
+            return await OkJson(req, new ApiResponse<Ordinance> { Items = DemoData.Ordinances });
         }
     }
 
@@ -257,13 +243,13 @@ public class OrdinancesFunctions : FunctionBase
     public async Task<HttpResponseData> Post(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "ordinances")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var body = await ReadBodyAsync<Ordinance>(req);
         if (body == null || string.IsNullOrWhiteSpace(body.Number) ||
             string.IsNullOrWhiteSpace(body.Title) || string.IsNullOrWhiteSpace(body.Category))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "number, title, and category are required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "number, title, and category are required");
 
         var item = new Ordinance
         {
@@ -278,25 +264,25 @@ public class OrdinancesFunctions : FunctionBase
         };
 
         var created = await _cosmos.CreateAsync(Container, item, new PartitionKey(item.Category));
-        return CreatedJson(req, created);
+        return await CreatedJson(req, created);
     }
 
     [Function("UpdateOrdinance")]
     public async Task<HttpResponseData> Put(
         [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "ordinances")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
-        if (string.IsNullOrEmpty(id)) return ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+        if (string.IsNullOrEmpty(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
 
         var body = await ReadBodyAsync<Ordinance>(req);
         if (body == null || string.IsNullOrEmpty(body.Category))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "category required in body");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "category required in body");
 
         var existing = await _cosmos.ReadAsync<Ordinance>(Container, id, new PartitionKey(body.Category));
-        if (existing == null) return ErrorJson(req, HttpStatusCode.NotFound, "Not found");
+        if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
 
         existing.Number = body.Number?.Trim() ?? existing.Number;
         existing.Title = body.Title?.Trim() ?? existing.Title;
@@ -305,22 +291,22 @@ public class OrdinancesFunctions : FunctionBase
         existing.Year = body.Year > 0 ? body.Year : existing.Year;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Category));
-        return OkJson(req, updated);
+        return await OkJson(req, updated);
     }
 
     [Function("DeleteOrdinance")]
     public async Task<HttpResponseData> Delete(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "ordinances")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
         var category = req.Query["category"];
         if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(category))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "id and category required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "id and category required");
 
         await _cosmos.DeleteAsync(Container, id, new PartitionKey(category));
-        return OkJson(req, new { success = true });
+        return await OkJson(req, new { success = true });
     }
 }

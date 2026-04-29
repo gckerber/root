@@ -9,8 +9,6 @@ using System.Net;
 
 namespace SaintLouisvilleApi.Functions;
 
-// ── Events ─────────────────────────────────────────────────────────────────
-
 public class EventsFunctions : FunctionBase
 {
     private readonly CosmosService _cosmos;
@@ -24,15 +22,12 @@ public class EventsFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "events")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-
         if (!_cosmos.IsAvailable)
-            return OkJson(req, new ApiResponse<CalendarEvent> { Items = DemoData.Events });
-
+            return await OkJson(req, new ApiResponse<CalendarEvent> { Items = DemoData.Events });
         try
         {
             var month = req.Query["month"];
             QueryDefinition query;
-
             if (!string.IsNullOrEmpty(month))
                 query = new QueryDefinition("SELECT * FROM c WHERE c.month = @month ORDER BY c.date ASC")
                     .WithParameter("@month", month);
@@ -40,12 +35,12 @@ public class EventsFunctions : FunctionBase
                 query = new QueryDefinition("SELECT * FROM c ORDER BY c.date ASC");
 
             var items = await _cosmos.QueryAsync<CalendarEvent>(Container, query);
-            return OkJson(req, new ApiResponse<CalendarEvent> { Items = items });
+            return await OkJson(req, new ApiResponse<CalendarEvent> { Items = items });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetEvents error");
-            return OkJson(req, new ApiResponse<CalendarEvent> { Items = DemoData.Events });
+            return await OkJson(req, new ApiResponse<CalendarEvent> { Items = DemoData.Events });
         }
     }
 
@@ -53,15 +48,15 @@ public class EventsFunctions : FunctionBase
     public async Task<HttpResponseData> Post(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "events")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var body = await ReadBodyAsync<CalendarEvent>(req);
         if (body == null || string.IsNullOrWhiteSpace(body.Title) || string.IsNullOrWhiteSpace(body.Date))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "title and date are required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "title and date are required");
 
         if (!DateTime.TryParse(body.Date, out var eventDate))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "Invalid date format");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid date format");
 
         var month = eventDate.ToString("yyyy-MM");
         var item = new CalendarEvent
@@ -77,25 +72,25 @@ public class EventsFunctions : FunctionBase
         };
 
         var created = await _cosmos.CreateAsync(Container, item, new PartitionKey(month));
-        return CreatedJson(req, created);
+        return await CreatedJson(req, created);
     }
 
     [Function("UpdateEvent")]
     public async Task<HttpResponseData> Put(
         [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "events")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
-        if (string.IsNullOrEmpty(id)) return ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+        if (string.IsNullOrEmpty(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
 
         var body = await ReadBodyAsync<CalendarEvent>(req);
         if (body == null || string.IsNullOrEmpty(body.Month))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "month required in body");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "month required in body");
 
         var existing = await _cosmos.ReadAsync<CalendarEvent>(Container, id, new PartitionKey(body.Month));
-        if (existing == null) return ErrorJson(req, HttpStatusCode.NotFound, "Not found");
+        if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
 
         existing.Title = body.Title?.Trim() ?? existing.Title;
         existing.Time = body.Time?.Trim();
@@ -103,27 +98,25 @@ public class EventsFunctions : FunctionBase
         existing.Description = body.Description?.Trim();
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Month));
-        return OkJson(req, updated);
+        return await OkJson(req, updated);
     }
 
     [Function("DeleteEvent")]
     public async Task<HttpResponseData> Delete(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "events")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
         var month = req.Query["month"];
         if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(month))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "id and month required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "id and month required");
 
         await _cosmos.DeleteAsync(Container, id, new PartitionKey(month));
-        return OkJson(req, new { success = true });
+        return await OkJson(req, new { success = true });
     }
 }
-
-// ── Photos ─────────────────────────────────────────────────────────────────
 
 public class PhotosFunctions : FunctionBase
 {
@@ -138,20 +131,18 @@ public class PhotosFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "photos")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-
         if (!_cosmos.IsAvailable)
-            return OkJson(req, new ApiResponse<Photo> { Items = DemoData.Photos });
-
+            return await OkJson(req, new ApiResponse<Photo> { Items = DemoData.Photos });
         try
         {
             var items = await _cosmos.QueryAsync<Photo>(Container,
                 new QueryDefinition("SELECT * FROM c ORDER BY c.year ASC"));
-            return OkJson(req, new ApiResponse<Photo> { Items = items });
+            return await OkJson(req, new ApiResponse<Photo> { Items = items });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetPhotos error");
-            return OkJson(req, new ApiResponse<Photo> { Items = DemoData.Photos });
+            return await OkJson(req, new ApiResponse<Photo> { Items = DemoData.Photos });
         }
     }
 
@@ -159,12 +150,12 @@ public class PhotosFunctions : FunctionBase
     public async Task<HttpResponseData> Post(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "photos")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var body = await ReadBodyAsync<Photo>(req);
         if (body == null || string.IsNullOrWhiteSpace(body.Caption) || string.IsNullOrWhiteSpace(body.Url))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "caption and url are required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "caption and url are required");
 
         var id = Guid.NewGuid().ToString();
         var item = new Photo
@@ -177,25 +168,23 @@ public class PhotosFunctions : FunctionBase
         };
 
         var created = await _cosmos.CreateAsync(Container, item, new PartitionKey(id));
-        return CreatedJson(req, created);
+        return await CreatedJson(req, created);
     }
 
     [Function("DeletePhoto")]
     public async Task<HttpResponseData> Delete(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "photos")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
-        if (string.IsNullOrEmpty(id)) return ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+        if (string.IsNullOrEmpty(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
 
         await _cosmos.DeleteAsync(Container, id, new PartitionKey(id));
-        return OkJson(req, new { success = true });
+        return await OkJson(req, new { success = true });
     }
 }
-
-// ── History ────────────────────────────────────────────────────────────────
 
 public class HistoryFunctions : FunctionBase
 {
@@ -210,20 +199,18 @@ public class HistoryFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "history")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-
         if (!_cosmos.IsAvailable)
-            return OkJson(req, new { text = DemoData.HistoryText });
-
+            return await OkJson(req, new { text = DemoData.HistoryText });
         try
         {
             var record = await _cosmos.ReadAsync<HistoryRecord>(
                 Container, "history-text", new PartitionKey("settings"));
-            return OkJson(req, new { text = record?.Text ?? string.Empty });
+            return await OkJson(req, new { text = record?.Text ?? string.Empty });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetHistory error");
-            return OkJson(req, new { text = DemoData.HistoryText });
+            return await OkJson(req, new { text = DemoData.HistoryText });
         }
     }
 
@@ -231,11 +218,10 @@ public class HistoryFunctions : FunctionBase
     public async Task<HttpResponseData> Post(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "history")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var body = await ReadBodyAsync<HistoryUpdateRequest>(req);
-
         var record = new HistoryRecord
         {
             Id = "history-text",
@@ -245,11 +231,9 @@ public class HistoryFunctions : FunctionBase
         };
 
         await _cosmos.UpsertAsync(Container, record, new PartitionKey("settings"));
-        return OkJson(req, new { success = true });
+        return await OkJson(req, new { success = true });
     }
 }
-
-// ── Upload URL ─────────────────────────────────────────────────────────────
 
 public class UploadUrlFunctions : FunctionBase
 {
@@ -263,19 +247,18 @@ public class UploadUrlFunctions : FunctionBase
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "upload-url")] HttpRequestData req)
     {
         if (req.Method == "OPTIONS") return Cors(req);
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_storage.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Storage not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_storage.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Storage not available");
 
         var body = await ReadBodyAsync<UploadUrlRequest>(req);
         if (body == null || string.IsNullOrWhiteSpace(body.Container) || string.IsNullOrWhiteSpace(body.Filename))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "container and filename are required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "container and filename are required");
 
         try
         {
             var (uploadUrl, publicUrl, blobName) = await _storage.GenerateSasUploadUrlAsync(
                 body.Container, body.Filename, body.ContentType);
-
-            return OkJson(req, new UploadUrlResponse
+            return await OkJson(req, new UploadUrlResponse
             {
                 UploadUrl = uploadUrl,
                 PublicUrl = publicUrl,
@@ -284,12 +267,12 @@ public class UploadUrlFunctions : FunctionBase
         }
         catch (ArgumentException ex)
         {
-            return ErrorJson(req, HttpStatusCode.BadRequest, ex.Message);
+            return await ErrorJson(req, HttpStatusCode.BadRequest, ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetUploadUrl error");
-            return ErrorJson(req, HttpStatusCode.InternalServerError, "Could not generate upload URL");
+            return await ErrorJson(req, HttpStatusCode.InternalServerError, "Could not generate upload URL");
         }
     }
 }

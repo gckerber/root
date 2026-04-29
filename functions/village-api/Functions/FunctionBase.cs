@@ -40,37 +40,36 @@ public abstract class FunctionBase
         }
     }
 
-    protected HttpResponseData OkJson(HttpRequestData req, object data)
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
+
+    protected async Task<HttpResponseData> OkJson(HttpRequestData req, object data)
     {
         var res = req.CreateResponse(HttpStatusCode.OK);
         res.Headers.Add("Content-Type", "application/json");
         res.Headers.Add("Access-Control-Allow-Origin", "*");
-        res.WriteString(JsonSerializer.Serialize(data, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = false
-        }));
+        await res.WriteStringAsync(JsonSerializer.Serialize(data, _jsonOptions));
         return res;
     }
 
-    protected HttpResponseData CreatedJson(HttpRequestData req, object data)
+    protected async Task<HttpResponseData> CreatedJson(HttpRequestData req, object data)
     {
         var res = req.CreateResponse(HttpStatusCode.Created);
         res.Headers.Add("Content-Type", "application/json");
         res.Headers.Add("Access-Control-Allow-Origin", "*");
-        res.WriteString(JsonSerializer.Serialize(data, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }));
+        await res.WriteStringAsync(JsonSerializer.Serialize(data, _jsonOptions));
         return res;
     }
 
-    protected HttpResponseData ErrorJson(HttpRequestData req, HttpStatusCode status, string message)
+    protected async Task<HttpResponseData> ErrorJson(HttpRequestData req, HttpStatusCode status, string message)
     {
         var res = req.CreateResponse(status);
         res.Headers.Add("Content-Type", "application/json");
         res.Headers.Add("Access-Control-Allow-Origin", "*");
-        res.WriteString(JsonSerializer.Serialize(new { message }));
+        await res.WriteStringAsync(JsonSerializer.Serialize(new { message }, _jsonOptions));
         return res;
     }
 

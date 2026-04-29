@@ -24,9 +24,8 @@ public class BulletinFunctions : FunctionBase
     {
         if (req.Method == "OPTIONS") return Cors(req);
 
-        // Return demo data if Cosmos not available
         if (!_cosmos.IsAvailable)
-            return OkJson(req, new ApiResponse<Bulletin> { Items = DemoData.Bulletins });
+            return await OkJson(req, new ApiResponse<Bulletin> { Items = DemoData.Bulletins });
 
         try
         {
@@ -48,12 +47,12 @@ public class BulletinFunctions : FunctionBase
                     b.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                     b.Body.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            return OkJson(req, new ApiResponse<Bulletin> { Items = items });
+            return await OkJson(req, new ApiResponse<Bulletin> { Items = items });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetBulletins error");
-            return OkJson(req, new ApiResponse<Bulletin> { Items = DemoData.Bulletins });
+            return await OkJson(req, new ApiResponse<Bulletin> { Items = DemoData.Bulletins });
         }
     }
 
@@ -61,12 +60,12 @@ public class BulletinFunctions : FunctionBase
     public async Task<HttpResponseData> Post(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "bulletin")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var body = await ReadBodyAsync<Bulletin>(req);
         if (body == null || string.IsNullOrWhiteSpace(body.Title) || string.IsNullOrWhiteSpace(body.Body))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "title and body are required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "title and body are required");
 
         var category = ValidCategories.Contains(body.Category) ? body.Category : "notice";
         var item = new Bulletin
@@ -82,25 +81,25 @@ public class BulletinFunctions : FunctionBase
         };
 
         var created = await _cosmos.CreateAsync(Container, item, new PartitionKey(category));
-        return CreatedJson(req, created);
+        return await CreatedJson(req, created);
     }
 
     [Function("UpdateBulletin")]
     public async Task<HttpResponseData> Put(
         [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "bulletin")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
-        if (string.IsNullOrEmpty(id)) return ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+        if (string.IsNullOrEmpty(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
 
         var body = await ReadBodyAsync<Bulletin>(req);
         if (body == null || string.IsNullOrEmpty(body.Category))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "category required in body");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "category required in body");
 
         var existing = await _cosmos.ReadAsync<Bulletin>(Container, id, new PartitionKey(body.Category));
-        if (existing == null) return ErrorJson(req, HttpStatusCode.NotFound, "Not found");
+        if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
 
         existing.Title = body.Title?.Trim() ?? existing.Title;
         existing.Body = body.Body?.Trim() ?? existing.Body;
@@ -108,22 +107,22 @@ public class BulletinFunctions : FunctionBase
         existing.Link = body.Link?.Trim();
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Category));
-        return OkJson(req, updated);
+        return await OkJson(req, updated);
     }
 
     [Function("DeleteBulletin")]
     public async Task<HttpResponseData> Delete(
         [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "bulletin")] HttpRequestData req)
     {
-        if (!IsAdmin(req)) return ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
-        if (!_cosmos.IsAvailable) return ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
         var id = req.Query["id"];
         var category = req.Query["category"];
         if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(category))
-            return ErrorJson(req, HttpStatusCode.BadRequest, "id and category required");
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "id and category required");
 
         await _cosmos.DeleteAsync(Container, id, new PartitionKey(category));
-        return OkJson(req, new { success = true });
+        return await OkJson(req, new { success = true });
     }
 }
