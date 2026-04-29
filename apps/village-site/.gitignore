@@ -1,0 +1,16 @@
+
+# Local development
+node_modules/
+apps/village-site/node_modules/
+apps/water-portal/node_modules/
+apps/admin/node_modules/
+functions/village-api/node_modules/
+dist/
+apps/village-site/dist/
+apps/water-portal/dist/
+apps/admin/dist/
+functions/village-api/publish/
+functions/village-api/bin/
+functions/village-api/obj/
+*.user
+.env.local
