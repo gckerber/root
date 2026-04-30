@@ -47,9 +47,8 @@ function MinuteCard({ doc }) {
                 </span>
               )}
             </div>
-            {/* Description shown on village site */}
-            {doc.description && (
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">{doc.description}</p>
+            {doc.summary && (
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">{doc.summary}</p>
             )}
           </div>
         </div>

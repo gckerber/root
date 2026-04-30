@@ -41,7 +41,7 @@ module.exports = async function (context, req) {
     }
     if (req.method === 'POST') {
       if (!isAdmin(req)) { context.res = { status: 401, headers: h, body: { message: 'Unauthorized' } }; return }
-      const { number, title, category, summary, fileUrl, year } = req.body || {}
+      const { number, title, category, summary, fileUrl, year, lastUpdated } = req.body || {}
       if (!number?.trim() || !title?.trim() || !category) { context.res = { status: 400, headers: h, body: { message: 'number, title, and category are required' } }; return }
       const record = {
         id: uuidv4(),
@@ -51,6 +51,7 @@ module.exports = async function (context, req) {
         summary: summary?.trim() || null,
         fileUrl: fileUrl?.trim() || null,
         year: year || new Date().getFullYear(),
+        lastUpdated: lastUpdated || null,
         createdAt: new Date().toISOString()
       }
       const { resource } = await container.items.create(record)

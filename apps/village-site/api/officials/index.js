@@ -37,10 +37,10 @@ module.exports = async function (context, req) {
     }
     if (!isAdmin(req)) { context.res = { status: 401, headers: h, body: { message: 'Unauthorized' } }; return }
     if (req.method === 'POST') {
-      const { name, title, bio, email, order } = req.body || {}
+      const { name, title, bio, email, order, photoUrl } = req.body || {}
       if (!name?.trim() || !title?.trim()) { context.res = { status: 400, headers: h, body: { message: 'name and title are required' } }; return }
       const id = uuidv4()
-      const record = { id, name: name.trim(), title: title.trim(), bio: bio?.trim() || '', email: email?.trim() || '', order: order ?? 99, createdAt: new Date().toISOString() }
+      const record = { id, name: name.trim(), title: title.trim(), bio: bio?.trim() || '', email: email?.trim() || '', order: order ?? 99, photoUrl: photoUrl || null, createdAt: new Date().toISOString() }
       const { resource } = await container.items.create(record)
       context.res = { status: 201, headers: h, body: resource }
       return

@@ -22,12 +22,15 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo / Village name */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center font-bold text-blue-900 text-sm">
+            <span
+              style={{ fontFamily: "'Great Vibes', cursive" }}
+              className="text-5xl text-yellow-400 leading-none select-none"
+            >
               SL
-            </div>
-            <div className="hidden sm:block">
-              <div className="text-sm font-bold leading-tight">Village of</div>
-              <div className="text-lg font-extrabold leading-tight tracking-wide">
+            </span>
+            <div className="hidden sm:block border-l border-blue-700 pl-3">
+              <div className="text-xs font-medium text-blue-300 tracking-widest uppercase leading-tight">Village of</div>
+              <div className="text-base font-bold leading-tight tracking-wide">
                 Saint Louisville
               </div>
             </div>

@@ -14,6 +14,7 @@ function MinuteForm({ meeting, onSave, onCancel, adminKey, isEdit }) {
     title: '',
     type: 'Regular Session',
     approved: false,
+    summary: '',
     fileUrl: meeting?.fileUrl || null,
     fileName: meeting?.fileName || null,
   })
@@ -89,6 +90,13 @@ function MinuteForm({ meeting, onSave, onCancel, adminKey, isEdit }) {
         <input className="input" value={form.title || ''}
           onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
           placeholder="e.g. April 2025 Regular Council Meeting" />
+      </div>
+
+      <div>
+        <label className="label">Summary (optional)</label>
+        <textarea className="input resize-none" rows={3} value={form.summary || ''}
+          onChange={(e) => setForm((p) => ({ ...p, summary: e.target.value }))}
+          placeholder="Brief summary of key decisions, motions passed, or topics discussed..." />
       </div>
 
       <div className="flex items-center gap-3">

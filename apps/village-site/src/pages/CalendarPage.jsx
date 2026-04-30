@@ -1,17 +1,16 @@
 // apps/village-site/src/pages/CalendarPage.jsx
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { MapPin, Clock, CalendarDays } from 'lucide-react'
+import { MapPin, Clock, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react'
 import axios from 'axios'
 import { format, parseISO, addMonths, startOfDay, startOfMonth } from 'date-fns'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
-function useUpcomingEvents() {
+function useAllEvents() {
   return useQuery({
-    queryKey: ['events', 'upcoming'],
-    queryFn: () =>
-      axios.get(`${API}/api/events`, { params: { upcoming: 'true' } }).then((r) => r.data),
+    queryKey: ['events', 'all'],
+    queryFn: () => axios.get(`${API}/api/events`).then((r) => r.data),
     placeholderData: { items: sampleEvents },
   })
 }
@@ -77,30 +76,93 @@ function EventCard({ event }) {
   )
 }
 
-export default function CalendarPage() {
-  const { data } = useUpcomingEvents()
-  const events = data?.items || sampleEvents
+function PastEventRow({ event }) {
+  const date = parseISO(event.date)
+  return (
+    <div className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
+      <div className="w-12 text-center flex-shrink-0">
+        <div className="text-xs font-semibold text-gray-400 uppercase">{format(date, 'MMM')}</div>
+        <div className="text-lg font-extrabold text-gray-300 leading-none">{format(date, 'd')}</div>
+        <div className="text-xs text-gray-300">{format(date, 'yyyy')}</div>
+      </div>
+      <div className="flex-grow min-w-0">
+        <p className="font-semibold text-gray-500 truncate">{event.title}</p>
+        <div className="flex gap-3 mt-0.5">
+          {event.time && (
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <Clock size={10} /> {event.time}
+            </span>
+          )}
+          {event.location && (
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <MapPin size={10} /> {event.location}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
-  const grouped = useMemo(() => {
+function MonthGroup({ monthKey, monthEvents }) {
+  return (
+    <section>
+      <div className="flex items-center gap-4 mb-6">
+        <h2 className="text-2xl font-extrabold text-gray-900 whitespace-nowrap">
+          {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
+        </h2>
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-sm text-gray-400 whitespace-nowrap">
+          {monthEvents.length} event{monthEvents.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {monthEvents.map((event) => (
+          <EventCard key={event.id} event={event} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export default function CalendarPage() {
+  const { data } = useAllEvents()
+  const events = data?.items || sampleEvents
+  const [showPast, setShowPast] = useState(false)
+
+  const { upcoming, future, past } = useMemo(() => {
     const today = startOfDay(new Date())
     const cutoff = addMonths(startOfMonth(today), 3)
 
-    const upcoming = events.filter((e) => {
+    const upcoming = {}
+    const future = {}
+    const past = []
+
+    events.forEach((e) => {
       const d = parseISO(e.date)
-      return d >= today && d < cutoff
+      if (d < today) {
+        past.push(e)
+      } else if (d < cutoff) {
+        const key = format(d, 'yyyy-MM')
+        if (!upcoming[key]) upcoming[key] = []
+        upcoming[key].push(e)
+      } else {
+        const key = format(d, 'yyyy-MM')
+        if (!future[key]) future[key] = []
+        future[key].push(e)
+      }
     })
 
-    const byMonth = {}
-    upcoming.forEach((e) => {
-      const key = format(parseISO(e.date), 'yyyy-MM')
-      if (!byMonth[key]) byMonth[key] = []
-      byMonth[key].push(e)
-    })
+    past.sort((a, b) => new Date(b.date) - new Date(a.date))
 
-    return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b))
+    return {
+      upcoming: Object.entries(upcoming).sort(([a], [b]) => a.localeCompare(b)),
+      future: Object.entries(future).sort(([a], [b]) => a.localeCompare(b)),
+      past,
+    }
   }, [events])
 
-  const totalEvents = grouped.reduce((sum, [, evts]) => sum + evts.length, 0)
+  const totalUpcoming = upcoming.reduce((s, [, evts]) => s + evts.length, 0)
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -110,42 +172,69 @@ export default function CalendarPage() {
           <h1 className="text-4xl font-extrabold text-gray-900">Events Calendar</h1>
         </div>
         <p className="text-gray-500 ml-1">
-          Upcoming council meetings, community events, and village activities
-          {totalEvents > 0 && (
+          Council meetings, community events, and village activities
+          {totalUpcoming > 0 && (
             <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {totalEvents} upcoming
+              {totalUpcoming} upcoming
             </span>
           )}
         </p>
       </div>
 
-      {grouped.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">
-          <CalendarDays size={48} className="mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-medium">No upcoming events in the next 3 months</p>
-          <p className="text-sm mt-1">Check back soon for new events.</p>
+      {/* Upcoming — next 3 months */}
+      {upcoming.length > 0 ? (
+        <div className="space-y-14 mb-16">
+          {upcoming.map(([monthKey, monthEvents]) => (
+            <MonthGroup key={monthKey} monthKey={monthKey} monthEvents={monthEvents} />
+          ))}
         </div>
       ) : (
-        <div className="space-y-14">
-          {grouped.map(([monthKey, monthEvents]) => (
-            <section key={monthKey}>
-              <div className="flex items-center gap-4 mb-6">
-                <h2 className="text-2xl font-extrabold text-gray-900 whitespace-nowrap">
-                  {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
-                </h2>
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-sm text-gray-400 whitespace-nowrap">
-                  {monthEvents.length} event{monthEvents.length !== 1 ? 's' : ''}
-                </span>
-              </div>
+        <div className="text-center py-16 text-gray-400 mb-16">
+          <CalendarDays size={48} className="mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-medium">No events in the next 3 months</p>
+        </div>
+      )}
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {monthEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            </section>
-          ))}
+      {/* Future — beyond 3 months */}
+      {future.length > 0 && (
+        <div className="mb-16">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-sm font-semibold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+              Further Ahead
+            </span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+          <div className="space-y-14">
+            {future.map(([monthKey, monthEvents]) => (
+              <MonthGroup key={monthKey} monthKey={monthKey} monthEvents={monthEvents} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Past events */}
+      {past.length > 0 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowPast((v) => !v)}
+            className="flex items-center gap-2 w-full text-left group"
+          >
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-widest whitespace-nowrap group-hover:text-gray-600 transition-colors">
+              {showPast ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {past.length} Past Event{past.length !== 1 ? 's' : ''}
+            </span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </button>
+
+          {showPast && (
+            <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-2">
+              {past.map((event) => (
+                <PastEventRow key={event.id} event={event} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -155,6 +244,14 @@ export default function CalendarPage() {
 const sampleEvents = [
   {
     id: '1',
+    date: new Date(Date.now() - 30 * 86400000).toISOString(),
+    title: 'March Council Meeting',
+    time: '7:00 PM',
+    location: 'Village Hall',
+    description: 'Monthly regular meeting of the Saint Louisville Village Council.',
+  },
+  {
+    id: '2',
     date: new Date().toISOString(),
     title: 'Regular Council Meeting',
     time: '7:00 PM',
@@ -162,7 +259,7 @@ const sampleEvents = [
     description: 'Monthly regular meeting of the Saint Louisville Village Council. All residents welcome.',
   },
   {
-    id: '2',
+    id: '3',
     date: new Date(Date.now() + 7 * 86400000).toISOString(),
     title: 'Community Clean-Up Day',
     time: '9:00 AM',
@@ -170,11 +267,19 @@ const sampleEvents = [
     description: 'Annual village-wide clean-up. Gloves and bags provided. Light refreshments available.',
   },
   {
-    id: '3',
+    id: '4',
     date: new Date(Date.now() + 45 * 86400000).toISOString(),
     title: 'Zoning Board Meeting',
     time: '6:30 PM',
     location: 'Village Hall',
     description: 'Regular meeting of the Zoning and Planning Board.',
+  },
+  {
+    id: '5',
+    date: new Date(Date.now() + 120 * 86400000).toISOString(),
+    title: 'Summer Community Picnic',
+    time: '12:00 PM',
+    location: 'Village Park',
+    description: 'Annual summer picnic for all village residents. Food, games, and fun for all ages.',
   },
 ]
