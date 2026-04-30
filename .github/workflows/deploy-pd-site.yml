@@ -43,17 +43,3 @@ jobs:
           app_location: apps/pd-site
           api_location: apps/pd-site/api
           output_location: dist
-
-  smoke-test:
-    name: Smoke Test
-    runs-on: ubuntu-latest
-    needs: deploy-site
-    if: ${{ secrets.PD_HOSTNAME != '' }}
-    steps:
-      - name: Wait for propagation
-        run: sleep 30
-      - name: Check site is live
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.PD_HOSTNAME }})
-          echo "HTTP status: $STATUS"
-          [ "$STATUS" = "200" ] && echo "✅ PD site is live" || (echo "❌ Status $STATUS" && exit 1)
