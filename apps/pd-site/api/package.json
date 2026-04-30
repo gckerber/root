@@ -1,0 +1,11 @@
+{
+  "name": "pd-site-api",
+  "version": "1.0.0",
+  "description": "SWA managed API functions for Saint Louisville PD Portal",
+  "main": "index.js",
+  "dependencies": {
+    "@azure/cosmos": "^4.0.0",
+    "@azure/communication-email": "^1.0.0",
+    "uuid": "^9.0.1"
+  }
+}
