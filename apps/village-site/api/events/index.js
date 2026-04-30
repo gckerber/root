@@ -21,21 +21,24 @@ module.exports = async function (context, req) {
   try {
     const container = getContainer()
     if (req.method === 'GET') {
-      const month = req.query.month
+      const { month, upcoming } = req.query
       let query = 'SELECT * FROM c'
       const params = []
       if (month) {
         query += ' WHERE c.month = @month'
         params.push({ name: '@month', value: month })
+      } else if (upcoming === 'true') {
+        query += ' WHERE c.date >= @today'
+        params.push({ name: '@today', value: new Date().toISOString() })
       }
       query += ' ORDER BY c.date ASC'
-      const { resources } = await container.items.query({ query, parameters: params }).fetchAll()
+      const { resources } = await container.items.query({ query, parameters: params }, { enableCrossPartitionQuery: true }).fetchAll()
       context.res = { status: 200, headers: h, body: { items: resources } }
       return
     }
     if (!isAdmin(req)) { context.res = { status: 401, headers: h, body: { message: 'Unauthorized' } }; return }
     if (req.method === 'POST') {
-      const { title, date, time, location, description } = req.body || {}
+      const { title, date, time, location, description, photoUrl } = req.body || {}
       if (!title?.trim() || !date) { context.res = { status: 400, headers: h, body: { message: 'title and date are required' } }; return }
       const eventDate = new Date(date)
       const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`
@@ -47,6 +50,7 @@ module.exports = async function (context, req) {
         time: time?.trim() || null,
         location: location?.trim() || 'Village Hall',
         description: description?.trim() || null,
+        photoUrl: photoUrl || null,
         createdAt: new Date().toISOString()
       }
       const { resource } = await container.items.create(record)
