@@ -1,164 +1,180 @@
 // apps/village-site/src/pages/CalendarPage.jsx
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Calendar as CalendarIcon, MapPin, Clock } from 'lucide-react'
+import { MapPin, Clock, CalendarDays } from 'lucide-react'
 import axios from 'axios'
-import { format, parseISO, isSameMonth, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isToday } from 'date-fns'
+import { format, parseISO, addMonths, startOfDay, startOfMonth } from 'date-fns'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
-function useEvents(month) {
+function useUpcomingEvents() {
   return useQuery({
-    queryKey: ['events', month],
+    queryKey: ['events', 'upcoming'],
     queryFn: () =>
-      axios.get(`${API}/api/events`, { params: { month } }).then((r) => r.data),
+      axios.get(`${API}/api/events`, { params: { upcoming: 'true' } }).then((r) => r.data),
     placeholderData: { items: sampleEvents },
   })
 }
 
-function MiniCalendar({ currentMonth, events, onDayClick, selectedDay }) {
-  const monthStart = startOfMonth(currentMonth)
-  const monthEnd = endOfMonth(currentMonth)
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
-  const startPad = getDay(monthStart) // 0=Sun
-
-  const eventDays = new Set(events.map((e) => format(parseISO(e.date), 'yyyy-MM-dd')))
-
+function EventCard({ event }) {
+  const date = parseISO(event.date)
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-      <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-400 mb-2">
-        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-          <div key={d} className="py-1">{d}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-0.5">
-        {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
-        {days.map((day) => {
-          const key = format(day, 'yyyy-MM-dd')
-          const hasEvent = eventDays.has(key)
-          const isSelected = selectedDay && isSameDay(day, selectedDay)
-          const todayDay = isToday(day)
-          return (
-            <button
-              key={key}
-              onClick={() => onDayClick(day)}
-              className={`relative aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors ${
-                isSelected
-                  ? 'bg-blue-700 text-white font-bold'
-                  : todayDay
-                  ? 'bg-blue-50 text-blue-700 font-bold'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {day.getDate()}
-              {hasEvent && (
-                <span className={`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-yellow-300' : 'bg-blue-500'}`} />
-              )}
-            </button>
-          )
-        })}
+    <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+      {event.photoUrl ? (
+        <div className="relative h-44 overflow-hidden flex-shrink-0">
+          <img src={event.photoUrl} alt={event.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute bottom-3 left-3">
+            <div className="bg-white rounded-xl px-2.5 py-1.5 text-center shadow">
+              <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wide leading-none">
+                {format(date, 'MMM')}
+              </div>
+              <div className="text-2xl font-extrabold text-gray-900 leading-none">
+                {format(date, 'd')}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="h-1.5 bg-blue-700 flex-shrink-0" />
+      )}
+
+      <div className="p-5 flex flex-col flex-grow">
+        {!event.photoUrl && (
+          <div className="flex items-center gap-3 mb-3">
+            <div className="bg-blue-700 rounded-xl px-2.5 py-1.5 text-center flex-shrink-0">
+              <div className="text-[10px] font-bold text-blue-200 uppercase tracking-wide leading-none">
+                {format(date, 'MMM')}
+              </div>
+              <div className="text-xl font-extrabold text-white leading-none">
+                {format(date, 'd')}
+              </div>
+            </div>
+            <span className="text-sm text-gray-400 font-medium">{format(date, 'EEEE')}</span>
+          </div>
+        )}
+
+        <h3 className="font-bold text-gray-900 text-base leading-snug">{event.title}</h3>
+
+        <div className="flex flex-col gap-1 mt-2">
+          {event.time && (
+            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+              <Clock size={12} className="flex-shrink-0" /> {event.time}
+            </span>
+          )}
+          {event.location && (
+            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+              <MapPin size={12} className="flex-shrink-0" /> {event.location}
+            </span>
+          )}
+        </div>
+
+        {event.description && (
+          <p className="text-sm text-gray-500 mt-3 line-clamp-3 flex-grow">{event.description}</p>
+        )}
       </div>
     </div>
   )
 }
 
 export default function CalendarPage() {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectedDay, setSelectedDay] = useState(null)
-  const monthParam = format(currentMonth, 'yyyy-MM')
-  const { data } = useEvents(monthParam)
+  const { data } = useUpcomingEvents()
   const events = data?.items || sampleEvents
 
-  const filteredEvents = selectedDay
-    ? events.filter((e) => isSameDay(parseISO(e.date), selectedDay))
-    : events
+  const grouped = useMemo(() => {
+    const today = startOfDay(new Date())
+    const cutoff = addMonths(startOfMonth(today), 3)
+
+    const upcoming = events.filter((e) => {
+      const d = parseISO(e.date)
+      return d >= today && d < cutoff
+    })
+
+    const byMonth = {}
+    upcoming.forEach((e) => {
+      const key = format(parseISO(e.date), 'yyyy-MM')
+      if (!byMonth[key]) byMonth[key] = []
+      byMonth[key].push(e)
+    })
+
+    return Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b))
+  }, [events])
+
+  const totalEvents = grouped.reduce((sum, [, evts]) => sum + evts.length, 0)
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Events Calendar</h1>
-        <p className="text-gray-500">Council meetings, community events, and village activities</p>
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-3">
+          <CalendarDays className="text-blue-700" size={32} />
+          <h1 className="text-4xl font-extrabold text-gray-900">Events Calendar</h1>
+        </div>
+        <p className="text-gray-500 ml-1">
+          Upcoming council meetings, community events, and village activities
+          {totalEvents > 0 && (
+            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {totalEvents} upcoming
+            </span>
+          )}
+        </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Calendar panel */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1))}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm hover:bg-gray-50"
-            >← Prev</button>
-            <span className="font-bold text-gray-800">{format(currentMonth, 'MMMM yyyy')}</span>
-            <button
-              onClick={() => setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1))}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm hover:bg-gray-50"
-            >Next →</button>
-          </div>
-          <MiniCalendar
-            currentMonth={currentMonth}
-            events={events}
-            onDayClick={setSelectedDay}
-            selectedDay={selectedDay}
-          />
-          {selectedDay && (
-            <button
-              onClick={() => setSelectedDay(null)}
-              className="w-full text-sm text-blue-600 hover:underline"
-            >
-              Show all events
-            </button>
-          )}
+      {grouped.length === 0 ? (
+        <div className="text-center py-24 text-gray-400">
+          <CalendarDays size={48} className="mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-medium">No upcoming events in the next 3 months</p>
+          <p className="text-sm mt-1">Check back soon for new events.</p>
         </div>
+      ) : (
+        <div className="space-y-14">
+          {grouped.map(([monthKey, monthEvents]) => (
+            <section key={monthKey}>
+              <div className="flex items-center gap-4 mb-6">
+                <h2 className="text-2xl font-extrabold text-gray-900 whitespace-nowrap">
+                  {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
+                </h2>
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-sm text-gray-400 whitespace-nowrap">
+                  {monthEvents.length} event{monthEvents.length !== 1 ? 's' : ''}
+                </span>
+              </div>
 
-        {/* Event list */}
-        <div className="lg:col-span-2">
-          <h2 className="font-bold text-gray-700 mb-4">
-            {selectedDay
-              ? `Events on ${format(selectedDay, 'MMMM d, yyyy')}`
-              : `All events — ${format(currentMonth, 'MMMM yyyy')}`}
-          </h2>
-          {filteredEvents.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 bg-white rounded-xl border border-gray-100">
-              No events scheduled{selectedDay ? ' for this day' : ' this month'}.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredEvents.map((event) => (
-                <div key={event.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-700 rounded-lg flex flex-col items-center justify-center text-white flex-shrink-0">
-                      <span className="text-xs font-medium leading-none">{format(parseISO(event.date), 'MMM')}</span>
-                      <span className="text-xl font-extrabold leading-none">{format(parseISO(event.date), 'd')}</span>
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="font-bold text-gray-900">{event.title}</h3>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                        {event.time && (
-                          <span className="flex items-center gap-1 text-xs text-gray-500">
-                            <Clock size={12} /> {event.time}
-                          </span>
-                        )}
-                        {event.location && (
-                          <span className="flex items-center gap-1 text-xs text-gray-500">
-                            <MapPin size={12} /> {event.location}
-                          </span>
-                        )}
-                      </div>
-                      {event.description && <p className="text-sm text-gray-600 mt-2">{event.description}</p>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {monthEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
 const sampleEvents = [
-  { id: '1', date: new Date().toISOString(), title: 'Regular Council Meeting', time: '7:00 PM', location: 'Village Hall', description: 'Monthly regular meeting of the Saint Louisville Village Council. All residents welcome.' },
-  { id: '2', date: new Date(Date.now() + 7 * 86400000).toISOString(), title: 'Community Clean-Up Day', time: '9:00 AM', location: 'Village Hall (meet here)', description: 'Annual village-wide clean-up. Gloves and bags provided. Light refreshments available.' },
-  { id: '3', date: new Date(Date.now() + 14 * 86400000).toISOString(), title: 'Zoning Board Meeting', time: '6:30 PM', location: 'Village Hall', description: 'Regular meeting of the Zoning and Planning Board.' },
+  {
+    id: '1',
+    date: new Date().toISOString(),
+    title: 'Regular Council Meeting',
+    time: '7:00 PM',
+    location: 'Village Hall',
+    description: 'Monthly regular meeting of the Saint Louisville Village Council. All residents welcome.',
+  },
+  {
+    id: '2',
+    date: new Date(Date.now() + 7 * 86400000).toISOString(),
+    title: 'Community Clean-Up Day',
+    time: '9:00 AM',
+    location: 'Village Hall (meet here)',
+    description: 'Annual village-wide clean-up. Gloves and bags provided. Light refreshments available.',
+  },
+  {
+    id: '3',
+    date: new Date(Date.now() + 45 * 86400000).toISOString(),
+    title: 'Zoning Board Meeting',
+    time: '6:30 PM',
+    location: 'Village Hall',
+    description: 'Regular meeting of the Zoning and Planning Board.',
+  },
 ]

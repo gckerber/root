@@ -216,42 +216,46 @@ export default function CalendarAdmin() {
                 adminKey={auth.key}
               />
             ) : (
-              <div key={event.id} className="card p-4 flex gap-4">
-                <div className="w-12 h-12 bg-pink-600/20 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
-                  <span className="text-pink-400 text-xs font-medium leading-none">
-                    {format(parseISO(event.date), 'MMM')}
-                  </span>
-                  <span className="text-white font-bold text-lg leading-none">
-                    {format(parseISO(event.date), 'd')}
-                  </span>
-                </div>
+              <div key={event.id} className="card overflow-hidden">
                 {event.photoUrl && (
-                  <img src={event.photoUrl} alt={event.title}
-                    className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+                  <div className="relative h-28 overflow-hidden">
+                    <img src={event.photoUrl} alt={event.title} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent" />
+                  </div>
                 )}
-                <div className="flex-grow min-w-0">
-                  <div className="text-white font-medium">{event.title}</div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                    {event.time && (
-                      <span className="text-slate-500 text-xs flex items-center gap-1">
-                        <Clock size={11} />{event.time}
-                      </span>
-                    )}
-                    {event.location && (
-                      <span className="text-slate-500 text-xs flex items-center gap-1">
-                        <MapPin size={11} />{event.location}
-                      </span>
+                <div className="p-4 flex gap-4">
+                  <div className="w-12 h-12 bg-pink-600/20 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-pink-400 text-xs font-medium leading-none">
+                      {format(parseISO(event.date), 'MMM')}
+                    </span>
+                    <span className="text-white font-bold text-lg leading-none">
+                      {format(parseISO(event.date), 'd')}
+                    </span>
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <div className="text-white font-medium">{event.title}</div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                      {event.time && (
+                        <span className="text-slate-500 text-xs flex items-center gap-1">
+                          <Clock size={11} />{event.time}
+                        </span>
+                      )}
+                      {event.location && (
+                        <span className="text-slate-500 text-xs flex items-center gap-1">
+                          <MapPin size={11} />{event.location}
+                        </span>
+                      )}
+                    </div>
+                    {event.description && (
+                      <p className="text-slate-500 text-xs mt-1 truncate">{event.description}</p>
                     )}
                   </div>
-                  {event.description && (
-                    <p className="text-slate-500 text-xs mt-1 truncate">{event.description}</p>
-                  )}
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <button onClick={() => setEditingId(event.id)} className="btn-ghost py-1.5 px-3 text-xs">Edit</button>
-                  <button onClick={() => handleDelete(event)} className="btn-danger py-1.5 px-3">
-                    <Trash2 size={13} />
-                  </button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => setEditingId(event.id)} className="btn-ghost py-1.5 px-3 text-xs">Edit</button>
+                    <button onClick={() => handleDelete(event)} className="btn-danger py-1.5 px-3">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )
