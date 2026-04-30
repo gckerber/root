@@ -12,7 +12,7 @@ function OrdForm({ item, onSave, onCancel, adminKey }) {
   const toast = useToast()
   const fileRef = useRef()
   const [form, setForm] = useState(item || {
-    number: '', title: '', category: 'general', summary: '', year: new Date().getFullYear(), fileUrl: ''
+    number: '', title: '', category: 'general', summary: '', year: new Date().getFullYear(), lastUpdated: '', fileUrl: ''
   })
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -78,6 +78,10 @@ function OrdForm({ item, onSave, onCancel, adminKey }) {
         <label className="label">Summary (optional)</label>
         <textarea className="input resize-none" rows={2} value={form.summary || ''} onChange={f('summary')}
           placeholder="One or two sentences describing what this ordinance covers..." />
+      </div>
+      <div>
+        <label className="label">Last Updated Date (optional)</label>
+        <input className="input" type="date" value={form.lastUpdated?.slice(0, 10) || ''} onChange={f('lastUpdated')} />
       </div>
       <div>
         <label className="label">

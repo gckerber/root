@@ -1,8 +1,9 @@
 // apps/village-site/src/pages/OrdinancesPage.jsx
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BookOpen, Download, Search, ChevronRight } from 'lucide-react'
+import { BookOpen, Download, Search, ChevronRight, Clock } from 'lucide-react'
 import axios from 'axios'
+import { format, parseISO } from 'date-fns'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
@@ -37,6 +38,11 @@ function OrdinanceRow({ ord }) {
           <span className="font-mono text-xs text-gray-400">{ord.number}</span>
           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">{ord.category}</span>
           {ord.year && <span className="text-xs text-gray-400">{ord.year}</span>}
+          {ord.lastUpdated && (
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <Clock size={10} /> Updated {format(parseISO(ord.lastUpdated), 'MMM d, yyyy')}
+            </span>
+          )}
         </div>
         <h3 className="font-semibold text-gray-800 mt-0.5 truncate">{ord.title}</h3>
         {ord.summary && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{ord.summary}</p>}

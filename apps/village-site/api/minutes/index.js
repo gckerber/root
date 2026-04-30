@@ -39,7 +39,7 @@ module.exports = async function (context, req) {
     }
     if (req.method === 'POST') {
       if (!isAdmin(req)) { context.res = { status: 401, headers: h, body: { message: 'Unauthorized' } }; return }
-      const { meetingDate, type, approved, fileUrl, fileSize, fileName } = req.body || {}
+      const { meetingDate, type, approved, fileUrl, fileSize, fileName, summary } = req.body || {}
       if (!meetingDate) { context.res = { status: 400, headers: h, body: { message: 'meetingDate is required' } }; return }
       const date = new Date(meetingDate)
       const year = date.getFullYear()
@@ -53,6 +53,7 @@ module.exports = async function (context, req) {
         fileUrl: fileUrl || null,
         fileSize: fileSize || null,
         fileName: fileName || null,
+        summary: summary?.trim() || null,
         createdAt: new Date().toISOString()
       }
       const { resource } = await container.items.create(record)
