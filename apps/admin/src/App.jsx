@@ -10,6 +10,8 @@ import BulletinAdmin from './pages/BulletinAdmin'
 import OrdinancesAdmin from './pages/OrdinancesAdmin'
 import CalendarAdmin from './pages/CalendarAdmin'
 import HistoryAdmin from './pages/HistoryAdmin'
+import PDAdmin from './pages/PDAdmin'
+import CourtAdmin from './pages/CourtAdmin'
 import Layout from './components/Layout'
 
 function ProtectedRoute({ children }) {
@@ -33,6 +35,8 @@ export default function App() {
               <Route path="ordinances" element={<OrdinancesAdmin />} />
               <Route path="calendar" element={<CalendarAdmin />} />
               <Route path="history" element={<HistoryAdmin />} />
+              <Route path="pd" element={<PDAdmin />} />
+              <Route path="court" element={<CourtAdmin />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

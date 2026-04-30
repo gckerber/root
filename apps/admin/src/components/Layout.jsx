@@ -3,7 +3,8 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../utils/context'
 import {
   LayoutDashboard, Image, Users, FileText, Megaphone,
-  BookOpen, Calendar, Camera, LogOut, Menu, X, ChevronRight
+  BookOpen, Calendar, Camera, LogOut, Menu, X, ChevronRight,
+  Shield, Gavel
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -18,12 +19,17 @@ const NAV = [
   { to: '/history',     icon: Camera,          label: 'History & Photos',color: 'text-teal-400',    desc: 'Gallery & text' },
 ]
 
+const PD_NAV = [
+  { to: '/pd',    icon: Shield, label: 'Citations',     color: 'text-amber-400', desc: 'Police citations' },
+  { to: '/court', icon: Gavel,  label: 'Court Schedule', color: 'text-amber-300', desc: "Mayor's Court dates" },
+]
+
 export default function Layout() {
   const { logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
-  const currentPage = NAV.find((n) => n.to === location.pathname)
+  const currentPage = [...NAV, ...PD_NAV].find((n) => n.to === location.pathname)
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -47,6 +53,38 @@ export default function Layout() {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all group ${
+                isActive
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon size={17} className={isActive ? color : 'text-slate-500 group-hover:text-slate-400'} />
+                <div className="flex-grow min-w-0">
+                  <div className="font-medium leading-tight truncate">{label}</div>
+                  {desc && <div className="text-xs text-slate-600 leading-tight truncate">{desc}</div>}
+                </div>
+                {isActive && <ChevronRight size={14} className={color} />}
+              </>
+            )}
+          </NavLink>
+        ))}
+
+        {/* Police Department section */}
+        <div className="pt-3 pb-1 px-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-widest">
+            <Shield size={11} /> Police Dept
+          </div>
+        </div>
+        {PD_NAV.map(({ to, icon: Icon, label, color, desc }) => (
+          <NavLink
+            key={to}
+            to={to}
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all group ${
