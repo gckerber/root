@@ -11,8 +11,7 @@ const DEFAULTS = {
   address2: 'Saint Louisville, OH 43071',
   phone: '(740) 568-7800',
   email: 'pd@saintlouisvilleohio.gov',
-  hours: 'Monday – Friday: 8:00 AM – 4:30 PM',
-  hoursNote: 'After hours: call non-emergency line',
+  hours: 'Monday – Friday: 8:00 AM – 4:30 PM\nAfter hours: call non-emergency line',
   chief: 'Contact Village Hall',
   courtPresidedBy: 'Mayor Zack Allen',
 }
@@ -98,15 +97,16 @@ export default function PDContactAdmin() {
         <h3 className="text-white font-medium flex items-center gap-2">
           <Clock size={15} className="text-amber-400" /> Office Hours
         </h3>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label className="label">Hours</label>
-            <input className="input" value={form.hours} onChange={f('hours')} placeholder="Monday – Friday: 8:00 AM – 4:30 PM" />
-          </div>
-          <div>
-            <label className="label">After-Hours Note</label>
-            <input className="input" value={form.hoursNote} onChange={f('hoursNote')} placeholder="After hours: call non-emergency line" />
-          </div>
+        <div>
+          <label className="label">Office Hours</label>
+          <textarea
+            className="input resize-none"
+            rows={3}
+            value={form.hours}
+            onChange={f('hours')}
+            placeholder={'Monday – Friday: 8:00 AM – 4:30 PM\nAfter hours: call non-emergency line'}
+          />
+          <p className="text-slate-600 text-xs mt-1">Each line shown separately on the site.</p>
         </div>
       </div>
 

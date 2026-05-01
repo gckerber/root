@@ -6,6 +6,12 @@ import { useAuth, useToast } from '../utils/context'
 
 const PD_API = import.meta.env.VITE_PD_API_URL || 'https://pd.saintlouisvilleohio.gov'
 
+const DEMO_IMAGES = [
+  { id: 'demo-1', url: 'https://picsum.photos/seed/slpd1/1400/700', caption: 'Placeholder 1 — upload your own photos to replace' },
+  { id: 'demo-2', url: 'https://picsum.photos/seed/slpd2/1400/700', caption: 'Placeholder 2' },
+  { id: 'demo-3', url: 'https://picsum.photos/seed/slpd3/1400/700', caption: 'Placeholder 3' },
+]
+
 export default function PDHeroAdmin() {
   const { auth } = useAuth()
   const toast = useToast()
@@ -134,10 +140,16 @@ export default function PDHeroAdmin() {
       {loading ? (
         <div className="text-slate-500 text-sm">Loading images…</div>
       ) : sorted.length === 0 ? (
-        <div className="card p-10 text-center">
-          <Image size={32} className="mx-auto mb-3 text-slate-600" />
-          <p className="text-slate-600">No images uploaded yet.</p>
-          <p className="text-slate-700 text-xs mt-1">Upload photos to create a rotating hero slideshow on the PD site.</p>
+        <div className="space-y-3">
+          <div className="card p-3 border-amber-600/20 bg-amber-600/5">
+            <p className="text-amber-400 text-xs font-semibold">Showing placeholder images — upload your own photos to replace these</p>
+          </div>
+          {DEMO_IMAGES.map(img => (
+            <div key={img.id} className="card p-3 flex items-center gap-3 opacity-60">
+              <img src={img.url} alt="" className="w-20 h-14 object-cover rounded-lg flex-shrink-0 bg-slate-800" />
+              <span className="text-slate-500 text-sm flex-grow">{img.caption}</span>
+            </div>
+          ))}
         </div>
       ) : (
         sorted.map((img, idx) => (
