@@ -12,6 +12,9 @@ import CalendarAdmin from './pages/CalendarAdmin'
 import HistoryAdmin from './pages/HistoryAdmin'
 import PDAdmin from './pages/PDAdmin'
 import CourtAdmin from './pages/CourtAdmin'
+import PDHeroAdmin from './pages/PDHeroAdmin'
+import FAQAdmin from './pages/FAQAdmin'
+import PDContactAdmin from './pages/PDContactAdmin'
 import Layout from './components/Layout'
 
 function ProtectedRoute({ children }) {
@@ -37,6 +40,9 @@ export default function App() {
               <Route path="history" element={<HistoryAdmin />} />
               <Route path="pd" element={<PDAdmin />} />
               <Route path="court" element={<CourtAdmin />} />
+              <Route path="pd-hero" element={<PDHeroAdmin />} />
+              <Route path="pd-faq" element={<FAQAdmin />} />
+              <Route path="pd-contact" element={<PDContactAdmin />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

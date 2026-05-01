@@ -4,7 +4,7 @@ import { useAuth } from '../utils/context'
 import {
   LayoutDashboard, Image, Users, FileText, Megaphone,
   BookOpen, Calendar, Camera, LogOut, Menu, X, ChevronRight,
-  Shield, Gavel
+  Shield, Gavel, HelpCircle, Phone
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -20,8 +20,11 @@ const NAV = [
 ]
 
 const PD_NAV = [
-  { to: '/pd',    icon: Shield, label: 'Citations',     color: 'text-amber-400', desc: 'Police citations' },
-  { to: '/court', icon: Gavel,  label: 'Court Schedule', color: 'text-amber-300', desc: "Mayor's Court dates" },
+  { to: '/pd',         icon: Shield,      label: 'Citations',      color: 'text-amber-400', desc: 'Police citations' },
+  { to: '/court',      icon: Gavel,       label: 'Court Schedule', color: 'text-amber-300', desc: "Mayor's Court dates" },
+  { to: '/pd-hero',    icon: Image,       label: 'Hero Images',    color: 'text-amber-200', desc: 'Carousel photos' },
+  { to: '/pd-faq',     icon: HelpCircle,  label: 'FAQ',            color: 'text-amber-200', desc: "Mayor's Court FAQ" },
+  { to: '/pd-contact', icon: Phone,       label: 'Contact Info',   color: 'text-amber-200', desc: 'Address & hours' },
 ]
 
 export default function Layout() {

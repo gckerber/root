@@ -1,13 +1,82 @@
 // apps/pd-site/src/pages/Home.jsx
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, CreditCard, Gavel, Phone, MapPin, Clock, ChevronRight, AlertTriangle } from 'lucide-react'
+import axios from 'axios'
 
-function QuickCard({ icon: Icon, title, desc, to, accent }) {
+const CONTACT_DEFAULTS = {
+  address: '100 N. High Street',
+  address2: 'Saint Louisville, OH 43071',
+  phone: '(740) 568-7800',
+  email: 'pd@saintlouisvilleohio.gov',
+  hours: 'Monday – Friday: 8:00 AM – 4:30 PM',
+  hoursNote: 'After hours: call non-emergency line',
+  chief: 'Contact Village Hall',
+  courtPresidedBy: 'Mayor Zack Allen',
+}
+
+function useHeroImages() {
+  const [images, setImages] = useState([])
+  useEffect(() => {
+    axios.get('/api/pd-images').then(r => setImages(r.data.items || [])).catch(() => {})
+  }, [])
+  return images
+}
+
+function useContact() {
+  const [contact, setContact] = useState(CONTACT_DEFAULTS)
+  useEffect(() => {
+    axios.get('/api/pd-contact').then(r => setContact(r.data)).catch(() => {})
+  }, [])
+  return contact
+}
+
+function HeroCarousel({ images }) {
+  const [idx, setIdx] = useState(0)
+
+  useEffect(() => {
+    if (images.length <= 1) return
+    const t = setInterval(() => setIdx(i => (i + 1) % images.length), 5000)
+    return () => clearInterval(t)
+  }, [images.length])
+
+  if (images.length === 0) {
+    return (
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{ backgroundImage: 'repeating-linear-gradient(45deg, #d97706 0, #d97706 1px, transparent 0, transparent 50%)', backgroundSize: '20px 20px' }}
+      />
+    )
+  }
+
   return (
-    <Link
-      to={to}
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group p-6 flex flex-col gap-3"
-    >
+    <>
+      {images.map((img, i) => (
+        <img
+          key={img.id}
+          src={img.url}
+          alt={img.caption || ''}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${i === idx ? 'opacity-40' : 'opacity-0'}`}
+        />
+      ))}
+      {images.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIdx(i)}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? 'bg-amber-400 w-4' : 'bg-white/40'}`}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+function QuickCard({ icon: Icon, title, desc, to, accent, scrollTo }) {
+  const content = (
+    <>
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${accent}`}>
         <Icon size={22} className="text-white" />
       </div>
@@ -18,18 +87,37 @@ function QuickCard({ icon: Icon, title, desc, to, accent }) {
       <div className="flex items-center gap-1 text-amber-600 text-sm font-semibold mt-auto">
         Learn more <ChevronRight size={15} />
       </div>
-    </Link>
+    </>
   )
+
+  const cls = 'bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group p-6 flex flex-col gap-3'
+
+  if (scrollTo) {
+    return (
+      <button
+        onClick={() => document.getElementById(scrollTo)?.scrollIntoView({ behavior: 'smooth' })}
+        className={`${cls} text-left w-full cursor-pointer`}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return <Link to={to} className={cls}>{content}</Link>
 }
 
 export default function Home() {
+  const images = useHeroImages()
+  const contact = useContact()
+
+  const phoneRaw = contact.phone?.replace(/\D/g, '') || '7405687800'
+
   return (
     <div>
       {/* Hero */}
       <section className="bg-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'repeating-linear-gradient(45deg, #d97706 0, #d97706 1px, transparent 0, transparent 50%)', backgroundSize: '20px 20px' }} />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col md:flex-row items-center gap-10">
+        <HeroCarousel images={images} />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col md:flex-row items-center gap-10 z-10">
           <div className="flex-grow">
             <div className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 tracking-widest uppercase">
               <Shield size={12} /> Official Village Police Department
@@ -74,7 +162,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <Phone size={18} className="text-red-200 flex-shrink-0" />
             <div>
-              <p className="font-bold leading-none">Non-Emergency: (740) 568-7800</p>
+              <p className="font-bold leading-none">Non-Emergency: {contact.phone}</p>
               <p className="text-red-200 text-xs mt-0.5">For non-urgent police matters</p>
             </div>
           </div>
@@ -104,7 +192,7 @@ export default function Home() {
             icon={Phone}
             title="Contact the Department"
             desc="Reach our non-emergency line, submit a tip, or find the physical address for in-person visits."
-            to="/#contact"
+            scrollTo="contact"
             accent="bg-blue-700"
           />
         </div>
@@ -126,10 +214,10 @@ export default function Home() {
             </p>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: 'Chief of Police', value: 'Contact Village Hall' },
+                { label: 'Chief of Police', value: contact.chief },
                 { label: 'Jurisdiction', value: 'Village of Saint Louisville, OH' },
                 { label: 'Court', value: "Mayor's Court" },
-                { label: 'Court Presided By', value: 'Mayor Zack Allen' },
+                { label: 'Court Presided By', value: contact.courtPresidedBy },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-slate-50 rounded-xl p-4">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">{label}</p>
@@ -145,26 +233,26 @@ export default function Home() {
                 <MapPin size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-800">Village Hall</p>
-                  <p className="text-slate-500 text-sm">100 N. High Street<br />Saint Louisville, OH 43071</p>
+                  <p className="text-slate-500 text-sm">{contact.address}<br />{contact.address2}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Phone size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-800">Non-Emergency Line</p>
-                  <p className="text-slate-500 text-sm">(740) 568-7800</p>
+                  <p className="text-slate-500 text-sm">{contact.phone}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Clock size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-800">Office Hours</p>
-                  <p className="text-slate-500 text-sm">Monday – Friday: 8:00 AM – 4:30 PM<br />After hours: call non-emergency line</p>
+                  <p className="text-slate-500 text-sm">{contact.hours}<br />{contact.hoursNote}</p>
                 </div>
               </div>
             </div>
             <a
-              href="mailto:pd@saintlouisvilleohio.gov"
+              href={`mailto:${contact.email}`}
               className="flex items-center justify-center gap-2 w-full py-3 border-2 border-slate-200 text-slate-700 font-semibold rounded-xl hover:border-amber-400 hover:text-amber-700 transition-colors"
             >
               Email the Department

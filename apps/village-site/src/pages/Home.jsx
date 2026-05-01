@@ -1,7 +1,7 @@
 // apps/village-site/src/pages/Home.jsx
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { FileText, Megaphone, BookOpen, Calendar, Camera, Droplets } from 'lucide-react'
+import { FileText, Megaphone, BookOpen, Calendar, Camera, Droplets, Shield } from 'lucide-react'
 import HeroSection from '../components/HeroSection'
 import axios from 'axios'
 
@@ -99,26 +99,43 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Water bill CTA */}
+      {/* Online portals CTA */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-blue-900 rounded-2xl p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-white">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-700 rounded-2xl flex items-center justify-center flex-shrink-0">
-              <Droplets size={32} className="text-blue-200" />
+        <div className="grid sm:grid-cols-2 gap-5">
+          <div className="bg-blue-900 rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-white">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-blue-700 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Droplets size={28} className="text-blue-200" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Pay Your Water Bill</h3>
+                <p className="text-blue-200 text-sm mt-0.5">Look up your balance and pay securely — available 24/7</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold">Pay Your Water Bill Online</h3>
-              <p className="text-blue-200 text-sm mt-1">
-                Look up your balance and pay securely — available 24/7
-              </p>
-            </div>
+            <a
+              href="https://water.saintlouisvilleohio.gov"
+              className="flex-shrink-0 px-6 py-2.5 bg-yellow-400 text-blue-900 font-bold rounded-xl hover:bg-yellow-300 transition-colors shadow-lg text-sm whitespace-nowrap"
+            >
+              Water Portal
+            </a>
           </div>
-          <a
-            href="https://water.saintlouisvilleohio.gov"
-            className="flex-shrink-0 px-8 py-3 bg-yellow-400 text-blue-900 font-bold rounded-xl hover:bg-yellow-300 transition-colors shadow-lg text-base"
-          >
-            Go to Water Portal
-          </a>
+          <div className="bg-slate-800 rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-white">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-slate-700 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Shield size={28} className="text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Police Department</h3>
+                <p className="text-slate-400 text-sm mt-0.5">Pay fines, view court dates, and contact the department</p>
+              </div>
+            </div>
+            <a
+              href="https://pd.saintlouisvilleohio.gov"
+              className="flex-shrink-0 px-6 py-2.5 bg-amber-500 text-slate-900 font-bold rounded-xl hover:bg-amber-400 transition-colors shadow-lg text-sm whitespace-nowrap"
+            >
+              PD Portal
+            </a>
+          </div>
         </div>
       </section>
     </div>
