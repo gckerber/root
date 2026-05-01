@@ -9,11 +9,16 @@ const CONTACT_DEFAULTS = {
   address2: 'Saint Louisville, OH 43071',
   phone: '(740) 568-7800',
   email: 'pd@saintlouisvilleohio.gov',
-  hours: 'Monday – Friday: 8:00 AM – 4:30 PM',
-  hoursNote: 'After hours: call non-emergency line',
+  hours: 'Monday – Friday: 8:00 AM – 4:30 PM\nAfter hours: call non-emergency line',
   chief: 'Contact Village Hall',
   courtPresidedBy: 'Mayor Zack Allen',
 }
+
+const DEMO_IMAGES = [
+  { id: 'demo-1', url: 'https://picsum.photos/seed/slpd1/1400/700', caption: '' },
+  { id: 'demo-2', url: 'https://picsum.photos/seed/slpd2/1400/700', caption: '' },
+  { id: 'demo-3', url: 'https://picsum.photos/seed/slpd3/1400/700', caption: '' },
+]
 
 function useHeroImages() {
   const [images, setImages] = useState([])
@@ -32,26 +37,18 @@ function useContact() {
 }
 
 function HeroCarousel({ images }) {
+  const display = images.length > 0 ? images : DEMO_IMAGES
   const [idx, setIdx] = useState(0)
 
   useEffect(() => {
-    if (images.length <= 1) return
-    const t = setInterval(() => setIdx(i => (i + 1) % images.length), 5000)
+    if (display.length <= 1) return
+    const t = setInterval(() => setIdx(i => (i + 1) % display.length), 5000)
     return () => clearInterval(t)
-  }, [images.length])
-
-  if (images.length === 0) {
-    return (
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{ backgroundImage: 'repeating-linear-gradient(45deg, #d97706 0, #d97706 1px, transparent 0, transparent 50%)', backgroundSize: '20px 20px' }}
-      />
-    )
-  }
+  }, [display.length])
 
   return (
     <>
-      {images.map((img, i) => (
+      {display.map((img, i) => (
         <img
           key={img.id}
           src={img.url}
@@ -59,9 +56,9 @@ function HeroCarousel({ images }) {
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${i === idx ? 'opacity-40' : 'opacity-0'}`}
         />
       ))}
-      {images.length > 1 && (
+      {display.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-          {images.map((_, i) => (
+          {display.map((_, i) => (
             <button
               key={i}
               onClick={() => setIdx(i)}
@@ -247,7 +244,7 @@ export default function Home() {
                 <Clock size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-800">Office Hours</p>
-                  <p className="text-slate-500 text-sm">{contact.hours}<br />{contact.hoursNote}</p>
+                  <p className="text-slate-500 text-sm" style={{ whiteSpace: 'pre-line' }}>{contact.hours}</p>
                 </div>
               </div>
             </div>

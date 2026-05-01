@@ -10,8 +10,7 @@ const DEFAULTS = {
   address2: 'Saint Louisville, OH 43071',
   phone: '(740) 568-7800',
   email: 'pd@saintlouisvilleohio.gov',
-  hours: 'Monday – Friday: 8:00 AM – 4:30 PM',
-  hoursNote: 'After hours: call non-emergency line',
+  hours: 'Monday – Friday: 8:00 AM – 4:30 PM\nAfter hours: call non-emergency line',
   chief: 'Contact Village Hall',
   courtPresidedBy: 'Mayor Zack Allen',
 }
