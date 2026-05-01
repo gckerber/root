@@ -4,6 +4,15 @@ import { Gavel, Calendar, Clock, MapPin, ChevronDown, ChevronUp, CheckCircle, Al
 import { format, parseISO } from 'date-fns'
 import axios from 'axios'
 
+const DEFAULT_FAQS = [
+  { id: 'd1', question: 'Can I request a continuance (postponement)?', answer: 'Yes. Contact Village Hall at (740) 568-7800 before your court date to request a continuance. Continuances are granted at the court\'s discretion and are not guaranteed.' },
+  { id: 'd2', question: 'What happens if I miss my court date?', answer: 'Failure to appear may result in additional fines, suspension of your driver\'s license, or an arrest warrant. Contact Village Hall immediately if you cannot make your court date.' },
+  { id: 'd3', question: 'Can I have an attorney represent me?', answer: 'Yes, you have the right to be represented by an attorney at your own expense. If you cannot afford an attorney, you may request a transfer to Licking County Municipal Court where a public defender may be available.' },
+  { id: 'd4', question: 'What if I want to transfer my case to Municipal Court?', answer: 'You may request a transfer to Licking County Municipal Court at any time before the Mayor\'s Court renders a decision. Contact Village Hall to initiate the transfer.' },
+  { id: 'd5', question: "Are Mayor's Court records public?", answer: "Mayor's Court is not a court of record. However, convictions are reported to the Ohio BMV and will appear on your driving record for traffic violations." },
+  { id: 'd6', question: 'Can I pay my fine in installments?', answer: 'Contact Village Hall at (740) 568-7800 to discuss payment arrangements. Installment plans are considered on a case-by-case basis at the Mayor\'s discretion.' },
+]
+
 function useCourtSchedule() {
   const [dates, setDates] = useState([])
   const [loading, setLoading] = useState(true)
@@ -14,6 +23,14 @@ function useCourtSchedule() {
       .finally(() => setLoading(false))
   }, [])
   return { dates, loading }
+}
+
+function useFaq() {
+  const [faqs, setFaqs] = useState([])
+  useEffect(() => {
+    axios.get('/api/faq').then(r => setFaqs(r.data.items || [])).catch(() => {})
+  }, [])
+  return faqs.length > 0 ? faqs : DEFAULT_FAQS
 }
 
 function Accordion({ question, children }) {
@@ -38,6 +55,7 @@ function Accordion({ question, children }) {
 
 export default function MayorsCourt() {
   const { dates, loading } = useCourtSchedule()
+  const faqs = useFaq()
   const nextThree = dates.slice(0, 3)
 
   return (
@@ -202,24 +220,11 @@ export default function MayorsCourt() {
       <section className="mb-12">
         <h2 className="text-xl font-bold text-slate-900 mb-6">Frequently Asked Questions</h2>
         <div className="space-y-3">
-          <Accordion question="Can I request a continuance (postponement)?">
-            Yes. Contact Village Hall at (740) 568-7800 before your court date to request a continuance. Continuances are granted at the court's discretion and are not guaranteed.
-          </Accordion>
-          <Accordion question="What happens if I miss my court date?">
-            Failure to appear may result in additional fines, suspension of your driver's license, or an arrest warrant. Contact Village Hall immediately if you cannot make your court date.
-          </Accordion>
-          <Accordion question="Can I have an attorney represent me?">
-            Yes, you have the right to be represented by an attorney at your own expense. If you cannot afford an attorney, you may request a transfer to Licking County Municipal Court where a public defender may be available.
-          </Accordion>
-          <Accordion question="What if I want to transfer my case to Municipal Court?">
-            You may request a transfer to Licking County Municipal Court at any time before the Mayor's Court renders a decision. Contact Village Hall to initiate the transfer.
-          </Accordion>
-          <Accordion question="Are Mayor's Court records public?">
-            Mayor's Court is not a court of record. However, convictions are reported to the Ohio BMV and will appear on your driving record for traffic violations.
-          </Accordion>
-          <Accordion question="Can I pay my fine in installments?">
-            Contact Village Hall at (740) 568-7800 to discuss payment arrangements. Installment plans are considered on a case-by-case basis at the Mayor's discretion.
-          </Accordion>
+          {faqs.map(faq => (
+            <Accordion key={faq.id} question={faq.question}>
+              {faq.answer}
+            </Accordion>
+          ))}
         </div>
       </section>
 
