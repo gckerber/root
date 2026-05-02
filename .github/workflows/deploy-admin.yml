@@ -25,6 +25,7 @@ jobs:
           VITE_ADMIN_USERNAME=admin
           VITE_ADMIN_PASSWORD=${{ secrets.VITE_ADMIN_PASSWORD }}
           VITE_VILLAGE_URL=https://${{ secrets.VILLAGE_HOSTNAME }}
+          VITE_PD_API_URL=https://${{ secrets.PD_HOSTNAME }}
           EOF
           echo "✅ .env.production written:"
           cat apps/admin/.env.production
