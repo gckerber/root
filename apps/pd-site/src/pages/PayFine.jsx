@@ -4,6 +4,8 @@ import { Search, CreditCard, CheckCircle, ArrowLeft, ShieldCheck, AlertCircle, G
 import axios from 'axios'
 import { format, parseISO } from 'date-fns'
 
+const API = import.meta.env.VITE_API_BASE_URL || 'https://func-village-prod.azurewebsites.net'
+
 function formatCard(v) { return v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim() }
 function formatExpiry(v) {
   const d = v.replace(/\D/g, '').slice(0, 4)
@@ -36,7 +38,7 @@ function LookupStep({ onFound }) {
     setStatus('loading')
     setError('')
     try {
-      const res = await axios.post('/api/fine-lookup', { citationNumber, lastName })
+      const res = await axios.post(`${API}/api/pd-fine-lookup`, { citationNumber, lastName })
       setStatus('idle')
       onFound(res.data)
     } catch (err) {
@@ -131,7 +133,7 @@ function PaymentStep({ citation, onBack, onSuccess }) {
   async function handleSubmit() {
     setStep('processing')
     try {
-      const res = await axios.post('/api/fine-payment', {
+      const res = await axios.post(`${API}/api/pd-fine-payment`, {
         citationId: citation.id,
         citationStatus: citation.status,
         amount: balance,

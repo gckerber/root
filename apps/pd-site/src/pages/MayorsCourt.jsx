@@ -4,6 +4,8 @@ import { Gavel, Calendar, Clock, MapPin, ChevronDown, ChevronUp, CheckCircle, Al
 import { format, parseISO } from 'date-fns'
 import axios from 'axios'
 
+const API = import.meta.env.VITE_API_BASE_URL || 'https://func-village-prod.azurewebsites.net'
+
 const DEFAULT_FAQS = [
   { id: 'd1', question: 'Can I request a continuance (postponement)?', answer: 'Yes. Contact Village Hall at (740) 568-7800 before your court date to request a continuance. Continuances are granted at the court\'s discretion and are not guaranteed.' },
   { id: 'd2', question: 'What happens if I miss my court date?', answer: 'Failure to appear may result in additional fines, suspension of your driver\'s license, or an arrest warrant. Contact Village Hall immediately if you cannot make your court date.' },
@@ -17,7 +19,7 @@ function useCourtSchedule() {
   const [dates, setDates] = useState([])
   const [loading, setLoading] = useState(true)
   useEffect(() => {
-    axios.get('/api/court-schedule', { params: { upcoming: 'true' } })
+    axios.get(`${API}/api/pd-court-schedule`, { params: { upcoming: 'true' } })
       .then(r => setDates(r.data.items || []))
       .catch(() => setDates([]))
       .finally(() => setLoading(false))
@@ -28,7 +30,7 @@ function useCourtSchedule() {
 function useFaq() {
   const [faqs, setFaqs] = useState([])
   useEffect(() => {
-    axios.get('/api/faq').then(r => setFaqs(r.data.items || [])).catch(() => {})
+    axios.get(`${API}/api/pd-faq`).then(r => setFaqs(r.data.items || [])).catch(() => {})
   }, [])
   return faqs.length > 0 ? faqs : DEFAULT_FAQS
 }

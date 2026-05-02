@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Save, Phone, MapPin, Clock, Mail, Shield } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
-const PD_API = import.meta.env.VITE_PD_API_URL || 'https://pd.saintlouisvilleohio.gov'
+const PD_API = import.meta.env.VITE_PD_API_URL || 'https://func-village-prod.azurewebsites.net'
 
 const DEFAULTS = {
   address: '100 N. High Street',

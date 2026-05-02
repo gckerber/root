@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, Save, X, Search, Shield } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 import { format, parseISO } from 'date-fns'
 
-const PD_API = import.meta.env.VITE_PD_API_URL || 'https://pd.saintlouisvilleohio.gov'
+const PD_API = import.meta.env.VITE_PD_API_URL || 'https://func-village-prod.azurewebsites.net'
 
 const STATUSES = ['unpaid', 'paid', 'court', 'dismissed']
 const VIOLATION_TYPES = ['Speeding', 'Stop Sign Violation', 'Red Light Violation', 'No Seat Belt', 'Failure to Yield', 'Improper Turn', 'No Valid License', 'No Insurance', 'Vehicle Equipment Violation', 'Noise Violation', 'Parking Violation', 'Other']
@@ -143,7 +143,7 @@ export default function PDAdmin() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    fetch(`${PD_API}/api/citations`, { headers: { 'x-admin-key': auth.key } })
+    fetch(`${PD_API}/api/pd-citations`, { headers: { 'x-admin-key': auth.key } })
       .then(r => r.json())
       .then(d => setCitations(d.items || []))
       .catch(() => toast('Could not load citations', 'error'))
@@ -152,7 +152,7 @@ export default function PDAdmin() {
 
   async function handleSave(form) {
     const isEdit = !!form.id
-    const url = isEdit ? `${PD_API}/api/citations?id=${form.id}` : `${PD_API}/api/citations`
+    const url = isEdit ? `${PD_API}/api/pd-citations?id=${form.id}` : `${PD_API}/api/pd-citations`
     const res = await fetch(url, {
       method: isEdit ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
@@ -175,7 +175,7 @@ export default function PDAdmin() {
 
   async function handleStatusChange(citation, newStatus) {
     try {
-      const res = await fetch(`${PD_API}/api/citations?id=${citation.id}`, {
+      const res = await fetch(`${PD_API}/api/pd-citations?id=${citation.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
         body: JSON.stringify({ ...citation, status: newStatus }),
@@ -192,7 +192,7 @@ export default function PDAdmin() {
   async function handleDelete(citation) {
     if (!confirm(`Delete citation ${citation.citationNumber}?`)) return
     try {
-      await fetch(`${PD_API}/api/citations?id=${citation.id}&status=${citation.status}`, {
+      await fetch(`${PD_API}/api/pd-citations?id=${citation.id}&status=${citation.status}`, {
         method: 'DELETE',
         headers: { 'x-admin-key': auth.key },
       })
