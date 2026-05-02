@@ -13,7 +13,7 @@ public class StorageService
 
     // All allowed upload containers
     private static readonly HashSet<string> AllowedContainers =
-        new() { "minutes", "ordinances", "photos", "hero", "officials", "events" };
+        new() { "minutes", "ordinances", "photos", "hero", "officials", "events", "pd-hero" };
 
     public StorageService(ILogger<StorageService> logger)
     {

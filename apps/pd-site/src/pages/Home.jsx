@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import { Shield, CreditCard, Gavel, Phone, MapPin, Clock, ChevronRight, AlertTriangle } from 'lucide-react'
 import axios from 'axios'
 
+const API = import.meta.env.VITE_API_BASE_URL || 'https://func-village-prod.azurewebsites.net'
+
 const CONTACT_DEFAULTS = {
   address: '100 N. High Street',
   address2: 'Saint Louisville, OH 43071',
@@ -23,7 +25,7 @@ const DEMO_IMAGES = [
 function useHeroImages() {
   const [images, setImages] = useState([])
   useEffect(() => {
-    axios.get('/api/pd-images').then(r => setImages(r.data.items || [])).catch(() => {})
+    axios.get(`${API}/api/pd-images`).then(r => setImages(r.data.items || [])).catch(() => {})
   }, [])
   return images
 }
@@ -31,7 +33,7 @@ function useHeroImages() {
 function useContact() {
   const [contact, setContact] = useState(CONTACT_DEFAULTS)
   useEffect(() => {
-    axios.get('/api/pd-contact').then(r => setContact(r.data)).catch(() => {})
+    axios.get(`${API}/api/pd-contact`).then(r => setContact(r.data)).catch(() => {})
   }, [])
   return contact
 }

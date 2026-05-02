@@ -49,6 +49,12 @@ public class CosmosService
         return _db.GetContainer(name);
     }
 
+    public Container GetContainer(string databaseName, string containerName)
+    {
+        if (_client == null) throw new InvalidOperationException("Cosmos DB not available");
+        return _client.GetDatabase(databaseName).GetContainer(containerName);
+    }
+
     public async Task<List<T>> QueryAsync<T>(string containerName, QueryDefinition query)
     {
         var container = GetContainer(containerName);

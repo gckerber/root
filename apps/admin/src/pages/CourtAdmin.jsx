@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, Save, X, Gavel, Calendar } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 import { format, parseISO } from 'date-fns'
 
-const PD_API = import.meta.env.VITE_PD_API_URL || 'https://pd.saintlouisvilleohio.gov'
+const PD_API = import.meta.env.VITE_PD_API_URL || 'https://func-village-prod.azurewebsites.net'
 
 function CourtForm({ item, onSave, onCancel }) {
   const toast = useToast()
@@ -79,7 +79,7 @@ export default function CourtAdmin() {
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
-    fetch(`${PD_API}/api/court-schedule`, { headers: { 'x-admin-key': auth.key } })
+    fetch(`${PD_API}/api/pd-court-schedule`, { headers: { 'x-admin-key': auth.key } })
       .then(r => r.json())
       .then(d => setDates(d.items || []))
       .catch(() => toast('Could not load court dates', 'error'))
@@ -88,7 +88,7 @@ export default function CourtAdmin() {
 
   async function handleSave(form) {
     const isEdit = !!form.id
-    const url = isEdit ? `${PD_API}/api/court-schedule?id=${form.id}` : `${PD_API}/api/court-schedule`
+    const url = isEdit ? `${PD_API}/api/pd-court-schedule?id=${form.id}` : `${PD_API}/api/pd-court-schedule`
     const payload = {
       ...form,
       year: new Date(form.date).getFullYear(),
@@ -112,7 +112,7 @@ export default function CourtAdmin() {
   async function handleDelete(item) {
     if (!confirm(`Delete court date on ${format(parseISO(item.date), 'MMM d, yyyy')}?`)) return
     try {
-      await fetch(`${PD_API}/api/court-schedule?id=${item.id}&year=${item.year}`, {
+      await fetch(`${PD_API}/api/pd-court-schedule?id=${item.id}&year=${item.year}`, {
         method: 'DELETE',
         headers: { 'x-admin-key': auth.key },
       })

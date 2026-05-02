@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Save, X, HelpCircle, ArrowUp, ArrowDown } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
-const PD_API = import.meta.env.VITE_PD_API_URL || 'https://pd.saintlouisvilleohio.gov'
+const PD_API = import.meta.env.VITE_PD_API_URL || 'https://func-village-prod.azurewebsites.net'
 
 function FAQForm({ item, nextOrder, onSave, onCancel }) {
   const toast = useToast()
@@ -58,7 +58,7 @@ export default function FAQAdmin() {
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
-    fetch(`${PD_API}/api/faq`, { headers: { 'x-admin-key': auth.key } })
+    fetch(`${PD_API}/api/pd-faq`, { headers: { 'x-admin-key': auth.key } })
       .then(r => r.json())
       .then(d => setItems(d.items || []))
       .catch(() => toast('Could not load FAQs', 'error'))
@@ -67,7 +67,7 @@ export default function FAQAdmin() {
 
   async function handleSave(form) {
     const isEdit = !!form.id
-    const url = isEdit ? `${PD_API}/api/faq?id=${form.id}` : `${PD_API}/api/faq`
+    const url = isEdit ? `${PD_API}/api/pd-faq?id=${form.id}` : `${PD_API}/api/pd-faq`
     const res = await fetch(url, {
       method: isEdit ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
@@ -93,7 +93,7 @@ export default function FAQAdmin() {
     const a = { ...sorted[i], order: j }
     const b = { ...sorted[j], order: i }
     await Promise.all([a, b].map(x =>
-      fetch(`${PD_API}/api/faq?id=${x.id}`, {
+      fetch(`${PD_API}/api/pd-faq?id=${x.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
         body: JSON.stringify(x),
@@ -105,7 +105,7 @@ export default function FAQAdmin() {
   async function handleDelete(item) {
     if (!confirm(`Delete FAQ: "${item.question.slice(0, 60)}…"?`)) return
     try {
-      await fetch(`${PD_API}/api/faq?id=${item.id}`, {
+      await fetch(`${PD_API}/api/pd-faq?id=${item.id}`, {
         method: 'DELETE',
         headers: { 'x-admin-key': auth.key },
       })

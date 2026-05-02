@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, Image, ArrowUp, ArrowDown, Upload } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
-const PD_API = import.meta.env.VITE_PD_API_URL || 'https://pd.saintlouisvilleohio.gov'
+const PD_API = import.meta.env.VITE_PD_API_URL || 'https://func-village-prod.azurewebsites.net'
 
 const DEMO_IMAGES = [
   { id: 'demo-1', url: 'https://picsum.photos/seed/slpd1/1400/700', caption: 'Placeholder 1 — upload your own photos to replace' },
@@ -38,7 +38,7 @@ export default function PDHeroAdmin() {
     setUploading(true)
     try {
       // 1. Get SAS upload URL
-      const sasRes = await fetch(`${PD_API}/api/upload-url`, {
+      const sasRes = await fetch(`${PD_API}/api/pd-upload-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
         body: JSON.stringify({ filename: file.name, contentType: file.type }),
