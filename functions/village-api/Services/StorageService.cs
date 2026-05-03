@@ -59,9 +59,20 @@ public class StorageService
 
         var containerClient = _client.GetBlobContainerClient(container);
 
-        // Ensure container exists with public blob access
+        // Ensure container exists with public blob access.
+        // SetAccessPolicyAsync is called after CreateIfNotExistsAsync so that
+        // pre-existing containers (created without public access) are also corrected.
         await containerClient.CreateIfNotExistsAsync(
             Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+        try
+        {
+            await containerClient.SetAccessPolicyAsync(
+                Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not set public access on container '{container}' — images may not be publicly accessible", container);
+        }
 
         var blobClient = containerClient.GetBlobClient(blobName);
 
