@@ -10,6 +10,9 @@ import Bulletin from './pages/Bulletin'
 import OrdinancesPage from './pages/OrdinancesPage'
 import CalendarPage from './pages/CalendarPage'
 import History from './pages/History'
+import PoliceDept from './pages/PoliceDept'
+import PoliceMayorsCourt from './pages/PoliceMayorsCourt'
+import PolicePayFine from './pages/PolicePayFine'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +35,9 @@ export default function App() {
               <Route path="/ordinances" element={<OrdinancesPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/history" element={<History />} />
+              <Route path="/police" element={<PoliceDept />} />
+              <Route path="/police/mayors-court" element={<PoliceMayorsCourt />} />
+              <Route path="/police/fines" element={<PolicePayFine />} />
             </Routes>
           </main>
           <Footer />
