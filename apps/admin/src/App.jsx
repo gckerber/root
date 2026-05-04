@@ -4,6 +4,7 @@ import { AuthProvider, ToastProvider, useAuth } from './utils/context'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import HeroEditor from './pages/HeroEditor'
+import VillageImagesAdmin from './pages/VillageImagesAdmin'
 import Officials from './pages/Officials'
 import MinutesAdmin from './pages/MinutesAdmin'
 import BulletinAdmin from './pages/BulletinAdmin'
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="hero" element={<HeroEditor />} />
+              <Route path="hero-images" element={<VillageImagesAdmin />} />
               <Route path="officials" element={<Officials />} />
               <Route path="minutes" element={<MinutesAdmin />} />
               <Route path="bulletin" element={<BulletinAdmin />} />

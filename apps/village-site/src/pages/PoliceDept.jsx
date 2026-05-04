@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, AlertTriangle, Mail,
 } from 'lucide-react'
 import axios from 'axios'
+import HeroCarousel from '../components/HeroCarousel'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
@@ -21,10 +22,9 @@ const DEFAULTS = {
 
 export default function PoliceDept() {
   const [contact, setContact] = useState(DEFAULTS)
-  const [images, setImages] = useState([])
-  const [faqs, setFaqs] = useState([])
+  const [images,  setImages]  = useState([])
+  const [faqs,    setFaqs]    = useState([])
   const [openFaq, setOpenFaq] = useState(null)
-  const [imgIdx, setImgIdx] = useState(0)
 
   useEffect(() => {
     axios.get(`${API}/api/pd-contact`).then(r => setContact({ ...DEFAULTS, ...r.data })).catch(() => {})
@@ -32,34 +32,37 @@ export default function PoliceDept() {
     axios.get(`${API}/api/pd-faq`).then(r => setFaqs(r.data.items || [])).catch(() => {})
   }, [])
 
-  useEffect(() => {
-    if (images.length <= 1) return
-    const t = setInterval(() => setImgIdx(i => (i + 1) % images.length), 5000)
-    return () => clearInterval(t)
-  }, [images.length])
-
   return (
     <div>
-      {/* Page header */}
-      <div className="bg-blue-900 text-white py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ── Full-width hero carousel ─────────────────────────────── */}
+      <HeroCarousel
+        images={images}
+        heightClass="h-[55vh] min-h-[380px] max-h-[680px]"
+        gradient="bg-gradient-to-t from-blue-950/85 via-blue-900/40 to-transparent"
+      >
+        {/* PD overlay — shield + title at the bottom like the village hero */}
+        <div className="h-full flex flex-col justify-end pb-10 px-6 sm:px-12 lg:px-20 max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-blue-700 rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="w-14 h-14 bg-blue-700/80 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-500/30">
               <Shield size={28} className="text-yellow-400" />
             </div>
             <div>
-              <p className="text-blue-300 text-sm font-medium uppercase tracking-widest">Village of Saint Louisville</p>
-              <h1 className="text-3xl font-bold">Police Department</h1>
+              <p className="text-blue-300 text-sm font-medium uppercase tracking-widest drop-shadow">
+                Village of Saint Louisville
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">
+                Police Department
+              </h1>
             </div>
           </div>
-          <p className="mt-4 text-blue-200 max-w-2xl text-sm leading-relaxed">
-            The Saint Louisville Police Department is committed to protecting and serving our community
-            with professionalism, integrity, and respect for every resident we serve.
+          <p className="mt-3 text-blue-200 max-w-xl text-sm leading-relaxed drop-shadow">
+            Committed to protecting and serving our community with professionalism,
+            integrity, and respect for every resident.
           </p>
         </div>
-      </div>
+      </HeroCarousel>
 
-      {/* Emergency banner */}
+      {/* ── Emergency banner ─────────────────────────────────────── */}
       <div className="bg-red-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap gap-6 items-center">
           <div className="flex items-center gap-2">
@@ -75,7 +78,7 @@ export default function PoliceDept() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Quick action cards */}
+        {/* ── Quick action cards ───────────────────────────────────── */}
         <div className="grid sm:grid-cols-3 gap-4 mb-10">
           <Link
             to="/police/mayors-court"
@@ -117,85 +120,52 @@ export default function PoliceDept() {
           </a>
         </div>
 
-        {/* Contact + Carousel */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-10">
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-              <h2 className="font-bold text-gray-800 text-lg mb-4">Contact &amp; Location</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <MapPin size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-700">{contact.address}</p>
-                    <p className="text-sm text-gray-500">{contact.address2}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-700">{contact.phone}</p>
-                    <p className="text-xs text-gray-400">Non-emergency line</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-gray-600 whitespace-pre-line">{contact.hours}</p>
+        {/* ── Contact + Department Details ─────────────────────────── */}
+        <div className="grid sm:grid-cols-2 gap-6 mb-10">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h2 className="font-bold text-gray-800 text-lg mb-4">Contact &amp; Location</h2>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <MapPin size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-gray-700">{contact.address}</p>
+                  <p className="text-sm text-gray-500">{contact.address2}</p>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-              <h2 className="font-bold text-gray-800 text-lg mb-4">Department Details</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Chief of Police</p>
-                  <p className="font-medium text-gray-800 text-sm">{contact.chief}</p>
+              <div className="flex items-start gap-3">
+                <Phone size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-gray-700">{contact.phone}</p>
+                  <p className="text-xs text-gray-400">Non-emergency line</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Court Presided By</p>
-                  <p className="font-medium text-gray-800 text-sm">{contact.courtPresidedBy}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3 col-span-2">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Jurisdiction</p>
-                  <p className="font-medium text-gray-800 text-sm">Village of Saint Louisville, OH</p>
-                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Clock size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-600 whitespace-pre-line">{contact.hours}</p>
               </div>
             </div>
           </div>
 
-          {/* Image carousel */}
-          {images.length > 0 ? (
-            <div className="relative bg-gray-900 rounded-xl overflow-hidden" style={{ minHeight: '280px' }}>
-              {images.map((img, i) => (
-                <img
-                  key={img.id}
-                  src={img.url}
-                  alt={img.caption || 'Police Department'}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${i === imgIdx ? 'opacity-100' : 'opacity-0'}`}
-                />
-              ))}
-              {images.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                  {images.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setImgIdx(i)}
-                      className={`h-1.5 rounded-full transition-all ${i === imgIdx ? 'bg-yellow-400 w-5' : 'bg-white/50 w-1.5'}`}
-                    />
-                  ))}
-                </div>
-              )}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h2 className="font-bold text-gray-800 text-lg mb-4">Department Details</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Chief of Police</p>
+                <p className="font-medium text-gray-800 text-sm">{contact.chief}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Court Presided By</p>
+                <p className="font-medium text-gray-800 text-sm">{contact.courtPresidedBy}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Jurisdiction</p>
+                <p className="font-medium text-gray-800 text-sm">Village of Saint Louisville, OH</p>
+              </div>
             </div>
-          ) : (
-            <div className="bg-blue-50 rounded-xl border border-blue-100 p-8 flex flex-col items-center justify-center text-center">
-              <Shield size={48} className="text-blue-200 mb-4" />
-              <p className="text-blue-900 font-semibold">Saint Louisville Police Department</p>
-              <p className="text-blue-400 text-sm mt-1">Protecting &amp; Serving Our Community</p>
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* FAQ */}
+        {/* ── FAQ ──────────────────────────────────────────────────── */}
         {faqs.length > 0 && (
           <div>
             <h2 className="font-bold text-gray-800 text-xl mb-4">Frequently Asked Questions</h2>
@@ -208,7 +178,7 @@ export default function PoliceDept() {
                   >
                     <span className="font-medium text-gray-800 pr-4">{faq.question}</span>
                     {openFaq === i
-                      ? <ChevronUp size={18} className="text-gray-400 flex-shrink-0" />
+                      ? <ChevronUp   size={18} className="text-gray-400 flex-shrink-0" />
                       : <ChevronDown size={18} className="text-gray-400 flex-shrink-0" />}
                   </button>
                   {openFaq === i && (

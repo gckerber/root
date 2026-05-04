@@ -232,6 +232,20 @@ public class PdCourtDate
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }
 
+public class VillageImage
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = string.Empty;
+    [JsonPropertyName("caption")]
+    public string? Caption { get; set; }
+    [JsonPropertyName("order")]
+    public int Order { get; set; }
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "image";
+}
+
 public class PdImage
 {
     [JsonPropertyName("id")]

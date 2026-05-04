@@ -10,7 +10,8 @@ import { useState } from 'react'
 
 const NAV = [
   { to: '/',            icon: LayoutDashboard, label: 'Dashboard',       color: 'text-slate-400' },
-  { to: '/hero',        icon: Image,           label: 'Hero Image',      color: 'text-purple-400',  desc: 'Front page photo' },
+  { to: '/hero',        icon: Image,           label: 'Hero Image',      color: 'text-purple-400',  desc: 'Single fallback photo' },
+  { to: '/hero-images', icon: Image,           label: 'Hero Carousel',   color: 'text-purple-300',  desc: 'Homepage slideshow' },
   { to: '/officials',   icon: Users,           label: 'Officials',       color: 'text-blue-400',    desc: 'Mayor & Council' },
   { to: '/minutes',     icon: FileText,        label: 'Council Minutes', color: 'text-green-400',   desc: 'Meetings & files' },
   { to: '/bulletin',    icon: Megaphone,       label: 'Bulletin Board',  color: 'text-yellow-400',  desc: 'Announcements' },
