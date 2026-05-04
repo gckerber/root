@@ -7,12 +7,19 @@ const API = 'https://func-village-prod.azurewebsites.net'
 const TITLE_OPTIONS = ['Mayor', 'Village Council', 'Other']
 
 // ── Committee tag input ──────────────────────────────────────────────────────
+const CHAIR_SUFFIX = ' (Chair)'
+const isChair  = (tag) => tag.endsWith(CHAIR_SUFFIX)
+const baseName = (tag) => isChair(tag) ? tag.slice(0, -CHAIR_SUFFIX.length) : tag
+
 function CommitteeTagInput({ value = [], onChange }) {
   const [inputVal, setInputVal] = useState('')
 
   function addTag(raw) {
-    const tag = raw.trim().replace(/,+$/, '').trim()
-    if (tag && !value.includes(tag)) onChange([...value, tag])
+    // Strip any manually typed "(Chair)" — user should use the ★ button
+    const tag = raw.trim().replace(/,+$/, '').replace(/\s*\(chair\)\s*$/i, '').trim()
+    if (!tag) return
+    const alreadyExists = value.some((t) => baseName(t).toLowerCase() === tag.toLowerCase())
+    if (!alreadyExists) onChange([...value, tag])
     setInputVal('')
   }
 
@@ -29,28 +36,56 @@ function CommitteeTagInput({ value = [], onChange }) {
     onChange(value.filter((t) => t !== tag))
   }
 
+  function toggleChair(tag) {
+    onChange(value.map((t) =>
+      t === tag
+        ? isChair(t) ? baseName(t) : t + CHAIR_SUFFIX
+        : t
+    ))
+  }
+
   return (
     <div>
       <label className="label flex items-center gap-1">
         <Tag size={12} /> Committees
-        <span className="text-slate-600 font-normal normal-case text-xs">(type &amp; press Enter to add)</span>
+        <span className="text-slate-600 font-normal normal-case text-xs ml-1">
+          — type &amp; press Enter to add · click ★ to toggle chairperson
+        </span>
       </label>
       <div className="min-h-[42px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 flex flex-wrap gap-1.5 items-center focus-within:border-blue-500 transition-colors">
-        {value.map((tag) => (
-          <span
-            key={tag}
-            className="inline-flex items-center gap-1 bg-blue-600/30 text-blue-300 border border-blue-600/40 rounded-full px-2.5 py-0.5 text-xs font-medium"
-          >
-            {tag}
-            <button
-              type="button"
-              onClick={() => removeTag(tag)}
-              className="text-blue-400 hover:text-red-400 transition-colors ml-0.5"
+        {value.map((tag) => {
+          const chair = isChair(tag)
+          return (
+            <span
+              key={tag}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                chair
+                  ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'
+                  : 'bg-blue-600/30 text-blue-300 border-blue-600/40'
+              }`}
             >
-              <X size={10} />
-            </button>
-          </span>
-        ))}
+              {/* Chair toggle star */}
+              <button
+                type="button"
+                onClick={() => toggleChair(tag)}
+                title={chair ? 'Remove chairperson' : 'Set as chairperson'}
+                className={`transition-colors ${chair ? 'text-yellow-400 hover:text-yellow-200' : 'text-slate-600 hover:text-yellow-400'}`}
+              >
+                ★
+              </button>
+              {baseName(tag)}
+              {chair && <span className="opacity-60 text-xs">(Chair)</span>}
+              {/* Remove tag */}
+              <button
+                type="button"
+                onClick={() => removeTag(tag)}
+                className="text-slate-500 hover:text-red-400 transition-colors ml-0.5"
+              >
+                <X size={10} />
+              </button>
+            </span>
+          )
+        })}
         <input
           type="text"
           value={inputVal}
