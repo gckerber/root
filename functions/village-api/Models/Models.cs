@@ -74,6 +74,10 @@ public class Official
     public string? PhotoUrl { get; set; }
     [JsonPropertyName("order")]
     public int Order { get; set; }
+    [JsonPropertyName("committees")]
+    public List<string>? Committees { get; set; }
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
     [JsonPropertyName("createdAt")]
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }
