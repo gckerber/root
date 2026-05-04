@@ -1,18 +1,77 @@
 // apps/admin/src/pages/Officials.jsx
-import { useState, useEffect, useRef } from 'react'
-import { Plus, Pencil, Trash2, Save, X, Upload, User } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Plus, Pencil, Trash2, Save, X, User, Tag } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
 const API = 'https://func-village-prod.azurewebsites.net'
-
-// Only these three title options
 const TITLE_OPTIONS = ['Mayor', 'Village Council', 'Other']
 
+// ── Committee tag input ──────────────────────────────────────────────────────
+function CommitteeTagInput({ value = [], onChange }) {
+  const [inputVal, setInputVal] = useState('')
+
+  function addTag(raw) {
+    const tag = raw.trim().replace(/,+$/, '').trim()
+    if (tag && !value.includes(tag)) onChange([...value, tag])
+    setInputVal('')
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag(inputVal)
+    } else if (e.key === 'Backspace' && inputVal === '' && value.length > 0) {
+      onChange(value.slice(0, -1))
+    }
+  }
+
+  function removeTag(tag) {
+    onChange(value.filter((t) => t !== tag))
+  }
+
+  return (
+    <div>
+      <label className="label flex items-center gap-1">
+        <Tag size={12} /> Committees
+        <span className="text-slate-600 font-normal normal-case text-xs">(type &amp; press Enter to add)</span>
+      </label>
+      <div className="min-h-[42px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 flex flex-wrap gap-1.5 items-center focus-within:border-blue-500 transition-colors">
+        {value.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1 bg-blue-600/30 text-blue-300 border border-blue-600/40 rounded-full px-2.5 py-0.5 text-xs font-medium"
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={() => removeTag(tag)}
+              className="text-blue-400 hover:text-red-400 transition-colors ml-0.5"
+            >
+              <X size={10} />
+            </button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => inputVal.trim() && addTag(inputVal)}
+          placeholder={value.length === 0 ? 'Finance and Safety (Chair), Streets and Sidewalks…' : ''}
+          className="flex-grow bg-transparent outline-none text-sm text-slate-200 placeholder-slate-600 min-w-[160px]"
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Official form ────────────────────────────────────────────────────────────
 function OfficialForm({ official, onSave, onCancel, adminKey }) {
   const toast = useToast()
   const fileRef = useRef()
   const [form, setForm] = useState(official || {
-    name: '', title: 'Village Council', bio: '', email: '', photoUrl: '', order: 99
+    name: '', title: 'Village Council', bio: '', email: '',
+    phone: '', photoUrl: '', order: 99, committees: [],
   })
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(official?.photoUrl || null)
@@ -61,11 +120,12 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
 
   return (
     <div className="bg-slate-800/60 rounded-xl p-4 space-y-3 border border-slate-700">
-      {/* Photo upload */}
+      {/* Photo + name/title row */}
       <div className="flex items-start gap-4">
         <div
           className="w-20 h-20 rounded-xl bg-slate-700 flex items-center justify-center cursor-pointer overflow-hidden flex-shrink-0 hover:bg-slate-600 transition-colors border-2 border-dashed border-slate-600"
           onClick={() => fileRef.current?.click()}
+          title="Click to upload photo"
         >
           {photoPreview ? (
             <img src={photoPreview} alt="Photo" className="w-full h-full object-cover" />
@@ -77,6 +137,7 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+
         <div className="flex-grow space-y-3">
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
@@ -90,19 +151,35 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
               </select>
             </div>
           </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">Email Address</label>
+              <input className="input" type="email" value={form.email} onChange={f('email')}
+                placeholder="name@saintlouisvilleohio.gov" />
+            </div>
+            <div>
+              <label className="label">Phone Number</label>
+              <input className="input" type="tel" value={form.phone || ''} onChange={f('phone')}
+                placeholder="(740) 000-0000" />
+            </div>
+          </div>
         </div>
       </div>
 
       <div>
-        <label className="label">Email Address</label>
-        <input className="input" type="email" value={form.email} onChange={f('email')}
-          placeholder="name@saintlouisvilleohio.gov" />
-      </div>
-      <div>
         <label className="label">Bio</label>
-        <textarea className="input resize-none" rows={3} value={form.bio} onChange={f('bio')}
-          placeholder="A short description of this official's role and background..." />
+        <textarea className="input resize-none" rows={2} value={form.bio} onChange={f('bio')}
+          placeholder="A short description of this official's role and background…" />
       </div>
+
+      {/* Committees — only show for council members */}
+      {form.title === 'Village Council' && (
+        <CommitteeTagInput
+          value={form.committees || []}
+          onChange={(committees) => setForm((p) => ({ ...p, committees }))}
+        />
+      )}
+
       <div className="flex gap-2 pt-1">
         <button onClick={handleSave} disabled={uploading} className="btn-primary">
           {uploading
@@ -115,6 +192,7 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
   )
 }
 
+// ── Main page ────────────────────────────────────────────────────────────────
 export default function Officials() {
   const { auth } = useAuth()
   const toast = useToast()
@@ -189,7 +267,7 @@ export default function Officials() {
               <OfficialForm official={o} onSave={save} onCancel={() => setEditingId(null)} adminKey={auth.key} />
             </div>
           ) : (
-            <div className="p-4 flex items-center gap-4">
+            <div className="p-4 flex items-start gap-4">
               {o.photoUrl ? (
                 <img src={o.photoUrl} alt={o.name}
                   className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
@@ -201,8 +279,17 @@ export default function Officials() {
               )}
               <div className="flex-grow min-w-0">
                 <div className="text-white font-medium leading-tight">{o.name}</div>
-                <div className="text-slate-500 text-xs">{o.title} · {o.email}</div>
+                <div className="text-slate-500 text-xs">{o.title}{o.email ? ` · ${o.email}` : ''}{o.phone ? ` · ${o.phone}` : ''}</div>
                 {o.bio && <div className="text-slate-500 text-xs mt-0.5 truncate">{o.bio}</div>}
+                {o.committees?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {o.committees.map((c) => (
+                      <span key={c} className="bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-full px-2 py-0.5 text-xs">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 flex-shrink-0">
                 <button onClick={() => setEditingId(o.id)} className="btn-ghost py-1.5 px-3">

@@ -182,6 +182,9 @@ public class OfficialsFunctions : FunctionBase
             Title = body.Title.Trim(),
             Bio = body.Bio?.Trim() ?? string.Empty,
             Email = body.Email?.Trim() ?? string.Empty,
+            Phone = body.Phone?.Trim(),
+            PhotoUrl = body.PhotoUrl,
+            Committees = body.Committees,
             Order = body.Order,
             CreatedAt = DateTime.UtcNow.ToString("o")
         };
@@ -210,6 +213,9 @@ public class OfficialsFunctions : FunctionBase
         existing.Title = body.Title?.Trim() ?? existing.Title;
         existing.Bio = body.Bio?.Trim() ?? existing.Bio;
         existing.Email = body.Email?.Trim() ?? existing.Email;
+        existing.Phone = body.Phone?.Trim() ?? existing.Phone;
+        existing.PhotoUrl = body.PhotoUrl ?? existing.PhotoUrl;
+        existing.Committees = body.Committees ?? existing.Committees;
         existing.Order = body.Order;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(id));
