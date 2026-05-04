@@ -27,10 +27,18 @@ public class EventsFunctions : FunctionBase
         try
         {
             var month = req.Query["month"];
+            var department = req.Query["department"];
             QueryDefinition query;
-            if (!string.IsNullOrEmpty(month))
+            if (!string.IsNullOrEmpty(month) && !string.IsNullOrEmpty(department))
+                query = new QueryDefinition("SELECT * FROM c WHERE c.month = @month AND c.department = @dept")
+                    .WithParameter("@month", month)
+                    .WithParameter("@dept", department);
+            else if (!string.IsNullOrEmpty(month))
                 query = new QueryDefinition("SELECT * FROM c WHERE c.month = @month")
                     .WithParameter("@month", month);
+            else if (!string.IsNullOrEmpty(department))
+                query = new QueryDefinition("SELECT * FROM c WHERE c.department = @dept")
+                    .WithParameter("@dept", department);
             else
                 query = new QueryDefinition("SELECT * FROM c");
 
@@ -70,6 +78,7 @@ public class EventsFunctions : FunctionBase
             Location = body.Location?.Trim() ?? "Village Hall",
             Description = body.Description?.Trim(),
             PhotoUrl = body.PhotoUrl?.Trim(),
+            Department = body.Department?.Trim(),
             CreatedAt = DateTime.UtcNow.ToString("o")
         };
 
@@ -130,6 +139,7 @@ public class EventsFunctions : FunctionBase
                 Location = body.Location?.Trim() ?? existing.Location,
                 Description = body.Description?.Trim(),
                 PhotoUrl = body.PhotoUrl?.Trim() ?? existing.PhotoUrl,
+                Department = body.Department?.Trim() ?? existing.Department,
                 CreatedAt = existing.CreatedAt
             };
             var created = await _cosmos.CreateAsync(Container, newItem, new PartitionKey(newMonth));
@@ -143,6 +153,7 @@ public class EventsFunctions : FunctionBase
         existing.Location = body.Location?.Trim() ?? existing.Location;
         existing.Description = body.Description?.Trim();
         existing.PhotoUrl = body.PhotoUrl?.Trim() ?? existing.PhotoUrl;
+        existing.Department = body.Department?.Trim() ?? existing.Department;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Month));
         return await OkJson(req, updated);

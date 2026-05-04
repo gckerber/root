@@ -4,7 +4,7 @@ import { Plus, Pencil, Trash2, Save, X, User, Tag } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
 const API = 'https://func-village-prod.azurewebsites.net'
-const TITLE_OPTIONS = ['Mayor', 'Village Council', 'Other']
+const TITLE_OPTIONS = ['Mayor', 'Village Council', 'Police Department', 'Other']
 
 // ── Committee tag input ──────────────────────────────────────────────────────
 const CHAIR_SUFFIX = ' (Chair)'

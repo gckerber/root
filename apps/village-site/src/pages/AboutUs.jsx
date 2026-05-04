@@ -141,7 +141,8 @@ export default function AboutUs() {
 
   const mayor   = officials.filter((o) => o.title === 'Mayor')
   const council = officials.filter((o) => o.title === 'Village Council').sort((a, b) => a.order - b.order)
-  const other   = officials.filter((o) => o.title !== 'Mayor' && o.title !== 'Village Council').sort((a, b) => a.order - b.order)
+  // Police Department officials appear on the PD page, not here
+  const other   = officials.filter((o) => o.title !== 'Mayor' && o.title !== 'Village Council' && o.title !== 'Police Department').sort((a, b) => a.order - b.order)
 
   // Build a stable list of all unique base-committee names and a colour map
   const { committeeList, colourMap } = useMemo(() => {

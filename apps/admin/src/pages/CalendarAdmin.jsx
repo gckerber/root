@@ -10,7 +10,7 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
   const toast = useToast()
   const fileRef = useRef()
   const [form, setForm] = useState(item || {
-    title: '', date: '', time: '', location: 'Village Hall', description: '', photoUrl: '', month: ''
+    title: '', date: '', time: '', location: 'Village Hall', description: '', photoUrl: '', month: '', department: 'village'
   })
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(item?.photoUrl || null)
@@ -85,6 +85,14 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
       <div>
         <label className="label">Location</label>
         <input className="input" value={form.location} onChange={f('location')} placeholder="Village Hall" />
+      </div>
+
+      <div>
+        <label className="label">Department</label>
+        <select className="input" value={form.department || 'village'} onChange={f('department')}>
+          <option value="village">Village</option>
+          <option value="police">Police Department</option>
+        </select>
       </div>
 
       <div>
