@@ -6,7 +6,7 @@ import { useAuth, useToast } from '../utils/context'
 const API = 'https://func-village-prod.azurewebsites.net'
 
 // Removed 'health' category as requested
-const CATEGORIES = ['zoning', 'general', 'traffic', 'utilities']
+const CATEGORIES = ['zoning', 'general', 'traffic', 'utilities', 'police']
 
 function OrdForm({ item, onSave, onCancel, adminKey }) {
   const toast = useToast()

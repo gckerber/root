@@ -120,6 +120,8 @@ public class CalendarEvent
     public string? Description { get; set; }
     [JsonPropertyName("photoUrl")]
     public string? PhotoUrl { get; set; }
+    [JsonPropertyName("department")]
+    public string? Department { get; set; }
     [JsonPropertyName("createdAt")]
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }
