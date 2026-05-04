@@ -78,6 +78,14 @@ public class Official
     public List<string>? Committees { get; set; }
     [JsonPropertyName("phone")]
     public string? Phone { get; set; }
+    [JsonPropertyName("phoneWork")]
+    public string? PhoneWork { get; set; }
+    [JsonPropertyName("phoneCell")]
+    public string? PhoneCell { get; set; }
+    [JsonPropertyName("phoneHome")]
+    public string? PhoneHome { get; set; }
+    [JsonPropertyName("department")]
+    public string? Department { get; set; }
     [JsonPropertyName("createdAt")]
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }
@@ -120,6 +128,8 @@ public class CalendarEvent
     public string? Description { get; set; }
     [JsonPropertyName("photoUrl")]
     public string? PhotoUrl { get; set; }
+    [JsonPropertyName("photoUrls")]
+    public List<string>? PhotoUrls { get; set; }
     [JsonPropertyName("department")]
     public string? Department { get; set; }
     [JsonPropertyName("createdAt")]

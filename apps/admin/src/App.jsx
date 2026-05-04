@@ -3,15 +3,15 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, ToastProvider, useAuth } from './utils/context'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import HeroEditor from './pages/HeroEditor'
 import VillageImagesAdmin from './pages/VillageImagesAdmin'
 import Officials from './pages/Officials'
+import PDOfficialsAdmin from './pages/PDOfficialsAdmin'
 import MinutesAdmin from './pages/MinutesAdmin'
 import BulletinAdmin from './pages/BulletinAdmin'
 import OrdinancesAdmin from './pages/OrdinancesAdmin'
 import CalendarAdmin from './pages/CalendarAdmin'
+import PDCalendarAdmin from './pages/PDCalendarAdmin'
 import HistoryAdmin from './pages/HistoryAdmin'
-import PDAdmin from './pages/PDAdmin'
 import CourtAdmin from './pages/CourtAdmin'
 import PDHeroAdmin from './pages/PDHeroAdmin'
 import FAQAdmin from './pages/FAQAdmin'
@@ -32,7 +32,6 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
-              <Route path="hero" element={<HeroEditor />} />
               <Route path="hero-images" element={<VillageImagesAdmin />} />
               <Route path="officials" element={<Officials />} />
               <Route path="minutes" element={<MinutesAdmin />} />
@@ -40,7 +39,8 @@ export default function App() {
               <Route path="ordinances" element={<OrdinancesAdmin />} />
               <Route path="calendar" element={<CalendarAdmin />} />
               <Route path="history" element={<HistoryAdmin />} />
-              <Route path="pd" element={<PDAdmin />} />
+              <Route path="pd-officials" element={<PDOfficialsAdmin />} />
+              <Route path="pd-calendar" element={<PDCalendarAdmin />} />
               <Route path="court" element={<CourtAdmin />} />
               <Route path="pd-hero" element={<PDHeroAdmin />} />
               <Route path="pd-faq" element={<FAQAdmin />} />

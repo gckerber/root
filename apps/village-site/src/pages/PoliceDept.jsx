@@ -66,14 +66,17 @@ function OfficerCard({ officer }) {
         )}
         <div className="min-w-0">
           <h3 className="font-bold text-gray-900 leading-tight">{officer.name}</h3>
-          <p className="text-sm font-medium text-blue-700">Police Department</p>
-          {officer.phone && (
+          <p className="text-sm font-medium text-blue-700">{officer.title || 'Police Department'}</p>
+          {(officer.phoneWork || officer.phone) && (
             <a
-              href={`tel:${officer.phone.replace(/\D/g, '')}`}
+              href={`tel:${(officer.phoneWork || officer.phone).replace(/\D/g, '')}`}
               className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
             >
-              {officer.phone}
+              {officer.phoneWork || officer.phone}
             </a>
+          )}
+          {officer.phoneCell && (
+            <span className="block text-xs text-gray-400">Cell: {officer.phoneCell}</span>
           )}
         </div>
       </div>
@@ -520,13 +523,28 @@ export default function PoliceDept() {
                         key={event.id}
                         className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                       >
-                        {event.photoUrl && (
-                          <img
-                            src={event.photoUrl}
-                            alt={event.title}
-                            className="w-full h-40 object-cover"
-                          />
-                        )}
+                        {/* Show all photos in a horizontal row, or single photo as full banner */}
+                        {(() => {
+                          const photos = event.photoUrls?.length ? event.photoUrls : (event.photoUrl ? [event.photoUrl] : [])
+                          if (photos.length === 0) return null
+                          if (photos.length === 1) return (
+                            <img src={photos[0]} alt={event.title} className="w-full h-40 object-cover" />
+                          )
+                          return (
+                            <div className="flex gap-0.5 h-36 overflow-hidden">
+                              {photos.slice(0, 3).map((url, i) => (
+                                <div key={i} className="flex-1 relative overflow-hidden">
+                                  <img src={url} alt="" className="w-full h-full object-cover" />
+                                  {i === 2 && photos.length > 3 && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                      <span className="text-white font-bold text-lg">+{photos.length - 3}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })()}
                         <div className="p-6 flex gap-4">
                           <div className="w-12 h-14 bg-blue-50 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
                             <span className="text-blue-700 text-xs font-medium leading-none">

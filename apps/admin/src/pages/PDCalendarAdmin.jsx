@@ -1,5 +1,5 @@
-// apps/admin/src/pages/CalendarAdmin.jsx
-// Manage village calendar events (excludes Police Department events — managed under PD section).
+// apps/admin/src/pages/PDCalendarAdmin.jsx
+// Manage Police Department events. Fetches/creates events with department === 'police'.
 // Supports multiple photos per event.
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, Save, X, Calendar, Clock, MapPin, Upload } from 'lucide-react'
@@ -8,7 +8,7 @@ import { format, parseISO } from 'date-fns'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
-// ── Photo grid ────────────────────────────────────────────────────────────────
+// ── Photo grid (supports multiple saved URLs + pending File objects) ──────────
 function PhotoGrid({ savedUrls, pendingFiles, onRemoveSaved, onRemovePending, onAddClick }) {
   return (
     <div>
@@ -70,7 +70,7 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
   function handlePhotoSelect(e) {
     const files = Array.from(e.target.files || [])
     if (files.length) setPendingFiles((prev) => [...prev, ...files])
-    e.target.value = ''
+    e.target.value = '' // allow re-selecting same file
   }
 
   async function uploadFile(file) {
@@ -108,7 +108,7 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
         date: dateObj.toISOString(),
         photoUrls: allUrls,
         photoUrl: allUrls[0] || '',
-        department: 'village',
+        department: 'police',
       })
     } catch (err) {
       toast(err.message || 'Save failed', 'error')
@@ -117,14 +117,16 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
   }
 
   return (
-    <div className="card p-5 border-pink-600/20 bg-pink-600/5 space-y-3">
+    <div className="card p-5 border-amber-600/20 bg-amber-600/5 space-y-3">
       <h3 className="text-white font-medium flex items-center gap-2">
-        <Calendar size={16} className="text-pink-400" />{item ? 'Edit Event' : 'New Event'}
+        <Calendar size={16} className="text-amber-400" />
+        {item ? 'Edit PD Event' : 'New PD Event'}
       </h3>
 
       <div>
         <label className="label">Event Title</label>
-        <input className="input" value={form.title} onChange={f('title')} placeholder="e.g. Regular Council Meeting" />
+        <input className="input" value={form.title} onChange={f('title')}
+          placeholder="e.g. Community Safety Night" />
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
@@ -146,7 +148,7 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
       <div>
         <label className="label">Description</label>
         <textarea className="input resize-none" rows={3} value={form.description || ''} onChange={f('description')}
-          placeholder="Additional details residents should know..." />
+          placeholder="Event details residents should know…" />
       </div>
 
       <PhotoGrid
@@ -170,8 +172,8 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
   )
 }
 
-// ── Main page ────────────────────────────────────────────────────────────────
-export default function CalendarAdmin() {
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function PDCalendarAdmin() {
   const { auth }  = useAuth()
   const toast     = useToast()
   const [events, setEvents]     = useState([])
@@ -180,10 +182,9 @@ export default function CalendarAdmin() {
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
-    fetch(`${API}/api/events`)
+    fetch(`${API}/api/events?department=police`)
       .then((r) => r.json())
-      // Exclude PD events — managed under the Police Department section
-      .then((d) => setEvents((d.items || []).filter((e) => e.department !== 'police')))
+      .then((d) => setEvents(d.items || []))
       .catch(() => toast('Could not load events', 'error'))
       .finally(() => setLoading(false))
   }, [])
@@ -197,7 +198,7 @@ export default function CalendarAdmin() {
       const res = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
-        body: JSON.stringify({ ...form, department: 'village' }),
+        body: JSON.stringify({ ...form, department: 'police' }),
       })
       if (!res.ok) throw new Error(await res.text())
       const saved = await res.json()
@@ -208,7 +209,7 @@ export default function CalendarAdmin() {
       )
       setAdding(false)
       setEditingId(null)
-      toast(isEdit ? 'Event updated!' : 'Event added to calendar!', 'success')
+      toast(isEdit ? 'Event updated!' : 'Event added!', 'success')
     } catch (err) {
       toast('Save failed: ' + err.message, 'error')
     }
@@ -235,7 +236,7 @@ export default function CalendarAdmin() {
     <div className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between mb-6">
         <p className="text-slate-400 text-sm">
-          Schedule council meetings and community events. Police Department events are managed separately.
+          Events appear on the Police Department page. Supports multiple photos.
         </p>
         <button onClick={() => setAdding(true)} disabled={adding} className="btn-primary">
           <Plus size={15} /> Add Event
@@ -251,6 +252,7 @@ export default function CalendarAdmin() {
           {upcoming.length > 0 && (
             <h3 className="text-slate-400 text-xs font-medium uppercase tracking-wider">Upcoming</h3>
           )}
+
           {upcoming.map((event) =>
             editingId === event.id ? (
               <EventForm
@@ -264,7 +266,11 @@ export default function CalendarAdmin() {
               <div key={event.id} className="card overflow-hidden">
                 {(event.photoUrls?.[0] || event.photoUrl) && (
                   <div className="relative h-28 overflow-hidden">
-                    <img src={event.photoUrls?.[0] || event.photoUrl} alt={event.title} className="w-full h-full object-cover" />
+                    <img
+                      src={event.photoUrls?.[0] || event.photoUrl}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 to-transparent" />
                     {(event.photoUrls?.length || 0) > 1 && (
                       <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
@@ -274,8 +280,8 @@ export default function CalendarAdmin() {
                   </div>
                 )}
                 <div className="p-4 flex gap-4">
-                  <div className="w-12 h-12 bg-pink-600/20 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
-                    <span className="text-pink-400 text-xs font-medium leading-none">
+                  <div className="w-12 h-12 bg-amber-600/20 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-amber-400 text-xs font-medium leading-none">
                       {format(parseISO(event.date), 'MMM')}
                     </span>
                     <span className="text-white font-bold text-lg leading-none">

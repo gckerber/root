@@ -78,6 +78,7 @@ public class EventsFunctions : FunctionBase
             Location = body.Location?.Trim() ?? "Village Hall",
             Description = body.Description?.Trim(),
             PhotoUrl = body.PhotoUrl?.Trim(),
+            PhotoUrls = body.PhotoUrls,
             Department = body.Department?.Trim(),
             CreatedAt = DateTime.UtcNow.ToString("o")
         };
@@ -139,6 +140,7 @@ public class EventsFunctions : FunctionBase
                 Location = body.Location?.Trim() ?? existing.Location,
                 Description = body.Description?.Trim(),
                 PhotoUrl = body.PhotoUrl?.Trim() ?? existing.PhotoUrl,
+                PhotoUrls = body.PhotoUrls ?? existing.PhotoUrls,
                 Department = body.Department?.Trim() ?? existing.Department,
                 CreatedAt = existing.CreatedAt
             };
@@ -153,6 +155,7 @@ public class EventsFunctions : FunctionBase
         existing.Location = body.Location?.Trim() ?? existing.Location;
         existing.Description = body.Description?.Trim();
         existing.PhotoUrl = body.PhotoUrl?.Trim() ?? existing.PhotoUrl;
+        existing.PhotoUrls = body.PhotoUrls ?? existing.PhotoUrls;
         existing.Department = body.Department?.Trim() ?? existing.Department;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Month));

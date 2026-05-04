@@ -17,11 +17,15 @@ function useAllEvents() {
 
 function EventCard({ event }) {
   const date = parseISO(event.date)
+  // Support multiple photos: use first from photoUrls[], fallback to legacy photoUrl
+  const thumbUrl = event.photoUrls?.[0] || event.photoUrl || null
+  const extraCount = (event.photoUrls?.length || 0) > 1 ? event.photoUrls.length - 1 : 0
+
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-      {event.photoUrl ? (
+      {thumbUrl ? (
         <div className="relative h-44 overflow-hidden flex-shrink-0">
-          <img src={event.photoUrl} alt={event.title} className="w-full h-full object-cover" />
+          <img src={thumbUrl} alt={event.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-3 left-3">
             <div className="bg-white rounded-xl px-2.5 py-1.5 text-center shadow">
@@ -33,6 +37,11 @@ function EventCard({ event }) {
               </div>
             </div>
           </div>
+          {extraCount > 0 && (
+            <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
+              +{extraCount} photos
+            </div>
+          )}
         </div>
       ) : (
         <div className="h-1.5 bg-blue-700 flex-shrink-0" />
