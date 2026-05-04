@@ -258,8 +258,7 @@ public class PdSiteFunctions : FunctionBase
             }
             catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
-                // Item may be in a different partition — upsert without partition key constraint
-                var res = await container.UpsertItemAsync(body);
+                var res = await container.UpsertItemAsync(body, new PartitionKey("image"));
                 return await OkJson(req, res.Resource);
             }
         }
@@ -394,8 +393,8 @@ public class PdSiteFunctions : FunctionBase
             body.Type = "config";
 
             var container = PdSettings();
-            // Upsert without explicit partition key — let Cosmos extract it from the document
-            var res = await container.UpsertItemAsync(body);
+            // Explicitly target the 'config' partition (partition key path: /type)
+            var res = await container.UpsertItemAsync(body, new PartitionKey("config"));
             return await OkJson(req, res.Resource);
         }
         catch (Exception ex)
@@ -457,7 +456,6 @@ public class PdSiteFunctions : FunctionBase
             body.Type = "faq";
 
             var container = PdFaq();
-            // Upsert without explicit partition key — let Cosmos extract it from the document
             var res = await container.UpsertItemAsync(body);
             return await CreatedJson(req, res.Resource);
         }
@@ -489,7 +487,6 @@ public class PdSiteFunctions : FunctionBase
             body.Type = "faq";
 
             var container = PdFaq();
-            // Upsert without explicit partition key — let Cosmos extract it from the document
             var res = await container.UpsertItemAsync(body);
             return await OkJson(req, res.Resource);
         }
