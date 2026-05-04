@@ -129,12 +129,12 @@ export default function Home() {
                 <p className="text-slate-400 text-sm mt-0.5">Pay fines, view court dates, and contact the department</p>
               </div>
             </div>
-            <a
-              href="https://pd.saintlouisvilleohio.gov"
+            <Link
+              to="/police"
               className="flex-shrink-0 px-6 py-2.5 bg-amber-500 text-slate-900 font-bold rounded-xl hover:bg-amber-400 transition-colors shadow-lg text-sm whitespace-nowrap"
             >
-              PD Portal
-            </a>
+              Police Dept
+            </Link>
           </div>
         </div>
       </section>

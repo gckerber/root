@@ -11,6 +11,7 @@ const links = [
   { to: '/ordinances', label: 'Ordinances' },
   { to: '/calendar', label: 'Calendar' },
   { to: '/history', label: 'History' },
+  { to: '/police', label: 'Police Dept' },
 ]
 
 export default function Navbar() {
@@ -60,12 +61,6 @@ export default function Navbar() {
             >
               Pay Water Bill
             </a>
-            <a
-              href="https://pd.saintlouisvilleohio.gov"
-              className="ml-1 px-4 py-2 bg-slate-700 text-amber-400 border border-slate-600 rounded-md text-sm font-bold hover:bg-slate-600 transition-colors"
-            >
-              Police Dept
-            </a>
           </div>
 
           {/* Mobile menu button */}
@@ -104,12 +99,6 @@ export default function Navbar() {
             className="block px-3 py-2 bg-yellow-400 text-blue-900 rounded-md text-sm font-bold text-center mt-2"
           >
             Pay Water Bill
-          </a>
-          <a
-            href="https://pd.saintlouisvilleohio.gov"
-            className="block px-3 py-2 bg-slate-700 text-amber-400 border border-slate-600 rounded-md text-sm font-bold text-center mt-1"
-          >
-            Police Dept
           </a>
         </div>
       )}
