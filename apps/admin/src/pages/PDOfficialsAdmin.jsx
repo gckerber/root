@@ -1,111 +1,27 @@
-// apps/admin/src/pages/Officials.jsx
-// Manage village officials (excludes Police Department officers — managed under PD section).
+// apps/admin/src/pages/PDOfficialsAdmin.jsx
+// Manage Police Department officers. Shows only officials with department === 'police'.
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Pencil, Trash2, Save, X, User, Tag } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, User } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
-// Suggested titles shown as a datalist — user can type freely
-const TITLE_SUGGESTIONS = [
-  'Mayor', 'Village Council', 'Fiscal Officer', 'Village Administrator',
-  'Village Solicitor', 'Zoning Inspector', 'Service Director', 'Clerk of Council',
-]
+// Suggested titles (used as a datalist — user can also type freely)
+const TITLE_SUGGESTIONS = ['Chief of Police', 'Officer', 'Detective', 'Sergeant', 'Lieutenant', 'Captain', 'Deputy Chief']
 
-// ── Committee tag input ──────────────────────────────────────────────────────
-const CHAIR_SUFFIX = ' (Chair)'
-const isChair  = (tag) => tag.endsWith(CHAIR_SUFFIX)
-const baseName = (tag) => isChair(tag) ? tag.slice(0, -CHAIR_SUFFIX.length) : tag
-
-function CommitteeTagInput({ value = [], onChange }) {
-  const [inputVal, setInputVal] = useState('')
-
-  function addTag(raw) {
-    const tag = raw.trim().replace(/,+$/, '').replace(/\s*\(chair\)\s*$/i, '').trim()
-    if (!tag) return
-    const alreadyExists = value.some((t) => baseName(t).toLowerCase() === tag.toLowerCase())
-    if (!alreadyExists) onChange([...value, tag])
-    setInputVal('')
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault()
-      addTag(inputVal)
-    } else if (e.key === 'Backspace' && inputVal === '' && value.length > 0) {
-      onChange(value.slice(0, -1))
-    }
-  }
-
-  function removeTag(tag) { onChange(value.filter((t) => t !== tag)) }
-
-  function toggleChair(tag) {
-    onChange(value.map((t) =>
-      t === tag ? (isChair(t) ? baseName(t) : t + CHAIR_SUFFIX) : t
-    ))
-  }
-
-  return (
-    <div>
-      <label className="label flex items-center gap-1">
-        <Tag size={12} /> Committees
-        <span className="text-slate-600 font-normal normal-case text-xs ml-1">
-          — type &amp; press Enter · click ★ to toggle chairperson
-        </span>
-      </label>
-      <div className="min-h-[42px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 flex flex-wrap gap-1.5 items-center focus-within:border-blue-500 transition-colors">
-        {value.map((tag) => {
-          const chair = isChair(tag)
-          return (
-            <span
-              key={tag}
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border ${
-                chair
-                  ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'
-                  : 'bg-blue-600/30 text-blue-300 border-blue-600/40'
-              }`}
-            >
-              <button type="button" onClick={() => toggleChair(tag)}
-                title={chair ? 'Remove chairperson' : 'Set as chairperson'}
-                className={`transition-colors ${chair ? 'text-yellow-400 hover:text-yellow-200' : 'text-slate-600 hover:text-yellow-400'}`}
-              >★</button>
-              {baseName(tag)}
-              {chair && <span className="opacity-60 text-xs">(Chair)</span>}
-              <button type="button" onClick={() => removeTag(tag)}
-                className="text-slate-500 hover:text-red-400 transition-colors ml-0.5">
-                <X size={10} />
-              </button>
-            </span>
-          )
-        })}
-        <input
-          type="text"
-          value={inputVal}
-          onChange={(e) => setInputVal(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={() => inputVal.trim() && addTag(inputVal)}
-          placeholder={value.length === 0 ? 'Finance and Safety, Streets and Sidewalks…' : ''}
-          className="flex-grow bg-transparent outline-none text-sm text-slate-200 placeholder-slate-600 min-w-[160px]"
-        />
-      </div>
-    </div>
-  )
-}
-
-// ── Official form ────────────────────────────────────────────────────────────
-function OfficialForm({ official, onSave, onCancel, adminKey }) {
+function OfficerForm({ official, onSave, onCancel, adminKey }) {
   const toast = useToast()
   const fileRef = useRef()
   const [form, setForm] = useState(official ? {
     ...official,
-    // Migrate old single 'phone' field → phoneWork for convenience
+    // Migrate old single phone to phoneWork for convenience
     phoneWork: official.phoneWork || official.phone || '',
     phoneCell: official.phoneCell || '',
     phoneHome: official.phoneHome || '',
   } : {
-    name: '', title: 'Village Council', bio: '', email: '',
+    name: '', title: 'Officer', bio: '', email: '',
     phoneWork: '', phoneCell: '', phoneHome: '',
-    photoUrl: '', order: 99, committees: [], department: 'village',
+    photoUrl: '', order: 99, department: 'police',
   })
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(official?.photoUrl || null)
@@ -143,7 +59,7 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
         })
         photoUrl = publicUrl
       }
-      await onSave({ ...form, photoUrl, department: form.department || 'village' })
+      await onSave({ ...form, photoUrl, department: 'police' })
     } catch (err) {
       toast(err.message || 'Save failed', 'error')
     }
@@ -177,15 +93,15 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
               <input className="input" value={form.name} onChange={f('name')} placeholder="Jane Smith" />
             </div>
             <div>
-              <label className="label">Title / Role</label>
+              <label className="label">Title / Rank</label>
               <input
                 className="input"
                 value={form.title}
                 onChange={f('title')}
-                placeholder="Mayor, Fiscal Officer, Solicitor…"
-                list="village-title-suggestions"
+                placeholder="Chief, Officer, Detective…"
+                list="pd-title-suggestions"
               />
-              <datalist id="village-title-suggestions">
+              <datalist id="pd-title-suggestions">
                 {TITLE_SUGGESTIONS.map((t) => <option key={t} value={t} />)}
               </datalist>
             </div>
@@ -201,7 +117,7 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
       <div>
         <label className="label">Bio</label>
         <textarea className="input resize-none" rows={2} value={form.bio || ''} onChange={f('bio')}
-          placeholder="A short description of this official's role and background…" />
+          placeholder="Brief description of this officer's role and background…" />
       </div>
 
       {/* Three phone fields */}
@@ -223,12 +139,6 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
         </div>
       </div>
 
-      {/* Committees — optional for any official */}
-      <CommitteeTagInput
-        value={form.committees || []}
-        onChange={(committees) => setForm((p) => ({ ...p, committees }))}
-      />
-
       <div className="flex gap-2 pt-1">
         <button onClick={handleSave} disabled={uploading} className="btn-primary">
           {uploading
@@ -241,24 +151,24 @@ function OfficialForm({ official, onSave, onCancel, adminKey }) {
   )
 }
 
-// ── Main page ────────────────────────────────────────────────────────────────
-export default function Officials() {
+export default function PDOfficialsAdmin() {
   const { auth } = useAuth()
   const toast = useToast()
   const [officials, setOfficials] = useState([])
-  const [loading, setLoading]     = useState(true)
+  const [loading, setLoading]   = useState(true)
   const [editingId, setEditingId] = useState(null)
-  const [adding, setAdding]       = useState(false)
+  const [adding, setAdding]     = useState(false)
 
   useEffect(() => {
     fetch(`${API}/api/officials`)
       .then((r) => r.json())
       .then((d) => {
-        // Exclude PD officials — they are managed under the Police Department section
-        const village = (d.items || []).filter((o) => o.department !== 'police')
-        if (village.length) setOfficials(village)
+        const pd = (d.items || [])
+          .filter((o) => o.department === 'police')
+          .sort((a, b) => a.order - b.order)
+        setOfficials(pd)
       })
-      .catch(() => toast('Could not load officials', 'error'))
+      .catch(() => toast('Could not load officers', 'error'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -269,7 +179,7 @@ export default function Officials() {
       const res = await fetch(url, {
         method: isNew ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
-        body: JSON.stringify(official),
+        body: JSON.stringify({ ...official, department: 'police' }),
       })
       if (!res.ok) throw new Error(await res.text())
       const saved = await res.json()
@@ -278,49 +188,48 @@ export default function Officials() {
       )
       setEditingId(null)
       setAdding(false)
-      toast(isNew ? 'Official added!' : 'Official updated!', 'success')
+      toast(isNew ? 'Officer added!' : 'Officer updated!', 'success')
     } catch (err) {
       toast('Save failed: ' + err.message, 'error')
     }
   }
 
   async function remove(id) {
-    if (!confirm('Remove this official from the website?')) return
+    if (!confirm('Remove this officer from the website?')) return
     try {
       await fetch(`${API}/api/officials?id=${id}`, {
         method: 'DELETE',
         headers: { 'x-admin-key': auth.key },
       })
       setOfficials((prev) => prev.filter((o) => o.id !== id))
-      toast('Official removed', 'success')
+      toast('Officer removed', 'success')
     } catch {
       toast('Delete failed', 'error')
     }
   }
 
-  if (loading) return <div className="text-slate-500 text-sm">Loading officials…</div>
+  if (loading) return <div className="text-slate-500 text-sm">Loading officers…</div>
 
   return (
     <div className="max-w-2xl space-y-3">
       <div className="flex items-center justify-between mb-6">
         <p className="text-slate-400 text-sm">
-          Village officials appear on the "Get to Know Us" page.
-          Police officers are managed under the Police Department section.
+          Officers appear on the "Officers" tab of the Police Department page.
         </p>
         <button onClick={() => setAdding(true)} className="btn-primary" disabled={adding}>
-          <Plus size={15} /> Add Official
+          <Plus size={15} /> Add Officer
         </button>
       </div>
 
       {adding && (
-        <OfficialForm onSave={save} onCancel={() => setAdding(false)} adminKey={auth.key} />
+        <OfficerForm onSave={save} onCancel={() => setAdding(false)} adminKey={auth.key} />
       )}
 
       {officials.map((o) => (
         <div key={o.id} className="card">
           {editingId === o.id ? (
             <div className="p-4">
-              <OfficialForm official={o} onSave={save} onCancel={() => setEditingId(null)} adminKey={auth.key} />
+              <OfficerForm official={o} onSave={save} onCancel={() => setEditingId(null)} adminKey={auth.key} />
             </div>
           ) : (
             <div className="p-4 flex items-start gap-4">
@@ -329,13 +238,13 @@ export default function Officials() {
                   className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
                   onError={(e) => { e.target.style.display = 'none' }} />
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold text-sm flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center justify-center text-amber-400 font-bold text-sm flex-shrink-0">
                   {o.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
                 </div>
               )}
               <div className="flex-grow min-w-0">
                 <div className="text-white font-medium leading-tight">{o.name}</div>
-                <div className="text-slate-500 text-xs">{o.title}</div>
+                <div className="text-amber-400 text-xs font-medium">{o.title}</div>
                 {o.email && <div className="text-slate-600 text-xs mt-0.5">{o.email}</div>}
                 <div className="flex flex-wrap gap-x-3 text-slate-600 text-xs mt-0.5">
                   {(o.phoneWork || o.phone) && <span>Work: {o.phoneWork || o.phone}</span>}
@@ -343,15 +252,6 @@ export default function Officials() {
                   {o.phoneHome && <span>Home: {o.phoneHome}</span>}
                 </div>
                 {o.bio && <div className="text-slate-500 text-xs mt-0.5 truncate">{o.bio}</div>}
-                {o.committees?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {o.committees.map((c) => (
-                      <span key={c} className="bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-full px-2 py-0.5 text-xs">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
               <div className="flex gap-2 flex-shrink-0">
                 <button onClick={() => setEditingId(o.id)} className="btn-ghost py-1.5 px-3">
@@ -365,6 +265,12 @@ export default function Officials() {
           )}
         </div>
       ))}
+
+      {officials.length === 0 && !adding && (
+        <div className="card p-10 text-center text-slate-600">
+          No officers yet. Click "Add Officer" to get started.
+        </div>
+      )}
     </div>
   )
 }

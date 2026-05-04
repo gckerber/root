@@ -183,8 +183,12 @@ public class OfficialsFunctions : FunctionBase
             Bio = body.Bio?.Trim() ?? string.Empty,
             Email = body.Email?.Trim() ?? string.Empty,
             Phone = body.Phone?.Trim(),
+            PhoneWork = body.PhoneWork?.Trim(),
+            PhoneCell = body.PhoneCell?.Trim(),
+            PhoneHome = body.PhoneHome?.Trim(),
             PhotoUrl = body.PhotoUrl,
             Committees = body.Committees,
+            Department = body.Department?.Trim(),
             Order = body.Order,
             CreatedAt = DateTime.UtcNow.ToString("o")
         };
@@ -214,8 +218,12 @@ public class OfficialsFunctions : FunctionBase
         existing.Bio = body.Bio?.Trim() ?? existing.Bio;
         existing.Email = body.Email?.Trim() ?? existing.Email;
         existing.Phone = body.Phone?.Trim() ?? existing.Phone;
+        existing.PhoneWork = body.PhoneWork?.Trim() ?? existing.PhoneWork;
+        existing.PhoneCell = body.PhoneCell?.Trim() ?? existing.PhoneCell;
+        existing.PhoneHome = body.PhoneHome?.Trim() ?? existing.PhoneHome;
         existing.PhotoUrl = body.PhotoUrl ?? existing.PhotoUrl;
         existing.Committees = body.Committees ?? existing.Committees;
+        existing.Department = body.Department?.Trim() ?? existing.Department;
         existing.Order = body.Order;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(id));

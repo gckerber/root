@@ -10,7 +10,6 @@ import { useState } from 'react'
 
 const NAV = [
   { to: '/',            icon: LayoutDashboard, label: 'Dashboard',       color: 'text-slate-400' },
-  { to: '/hero',        icon: Image,           label: 'Hero Image',      color: 'text-purple-400',  desc: 'Single fallback photo' },
   { to: '/hero-images', icon: Image,           label: 'Hero Carousel',   color: 'text-purple-300',  desc: 'Homepage slideshow' },
   { to: '/officials',   icon: Users,           label: 'Officials',       color: 'text-blue-400',    desc: 'Mayor & Council' },
   { to: '/minutes',     icon: FileText,        label: 'Council Minutes', color: 'text-green-400',   desc: 'Meetings & files' },
@@ -21,11 +20,12 @@ const NAV = [
 ]
 
 const PD_NAV = [
-  { to: '/pd',         icon: Shield,      label: 'Citations',      color: 'text-amber-400', desc: 'Police citations' },
-  { to: '/court',      icon: Gavel,       label: 'Court Schedule', color: 'text-amber-300', desc: "Mayor's Court dates" },
-  { to: '/pd-hero',    icon: Image,       label: 'Hero Images',    color: 'text-amber-200', desc: 'Carousel photos' },
-  { to: '/pd-faq',     icon: HelpCircle,  label: 'FAQ',            color: 'text-amber-200', desc: "Mayor's Court FAQ" },
-  { to: '/pd-contact', icon: Phone,       label: 'Contact Info',   color: 'text-amber-200', desc: 'Address & hours' },
+  { to: '/pd-officials', icon: Users,      label: 'Officers',       color: 'text-amber-400', desc: 'Officer profiles' },
+  { to: '/pd-calendar',  icon: Calendar,   label: 'Events',         color: 'text-amber-300', desc: 'PD community events' },
+  { to: '/court',        icon: Gavel,      label: 'Court Schedule', color: 'text-amber-200', desc: "Mayor's Court dates" },
+  { to: '/pd-hero',      icon: Image,      label: 'Hero Images',    color: 'text-amber-200', desc: 'Carousel photos' },
+  { to: '/pd-faq',       icon: HelpCircle, label: 'FAQ',            color: 'text-amber-200', desc: "Mayor's Court FAQ" },
+  { to: '/pd-contact',   icon: Phone,      label: 'Contact Info',   color: 'text-amber-200', desc: 'Address & hours' },
 ]
 
 export default function Layout() {

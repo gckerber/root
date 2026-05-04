@@ -55,9 +55,18 @@ function OfficialCard({ official, colourMap }) {
           <p className={`text-sm font-medium ${isMayor ? 'text-yellow-700' : 'text-gray-500'}`}>
             {official.title}
           </p>
-          {official.phone && (
-            <a href={`tel:${official.phone.replace(/\D/g, '')}`}
-              className="text-xs text-gray-400 hover:text-blue-600 transition-colors">{official.phone}</a>
+          {/* Show work phone (or legacy phone), cell, home */}
+          {(official.phoneWork || official.phone) && (
+            <a href={`tel:${(official.phoneWork || official.phone).replace(/\D/g, '')}`}
+              className="text-xs text-gray-400 hover:text-blue-600 transition-colors">
+              {official.phoneWork || official.phone}
+            </a>
+          )}
+          {official.phoneCell && (
+            <span className="text-xs text-gray-400">Cell: {official.phoneCell}</span>
+          )}
+          {official.phoneHome && (
+            <span className="text-xs text-gray-400">Home: {official.phoneHome}</span>
           )}
         </div>
       </div>
@@ -139,10 +148,10 @@ export default function AboutUs() {
       .finally(() => setLoaded(true))
   }, [])
 
-  const mayor   = officials.filter((o) => o.title === 'Mayor')
-  const council = officials.filter((o) => o.title === 'Village Council').sort((a, b) => a.order - b.order)
-  // Police Department officials appear on the PD page, not here
-  const other   = officials.filter((o) => o.title !== 'Mayor' && o.title !== 'Village Council' && o.title !== 'Police Department').sort((a, b) => a.order - b.order)
+  // Police Department officers are shown on the PD page, not here
+  const mayor   = officials.filter((o) => o.department !== 'police' && o.title === 'Mayor')
+  const council = officials.filter((o) => o.department !== 'police' && o.title === 'Village Council').sort((a, b) => a.order - b.order)
+  const other   = officials.filter((o) => o.department !== 'police' && o.title !== 'Mayor' && o.title !== 'Village Council').sort((a, b) => a.order - b.order)
 
   // Build a stable list of all unique base-committee names and a colour map
   const { committeeList, colourMap } = useMemo(() => {
