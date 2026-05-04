@@ -1,30 +1,31 @@
 // apps/village-site/src/components/HeroSection.jsx
-// Hero image is stored in Azure Blob Storage at:
-// https://stslvprodfs7n7vax.blob.core.windows.net/hero/hero.jpg
-// Upload via the admin panel Hero Image section
+// Multi-image carousel hero for the village homepage.
+// Images are managed via Admin → Hero Images and stored in the village-images Cosmos container.
+// Falls back to the single hero.jpg if no carousel images have been uploaded yet.
+import { useState, useEffect } from 'react'
+import HeroCarousel from './HeroCarousel'
+import axios from 'axios'
 
-const HERO_URL = 'https://stslvprodfs7n7vax.blob.core.windows.net/hero/hero.jpg'
+const API          = 'https://func-village-prod.azurewebsites.net'
+const FALLBACK_URL = 'https://stslvprodfs7n7vax.blob.core.windows.net/hero/hero.jpg'
 
 export default function HeroSection() {
+  const [images, setImages] = useState([])
+
+  useEffect(() => {
+    axios.get(`${API}/api/village-images`)
+      .then((r) => setImages(r.data.items || []))
+      .catch(() => {/* use fallback */})
+  }, [])
+
   return (
-    <div className="relative h-[70vh] min-h-[480px] max-h-[800px] overflow-hidden">
-      {/* Hero image from Azure Blob Storage */}
-      <img
-        src={HERO_URL}
-        alt="Aerial view of Saint Louisville, Ohio"
-        className="absolute inset-0 w-full h-full object-cover object-center"
-        loading="eager"
-        onError={(e) => {
-          // Fallback to a solid color if image not uploaded yet
-          e.target.style.display = 'none'
-        }}
-      />
-
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-blue-950/80 via-blue-900/30 to-transparent" />
-
-      {/* Content */}
-      <div className="relative h-full flex flex-col justify-end pb-12 px-6 sm:px-12 lg:px-20 max-w-7xl mx-auto">
+    <HeroCarousel
+      images={images}
+      fallbackUrl={FALLBACK_URL}
+      heightClass="h-[70vh] min-h-[480px] max-h-[800px]"
+    >
+      {/* Village name + CTA overlay */}
+      <div className="h-full flex flex-col justify-end pb-12 px-6 sm:px-12 lg:px-20 max-w-7xl mx-auto">
         <div className="inline-flex items-center gap-2 bg-yellow-400/90 text-blue-900 px-4 py-1.5 rounded-full text-sm font-bold mb-4 w-fit">
           <span className="w-2 h-2 bg-blue-900 rounded-full" />
           Licking County, Ohio · Est. 1833
@@ -42,20 +43,26 @@ export default function HeroSection() {
         </p>
 
         <div className="mt-8 flex flex-wrap gap-4">
-          <a href="/bulletin"
-            className="px-6 py-3 bg-yellow-400 text-blue-900 font-bold rounded-lg hover:bg-yellow-300 transition-colors shadow-lg text-sm sm:text-base">
+          <a
+            href="/bulletin"
+            className="px-6 py-3 bg-yellow-400 text-blue-900 font-bold rounded-lg hover:bg-yellow-300 transition-colors shadow-lg text-sm sm:text-base"
+          >
             Latest Announcements
           </a>
-          <a href="/minutes"
-            className="px-6 py-3 bg-white/15 text-white font-semibold rounded-lg border border-white/30 hover:bg-white/25 transition-colors backdrop-blur-sm text-sm sm:text-base">
+          <a
+            href="/minutes"
+            className="px-6 py-3 bg-white/15 text-white font-semibold rounded-lg border border-white/30 hover:bg-white/25 transition-colors backdrop-blur-sm text-sm sm:text-base"
+          >
             Council Meeting Minutes
           </a>
-          <a href="https://water.saintlouisvilleohio.gov"
-            className="px-6 py-3 bg-blue-600/80 text-white font-semibold rounded-lg border border-blue-400/50 hover:bg-blue-500/80 transition-colors backdrop-blur-sm text-sm sm:text-base">
+          <a
+            href="https://water.saintlouisvilleohio.gov"
+            className="px-6 py-3 bg-blue-600/80 text-white font-semibold rounded-lg border border-blue-400/50 hover:bg-blue-500/80 transition-colors backdrop-blur-sm text-sm sm:text-base"
+          >
             Pay Water Bill
           </a>
         </div>
       </div>
-    </div>
+    </HeroCarousel>
   )
 }
