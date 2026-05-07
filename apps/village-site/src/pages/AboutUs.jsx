@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Mail, Phone, Award, Users } from 'lucide-react'
 import ContactForm from '../components/ContactForm'
+import { OfficialGrid } from '../components/OfficialCards'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
@@ -137,8 +138,9 @@ function CommitteeCard({ name, members, colour }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function AboutUs() {
-  const [officials, setOfficials] = useState([])
-  const [loaded, setLoaded] = useState(false)
+  const [officials,    setOfficials]    = useState([])
+  const [siteSettings, setSiteSettings] = useState({})
+  const [loaded,       setLoaded]       = useState(false)
 
   useEffect(() => {
     fetch(`${API}/api/officials`)
@@ -146,12 +148,20 @@ export default function AboutUs() {
       .then((d) => { if (d.items?.length) setOfficials(d.items) })
       .catch(() => {})
       .finally(() => setLoaded(true))
+    fetch(`${API}/api/site-settings`)
+      .then((r) => r.json())
+      .then((d) => setSiteSettings(d || {}))
+      .catch(() => {})
   }, [])
 
   // Police Department officers are shown on the PD page, not here
   const mayor   = officials.filter((o) => o.department !== 'police' && o.title === 'Mayor')
   const council = officials.filter((o) => o.department !== 'police' && o.title === 'Village Council').sort((a, b) => a.order - b.order)
   const other   = officials.filter((o) => o.department !== 'police' && o.title !== 'Mayor' && o.title !== 'Village Council').sort((a, b) => a.order - b.order)
+
+  const mayorLayout   = siteSettings.mayorLayout   || 'grid'
+  const councilLayout = siteSettings.councilLayout || 'grid'
+  const otherLayout   = siteSettings.otherLayout   || 'grid'
 
   // Build a stable list of all unique base-committee names and a colour map
   const { committeeList, colourMap } = useMemo(() => {
@@ -194,9 +204,13 @@ export default function AboutUs() {
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-yellow-400 rounded-full" />Village Mayor
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mayor.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
-          </div>
+          {mayorLayout === 'grid' ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {mayor.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
+            </div>
+          ) : (
+            <OfficialGrid officials={mayor} layout={mayorLayout} />
+          )}
         </section>
       )}
 
@@ -206,9 +220,13 @@ export default function AboutUs() {
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-blue-500 rounded-full" />Village Council
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {council.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
-          </div>
+          {councilLayout === 'grid' ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {council.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
+            </div>
+          ) : (
+            <OfficialGrid officials={council} layout={councilLayout} />
+          )}
         </section>
       )}
 
@@ -238,9 +256,13 @@ export default function AboutUs() {
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-gray-400 rounded-full" />Other Officials &amp; Staff
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {other.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
-          </div>
+          {otherLayout === 'grid' ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {other.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
+            </div>
+          ) : (
+            <OfficialGrid officials={other} layout={otherLayout} />
+          )}
         </section>
       )}
 

@@ -308,6 +308,22 @@ public class PdContact
     public string CourtPresidedBy { get; set; } = "Mayor Zack Allen";
 }
 
+public class SiteSettings
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "site-settings";
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "config";
+    [JsonPropertyName("pdOfficerLayout")]
+    public string? PdOfficerLayout { get; set; }
+    [JsonPropertyName("mayorLayout")]
+    public string? MayorLayout { get; set; }
+    [JsonPropertyName("councilLayout")]
+    public string? CouncilLayout { get; set; }
+    [JsonPropertyName("otherLayout")]
+    public string? OtherLayout { get; set; }
+}
+
 public class FineLookupRequest
 {
     [JsonPropertyName("citationNumber")]
