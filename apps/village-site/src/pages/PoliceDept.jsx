@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import axios from 'axios'
 import HeroCarousel from '../components/HeroCarousel'
+import { OfficialGrid } from '../components/OfficialCards'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
@@ -47,67 +48,20 @@ function formatTime(timeStr) {
   } catch { return timeStr }
 }
 
-// ── Officer card ──────────────────────────────────────────────────────────────
-function OfficerCard({ officer }) {
-  const initials = officer.name.split(' ').map((n) => n[0]).join('').slice(0, 2)
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-4">
-        {officer.photoUrl ? (
-          <img
-            src={officer.photoUrl}
-            alt={officer.name}
-            className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-gray-100"
-          />
-        ) : (
-          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-800 flex-shrink-0">
-            {initials}
-          </div>
-        )}
-        <div className="min-w-0">
-          <h3 className="font-bold text-gray-900 leading-tight">{officer.name}</h3>
-          <p className="text-sm font-medium text-blue-700">{officer.title || 'Police Department'}</p>
-          {(officer.phoneWork || officer.phone) && (
-            <a
-              href={`tel:${(officer.phoneWork || officer.phone).replace(/\D/g, '')}`}
-              className="text-xs text-gray-400 hover:text-blue-600 transition-colors"
-            >
-              {officer.phoneWork || officer.phone}
-            </a>
-          )}
-          {officer.phoneCell && (
-            <span className="block text-xs text-gray-400">Cell: {officer.phoneCell}</span>
-          )}
-        </div>
-      </div>
-      {officer.bio && (
-        <p className="text-sm text-gray-600 leading-relaxed flex-grow">{officer.bio}</p>
-      )}
-      {officer.email && (
-        <a
-          href={`mailto:${officer.email}`}
-          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium mt-auto"
-        >
-          <Mail size={15} />{officer.email}
-        </a>
-      )}
-    </div>
-  )
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function PoliceDept() {
-  const [tab,        setTab]        = useState('home')
-  const [contact,    setContact]    = useState(DEFAULTS)
-  const [images,     setImages]     = useState([])
-  const [faqs,       setFaqs]       = useState([])
-  const [openFaq,    setOpenFaq]    = useState(null)
-  const [officers,   setOfficers]   = useState([])
-  const [courtDates, setCourtDates] = useState([])
-  const [events,     setEvents]     = useState([])
-  const [tabLoading, setTabLoading] = useState({ officers: false, court: false, events: false })
+  const [tab,          setTab]          = useState('home')
+  const [contact,      setContact]      = useState(DEFAULTS)
+  const [siteSettings, setSiteSettings] = useState({})
+  const [images,       setImages]       = useState([])
+  const [faqs,         setFaqs]         = useState([])
+  const [openFaq,      setOpenFaq]      = useState(null)
+  const [officers,     setOfficers]     = useState([])
+  const [courtDates,   setCourtDates]   = useState([])
+  const [events,       setEvents]       = useState([])
+  const [tabLoading,   setTabLoading]   = useState({ officers: false, court: false, events: false })
 
-  // Track which tabs have already been fetched (so we don't re-fetch on tab re-click)
+  // Track which tabs have already been fetched
   const loadedTabs = useRef(new Set())
 
   // Core data — loaded on mount
@@ -115,9 +69,10 @@ export default function PoliceDept() {
     axios.get(`${API}/api/pd-contact`).then((r) => setContact({ ...DEFAULTS, ...r.data })).catch(() => {})
     axios.get(`${API}/api/pd-images`).then((r) => setImages(r.data.items || [])).catch(() => {})
     axios.get(`${API}/api/pd-faq`).then((r) => setFaqs(r.data.items || [])).catch(() => {})
+    axios.get(`${API}/api/site-settings`).then((r) => setSiteSettings(r.data || {})).catch(() => {})
   }, [])
 
-  // Lazy-load tab-specific data on first visit to each tab
+  // Lazy-load tab-specific data on first visit
   useEffect(() => {
     if (tab === 'officers' && !loadedTabs.current.has('officers')) {
       loadedTabs.current.add('officers')
@@ -125,7 +80,7 @@ export default function PoliceDept() {
       axios.get(`${API}/api/officials`)
         .then((r) => {
           const pd = (r.data.items || [])
-            .filter((o) => o.title === 'Police Department')
+            .filter((o) => o.department === 'police')
             .sort((a, b) => a.order - b.order)
           setOfficers(pd)
         })
@@ -157,9 +112,25 @@ export default function PoliceDept() {
 
   const upcomingEvents = events.filter((e) => new Date(e.date) >= new Date())
   const pastEvents     = events.filter((e) => new Date(e.date) < new Date())
+  const officerLayout  = siteSettings.pdOfficerLayout || 'grid'
 
   return (
     <div>
+      {/* ── Emergency banner — pinned at very top ────────────────── */}
+      <div className="bg-red-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap gap-6 items-center">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-red-200 flex-shrink-0" />
+            <span className="font-extrabold">Emergency: 911</span>
+            <span className="text-red-300 text-sm hidden sm:inline">— For all life-threatening emergencies</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Phone size={15} className="text-red-200 flex-shrink-0" />
+            <span className="font-semibold">Non-Emergency: {contact.phone}</span>
+          </div>
+        </div>
+      </div>
+
       {/* ── Full-width hero carousel ─────────────────────────────── */}
       <HeroCarousel
         images={images}
@@ -186,21 +157,6 @@ export default function PoliceDept() {
           </p>
         </div>
       </HeroCarousel>
-
-      {/* ── Emergency banner ─────────────────────────────────────── */}
-      <div className="bg-red-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap gap-6 items-center">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-red-200 flex-shrink-0" />
-            <span className="font-extrabold">Emergency: 911</span>
-            <span className="text-red-300 text-sm hidden sm:inline">— For all life-threatening emergencies</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Phone size={15} className="text-red-200 flex-shrink-0" />
-            <span className="font-semibold">Non-Emergency: {contact.phone}</span>
-          </div>
-        </div>
-      </div>
 
       {/* ── Tab bar ──────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
@@ -378,9 +334,7 @@ export default function PoliceDept() {
                 </p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {officers.map((o) => <OfficerCard key={o.id} officer={o} />)}
-              </div>
+              <OfficialGrid officials={officers} layout={officerLayout} />
             )}
           </div>
         )}
@@ -432,8 +386,7 @@ export default function PoliceDept() {
             ) : (
               <div className="space-y-3">
                 {courtDates.map((d) => (
-                  <div
-                    key={d.id}
+                  <div key={d.id}
                     className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -446,20 +399,16 @@ export default function PoliceDept() {
                           <div className="flex flex-wrap gap-4 mt-1.5">
                             {d.time && (
                               <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                                <Clock size={14} className="text-gray-400" />
-                                {formatTime(d.time)}
+                                <Clock size={14} className="text-gray-400" />{formatTime(d.time)}
                               </span>
                             )}
                             {d.location && (
                               <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                                <MapPin size={14} className="text-gray-400" />
-                                {d.location}
+                                <MapPin size={14} className="text-gray-400" />{d.location}
                               </span>
                             )}
                           </div>
-                          {d.notes && (
-                            <p className="text-sm text-gray-400 mt-2 italic">{d.notes}</p>
-                          )}
+                          {d.notes && <p className="text-sm text-gray-400 mt-2 italic">{d.notes}</p>}
                         </div>
                       </div>
                       {d.judge && (
@@ -519,11 +468,9 @@ export default function PoliceDept() {
                 {upcomingEvents.length > 0 && (
                   <div className="space-y-4">
                     {upcomingEvents.map((event) => (
-                      <div
-                        key={event.id}
+                      <div key={event.id}
                         className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                       >
-                        {/* Show all photos in a horizontal row, or single photo as full banner */}
                         {(() => {
                           const photos = event.photoUrls?.length ? event.photoUrls : (event.photoUrl ? [event.photoUrl] : [])
                           if (photos.length === 0) return null
@@ -585,8 +532,7 @@ export default function PoliceDept() {
                     </summary>
                     <div className="mt-3 space-y-3 opacity-60">
                       {pastEvents.map((event) => (
-                        <div
-                          key={event.id}
+                        <div key={event.id}
                           className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex gap-4 items-start"
                         >
                           <div className="text-gray-500 text-sm w-28 flex-shrink-0 pt-0.5">

@@ -405,6 +405,66 @@ public class PdSiteFunctions : FunctionBase
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // SITE SETTINGS  (layout preferences for public pages)
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── GET /api/site-settings (public) ──────────────────────────
+    [Function("GetSiteSettings")]
+    public async Task<HttpResponseData> GetSiteSettings(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "site-settings")] HttpRequestData req)
+    {
+        if (req.Method == "OPTIONS") return Cors(req);
+        if (!_cosmos.IsAvailable) return await OkJson(req, new SiteSettings());
+
+        try
+        {
+            var container = PdSettings();
+            var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @id")
+                .WithParameter("@id", "site-settings");
+            SiteSettings? found = null;
+            using var feed = container.GetItemQueryIterator<SiteSettings>(query);
+            while (feed.HasMoreResults && found == null)
+            {
+                var batch = await feed.ReadNextAsync();
+                found = batch.FirstOrDefault();
+            }
+            return await OkJson(req, found ?? new SiteSettings());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetSiteSettings error: {msg}", ex.Message);
+            return await OkJson(req, new SiteSettings());
+        }
+    }
+
+    // ── PUT /api/site-settings (admin) ────────────────────────────
+    [Function("UpsertSiteSettings")]
+    public async Task<HttpResponseData> UpsertSiteSettings(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "site-settings")] HttpRequestData req)
+    {
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database unavailable");
+
+        try
+        {
+            var body = await ReadBodyAsync<SiteSettings>(req);
+            if (body == null) return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid body");
+
+            body.Id   = "site-settings";
+            body.Type = "config";
+
+            var container = PdSettings();
+            var res = await container.UpsertItemAsync(body, new PartitionKey("config"));
+            return await OkJson(req, res.Resource);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpsertSiteSettings error: {msg}", ex.Message);
+            return await ErrorJson(req, HttpStatusCode.InternalServerError, ex.Message);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // PD FAQ
     // ═══════════════════════════════════════════════════════════════
 

@@ -1,8 +1,15 @@
 // apps/admin/src/pages/PDOfficialsAdmin.jsx
 // Manage Police Department officers. Shows only officials with department === 'police'.
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Pencil, Trash2, Save, X, User } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, User, Monitor } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
+
+const LAYOUT_MODES = [
+  { id: 'grid',      label: 'Grid',       desc: '3 columns · round photo' },
+  { id: 'wide',      label: '2-Column',   desc: '2 columns · photo on left' },
+  { id: 'full',      label: 'Full Width', desc: '1 column · large photo' },
+  { id: 'spotlight', label: 'Spotlight',  desc: 'One at a time · auto-cycles' },
+]
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
@@ -154,10 +161,37 @@ function OfficerForm({ official, onSave, onCancel, adminKey }) {
 export default function PDOfficialsAdmin() {
   const { auth } = useAuth()
   const toast = useToast()
-  const [officials, setOfficials] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [editingId, setEditingId] = useState(null)
-  const [adding, setAdding]     = useState(false)
+  const [officials,    setOfficials]    = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [editingId,    setEditingId]    = useState(null)
+  const [adding,       setAdding]       = useState(false)
+  const [siteSettings, setSiteSettings] = useState(null)
+  const [savingLayout, setSavingLayout] = useState(false)
+
+  useEffect(() => {
+    fetch(`${API}/api/site-settings`)
+      .then((r) => r.json())
+      .then((d) => setSiteSettings(d || {}))
+      .catch(() => setSiteSettings({}))
+  }, [])
+
+  async function saveLayout(layoutId) {
+    setSavingLayout(true)
+    try {
+      const next = { ...(siteSettings || {}), pdOfficerLayout: layoutId }
+      const res = await fetch(`${API}/api/site-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
+        body: JSON.stringify(next),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      setSiteSettings(await res.json())
+      toast('Layout updated!', 'success')
+    } catch {
+      toast('Could not save layout', 'error')
+    }
+    setSavingLayout(false)
+  }
 
   useEffect(() => {
     fetch(`${API}/api/officials`)
@@ -212,7 +246,35 @@ export default function PDOfficialsAdmin() {
 
   return (
     <div className="max-w-2xl space-y-3">
-      <div className="flex items-center justify-between mb-6">
+      {/* Layout picker */}
+      {siteSettings !== null && (
+        <div className="card p-4 mb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Monitor size={14} className="text-amber-400" />
+            <span className="text-white text-sm font-medium">Officer Card Layout</span>
+            <span className="text-slate-500 text-xs">— controls how officers appear on the public site</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {LAYOUT_MODES.map(({ id, label, desc }) => (
+              <button
+                key={id}
+                onClick={() => saveLayout(id)}
+                disabled={savingLayout}
+                className={`px-3 py-2 rounded-lg text-left transition-all border ${
+                  (siteSettings?.pdOfficerLayout || 'grid') === id
+                    ? 'bg-amber-600 border-amber-500 text-white'
+                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                <div className="text-sm font-medium">{label}</div>
+                <div className="text-xs opacity-60">{desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mb-2">
         <p className="text-slate-400 text-sm">
           Officers appear on the "Officers" tab of the Police Department page.
         </p>
