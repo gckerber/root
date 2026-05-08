@@ -396,20 +396,6 @@ export default function PoliceDept() {
         </div>
       </div>
 
-      {/* Pay Fines CTA — always visible */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2rem 4.5rem', background: NAVY, borderTop: '1px solid #162d4a' }}>
-        <div>
-          <p style={{ ...LABEL, color: '#93c5fd', marginBottom: '.375rem' }}>Online payments accepted</p>
-          <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em', marginBottom: '.25rem' }}>Pay a Citation or Court Fine</p>
-          <p style={{ fontSize: '.875rem', color: '#94a3b8' }}>Traffic citations and Mayor's Court fines can be paid securely online.</p>
-        </div>
-        <a
-          href="#pay-fines"
-          style={{ display: 'inline-block', background: GOLD, color: NAVY, fontSize: '.875rem', fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', textDecoration: 'none', padding: '.875rem 2rem', flexShrink: 0, marginLeft: '3rem' }}
-        >
-          Pay Now →
-        </a>
-      </div>
     </div>
   )
 }

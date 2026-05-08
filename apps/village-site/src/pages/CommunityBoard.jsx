@@ -60,18 +60,17 @@ function UrgentRow({ item }) {
         padding: '1.25rem 4.5rem',
       }}
     >
-      <span
-        style={{
-          ...LABEL_STYLE,
-          color: '#fca5a5',
-          background: '#991b1b',
-          padding: '2px 8px',
-          borderRadius: 2,
-          flexShrink: 0,
-        }}
-      >
-        URGENT
-      </span>
+      {/* Tag + optional pinned */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
+        <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', background: '#991b1b', color: '#fca5a5', padding: '3px 8px', borderRadius: 2 }}>
+          URGENT
+        </span>
+        {item.pinned && (
+          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '3px' }}>
+            📌 Pinned
+          </span>
+        )}
+      </div>
       <span style={{ fontWeight: 700, fontSize: '1rem', color: 'white', flexGrow: 1 }}>
         {item.title}
       </span>
@@ -89,58 +88,63 @@ function EventPhotoRow({ item, index }) {
   const day = formatDay(item.date)
   const month = formatMonthShort(item.date)
   const bg = index % 2 === 0 ? 'white' : '#f8fafc'
+  const reversed = index % 2 === 1
+
+  const photo = (
+    <div style={{ width: '40%', flexShrink: 0, overflow: 'hidden' }}>
+      <img
+        src={photoUrl}
+        alt={item.title}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+    </div>
+  )
+
+  const content = (
+    <div style={{ flex: 1, padding: '2rem 3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
+      <span style={LABEL_STYLE}>EVENT</span>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+        <span style={{ fontSize: '3rem', fontWeight: 900, color: '#1e3a5f', lineHeight: 1 }}>
+          {day}
+        </span>
+        <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>{month}</span>
+      </div>
+
+      <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+        {item.title}
+      </h2>
+
+      {(item.location || item.time) && (
+        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: '#64748b' }}>
+          {item.location && <span>{item.location}</span>}
+          {item.time && <span>{item.time}</span>}
+        </div>
+      )}
+
+      {item.description && (
+        <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0, lineHeight: 1.6, WebkitLineClamp: 3, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {item.description}
+        </p>
+      )}
+
+      {item.link && (
+        <a
+          href={item.link}
+          style={{ fontSize: '0.875rem', color: '#1e3a5f', fontWeight: 600, marginTop: '0.25rem', textDecoration: 'none' }}
+        >
+          Learn more →
+        </a>
+      )}
+    </div>
+  )
 
   return (
     <div
       className="flex items-stretch border-t"
       style={{ borderColor: '#f1f5f9', minHeight: 280, background: bg }}
     >
-      {/* Photo */}
-      <div style={{ width: '40%', flexShrink: 0, overflow: 'hidden' }}>
-        <img
-          src={photoUrl}
-          alt={item.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-      </div>
-
-      {/* Content */}
-      <div style={{ padding: '2rem 3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
-        <span style={LABEL_STYLE}>EVENT</span>
-
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-          <span style={{ fontSize: '3rem', fontWeight: 900, color: '#1e3a5f', lineHeight: 1 }}>
-            {day}
-          </span>
-          <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>{month}</span>
-        </div>
-
-        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-          {item.title}
-        </h2>
-
-        {(item.location || item.time) && (
-          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: '#64748b' }}>
-            {item.location && <span>{item.location}</span>}
-            {item.time && <span>{item.time}</span>}
-          </div>
-        )}
-
-        {item.description && (
-          <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0, lineHeight: 1.6, WebkitLineClamp: 3, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {item.description}
-          </p>
-        )}
-
-        {item.link && (
-          <a
-            href={item.link}
-            style={{ fontSize: '0.875rem', color: '#1e3a5f', fontWeight: 600, marginTop: '0.25rem', textDecoration: 'none' }}
-          >
-            Learn more →
-          </a>
-        )}
-      </div>
+      {reversed ? <>{content}{photo}</> : <>{photo}{content}</>}
     </div>
   )
 }
@@ -208,23 +212,28 @@ function NoticeRow({ item }) {
       className="flex items-start border-t"
       style={{ borderColor: '#f1f5f9', padding: '1.25rem 4.5rem', gap: '1.5rem' }}
     >
-      {/* Category tag */}
-      <span
-        style={{
-          fontSize: '10px',
-          fontWeight: 700,
-          letterSpacing: '.1em',
-          textTransform: 'uppercase',
-          background: catColor.bg,
-          color: catColor.text,
-          padding: '3px 8px',
-          borderRadius: 3,
-          flexShrink: 0,
-          marginTop: 2,
-        }}
-      >
-        {catLabel}
-      </span>
+      {/* Category tag + pinned badge */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0, marginTop: 2 }}>
+        <span
+          style={{
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '.1em',
+            textTransform: 'uppercase',
+            background: catColor.bg,
+            color: catColor.text,
+            padding: '3px 8px',
+            borderRadius: 3,
+          }}
+        >
+          {catLabel}
+        </span>
+        {item.pinned && (
+          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '3px' }}>
+            📌 Pinned
+          </span>
+        )}
+      </div>
 
       {/* Content */}
       <div style={{ flexGrow: 1 }}>
@@ -292,7 +301,6 @@ function SkeletonRows() {
 
 export default function CommunityBoard() {
   const [filter, setFilter] = useState('all')
-  const [sort, setSort] = useState('newest')
 
   const { data: bulletins, isLoading: loadingBulletins } = useBulletins()
   const { data: events, isLoading: loadingEvents } = useEvents()
@@ -303,13 +311,14 @@ export default function CommunityBoard() {
     const bItems = (bulletins?.items || []).map((i) => ({ ...i, _type: i.category }))
     const eItems = (events?.items || []).map((i) => ({ ...i, _type: 'event' }))
     const merged = [...bItems, ...eItems]
-    merged.sort((a, b) =>
-      sort === 'newest'
-        ? new Date(b.date) - new Date(a.date)
-        : new Date(a.date) - new Date(b.date)
-    )
+    merged.sort((a, b) => {
+      const aUrgent = a.category === 'urgent' ? 1 : 0
+      const bUrgent = b.category === 'urgent' ? 1 : 0
+      if (bUrgent !== aUrgent) return bUrgent - aUrgent
+      return new Date(b.date) - new Date(a.date)
+    })
     return merged
-  }, [bulletins, events, sort])
+  }, [bulletins, events])
 
   const visibleItems = useMemo(() => {
     if (filter === 'all') return allItems
@@ -432,38 +441,6 @@ export default function CommunityBoard() {
           Notices ({noticeCount})
         </button>
 
-        {/* Sort toggle — pushed to the right */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
-          <button
-            onClick={() => setSort('newest')}
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.8125rem',
-              fontWeight: sort === 'newest' ? 700 : 500,
-              color: sort === 'newest' ? '#fff' : '#475569',
-              background: sort === 'newest' ? '#1e3a5f' : '#fff',
-              border: 'none',
-              cursor: 'pointer',
-              borderRight: '1px solid #e2e8f0',
-            }}
-          >
-            ↓ Newest
-          </button>
-          <button
-            onClick={() => setSort('oldest')}
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.8125rem',
-              fontWeight: sort === 'oldest' ? 700 : 500,
-              color: sort === 'oldest' ? '#fff' : '#475569',
-              background: sort === 'oldest' ? '#1e3a5f' : '#fff',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            ↑ Oldest
-          </button>
-        </div>
       </div>
 
       {/* Content */}
@@ -477,9 +454,46 @@ export default function CommunityBoard() {
         </div>
       ) : (
         <div>
-          {visibleItems.map((item, index) => (
-            <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={index} />
-          ))}
+          {(() => {
+            const now = new Date()
+            const urgent = visibleItems.filter((i) => i.category === 'urgent')
+            const nonUrgent = visibleItems.filter((i) => i.category !== 'urgent')
+            const upcoming = nonUrgent
+              .filter((i) => !i.date || new Date(i.date) >= now)
+              .sort((a, b) => new Date(a.date) - new Date(b.date))
+            const past = nonUrgent.filter((i) => i.date && new Date(i.date) < now)
+            return (
+              <>
+                {urgent.map((item, index) => (
+                  <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={index} />
+                ))}
+                {upcoming.map((item, index) => (
+                  <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={urgent.length + index} />
+                ))}
+                {past.length > 0 && (
+                  <>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      padding: '1.25rem 4.5rem',
+                      background: '#f8fafc',
+                      borderTop: '1px solid #e2e8f0',
+                      borderBottom: '1px solid #e2e8f0',
+                    }}>
+                      <span style={{ ...LABEL_STYLE, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                        Past Events &amp; Notices
+                      </span>
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                    </div>
+                    {past.map((item, index) => (
+                      <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={urgent.length + upcoming.length + index} />
+                    ))}
+                  </>
+                )}
+              </>
+            )
+          })()}
         </div>
       )}
     </div>
