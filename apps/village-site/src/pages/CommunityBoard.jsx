@@ -57,7 +57,7 @@ function UrgentRow({ item }) {
       style={{
         background: '#7f1d1d',
         color: 'white',
-        padding: '1.25rem 4.5rem',
+        padding: '1.25rem var(--px)',
       }}
     >
       {/* Tag + optional pinned */}
@@ -91,7 +91,7 @@ function EventPhotoRow({ item, index }) {
   const reversed = index % 2 === 1
 
   const photo = (
-    <div style={{ width: '40%', flexShrink: 0, overflow: 'hidden' }}>
+    <div className="mob-photo" style={{ width: '40%', flexShrink: 0, overflow: 'hidden' }}>
       <img
         src={photoUrl}
         alt={item.title}
@@ -101,7 +101,7 @@ function EventPhotoRow({ item, index }) {
   )
 
   const content = (
-    <div style={{ flex: 1, padding: '2rem 3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
+    <div className="mob-full" style={{ flex: 1, padding: '2rem 3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
       <span style={LABEL_STYLE}>EVENT</span>
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
@@ -141,7 +141,7 @@ function EventPhotoRow({ item, index }) {
 
   return (
     <div
-      className="flex items-stretch border-t"
+      className="flex items-stretch border-t mob-stack"
       style={{ borderColor: '#f1f5f9', minHeight: 280, background: bg }}
     >
       {reversed ? <>{content}{photo}</> : <>{photo}{content}</>}
@@ -157,7 +157,7 @@ function EventNoPhotoRow({ item, index }) {
   return (
     <div
       className="flex items-center border-t"
-      style={{ borderColor: '#f1f5f9', padding: '1.5rem 4.5rem', gap: '2rem', background: bg }}
+      style={{ borderColor: '#f1f5f9', padding: '1.5rem var(--px)', gap: '2rem', background: bg }}
     >
       {/* Big date */}
       <div style={{ textAlign: 'center', flexShrink: 0, width: 56 }}>
@@ -210,7 +210,7 @@ function NoticeRow({ item }) {
   return (
     <div
       className="flex items-start border-t"
-      style={{ borderColor: '#f1f5f9', padding: '1.25rem 4.5rem', gap: '1.5rem' }}
+      style={{ borderColor: '#f1f5f9', padding: '1.25rem var(--px)', gap: '1.5rem' }}
     >
       {/* Category tag + pinned badge */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0, marginTop: 2 }}>
@@ -281,7 +281,7 @@ function SkeletonRows() {
         <div
           key={n}
           className="flex items-center border-t animate-pulse"
-          style={{ borderColor: '#f1f5f9', padding: '1.5rem 4.5rem', gap: '2rem' }}
+          style={{ borderColor: '#f1f5f9', padding: '1.5rem var(--px)', gap: '2rem' }}
         >
           <div style={{ width: 48, height: 56, background: '#e2e8f0', borderRadius: 4, flexShrink: 0 }} />
           <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -378,7 +378,7 @@ export default function CommunityBoard() {
   return (
     <div>
       {/* Section heading */}
-      <div style={{ padding: '2.5rem 4.5rem' }}>
+      <div style={{ padding: '2.5rem var(--px)' }}>
         <p style={LABEL_STYLE}>COMMUNITY &middot; VILLAGE OF OHIO</p>
         <h1
           style={{
@@ -397,11 +397,12 @@ export default function CommunityBoard() {
 
       {/* Filter bar */}
       <div
-        className="flex items-center gap-3 border-t border-b"
+        className="flex items-center gap-3 border-t border-b mob-scroll"
         style={{
-          padding: '1rem 4.5rem',
+          padding: '1rem var(--px)',
           borderColor: '#f1f5f9',
           background: '#f8fafc',
+          minWidth: 0,
         }}
       >
         <button
@@ -448,7 +449,7 @@ export default function CommunityBoard() {
         <SkeletonRows />
       ) : visibleItems.length === 0 ? (
         <div
-          style={{ textAlign: 'center', padding: '4rem 4.5rem', color: '#64748b', fontSize: '1rem' }}
+          style={{ textAlign: 'center', padding: '4rem var(--px)', color: '#64748b', fontSize: '1rem' }}
         >
           No items to show.
         </div>
@@ -476,7 +477,7 @@ export default function CommunityBoard() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '1rem',
-                      padding: '1.25rem 4.5rem',
+                      padding: '1.25rem var(--px)',
                       background: '#f8fafc',
                       borderTop: '1px solid #e2e8f0',
                       borderBottom: '1px solid #e2e8f0',

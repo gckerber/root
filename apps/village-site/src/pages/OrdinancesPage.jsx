@@ -63,8 +63,8 @@ function SkeletonRows() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-5 px-[4.5rem] py-5 border-t border-[#f1f5f9] animate-pulse"
-          style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc' }}
+          className="flex items-center gap-5 py-5 border-t border-[#f1f5f9] animate-pulse"
+          style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}
         >
           <div className="w-10 h-10 bg-[#e2e8f0] flex-shrink-0" />
           <div className="flex-1 space-y-2">
@@ -84,8 +84,8 @@ function DocumentRow({ item, index }) {
 
   return (
     <div
-      className="flex items-center gap-5 px-[4.5rem] py-5 border-t border-[#f1f5f9]"
-      style={{ background: bg }}
+      className="flex items-center gap-5 py-5 border-t border-[#f1f5f9]"
+      style={{ background: bg, paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}
     >
       {/* PDF icon */}
       <div className="w-10 h-10 bg-[#f1f5f9] flex items-center justify-center flex-shrink-0 text-[#94a3b8]">
@@ -178,10 +178,11 @@ export default function OrdinancesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Section heading */}
-      <div className="px-[4.5rem] py-[2.5rem] border-b border-[#f1f5f9]">
+      <div className="py-[2.5rem] border-b border-[#f1f5f9]" style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}>
         <p style={LABEL_STYLE} className="mb-3">Official Records</p>
         <h1
-          className="text-[3rem] font-black tracking-tight text-[#1e3a5f] leading-none mb-3"
+          className="font-black tracking-tight text-[#1e3a5f] leading-none mb-3"
+          style={{ fontSize: 'clamp(1.75rem, 5vw, 3rem)' }}
         >
           Ordinances &amp; Documents
         </h1>
@@ -191,7 +192,7 @@ export default function OrdinancesPage() {
       </div>
 
       {/* Category tabs + search */}
-      <div className="flex items-center gap-0 border-b border-[#f1f5f9] px-[4.5rem] flex-wrap">
+      <div className="flex items-center gap-0 border-b border-[#f1f5f9] flex-wrap" style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}>
         {TABS.map(({ id, label }) => (
           <button
             key={id}
@@ -226,7 +227,7 @@ export default function OrdinancesPage() {
         byYear.map(([year, items]) => (
           <div key={year}>
             {/* Year header */}
-            <div className="px-[4.5rem] py-3 bg-[#f8fafc] border-t border-[#f1f5f9]">
+            <div className="py-3 bg-[#f8fafc] border-t border-[#f1f5f9]" style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}>
               <span
                 className="text-xs font-bold tracking-wider uppercase"
                 style={{ color: '#1e3a5f' }}

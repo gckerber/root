@@ -65,9 +65,9 @@ function MinuteRow({ doc, altBg }) {
 
   return (
     <div
-      className="flex items-start gap-6 border-t border-[#f1f5f9]"
+      className="flex items-start gap-4 border-t border-[#f1f5f9] flex-wrap"
       style={{
-        padding: '1.5rem 4.5rem',
+        padding: '1.5rem var(--px)',
         backgroundColor: altBg ? '#f8fafc' : '#ffffff',
       }}
     >
@@ -199,7 +199,7 @@ export default function Minutes() {
       {/* 1. Section heading */}
       <div
         className="border-b border-[#f1f5f9]"
-        style={{ padding: '2.5rem 4.5rem' }}
+        style={{ padding: '2.5rem var(--px)' }}
       >
         <div style={LABEL_STYLE} className="mb-3">
           Village Government
@@ -217,7 +217,7 @@ export default function Minutes() {
       </div>
 
       {/* 2. Upcoming meetings band */}
-      <div style={{ backgroundColor: '#1e3a5f', padding: '2rem 4.5rem' }}>
+      <div style={{ backgroundColor: '#1e3a5f', padding: '2rem var(--px)' }}>
         <div
           style={{
             fontSize: '10px',
@@ -235,7 +235,7 @@ export default function Minutes() {
         </h2>
 
         <div
-          className="flex gap-0 border-t border-white/10 mt-4 pt-6"
+          className="flex gap-0 border-t border-white/10 mt-4 pt-6 mob-scroll"
           style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}
         >
           {upcomingSlots.map((m, i) => {
@@ -283,8 +283,8 @@ export default function Minutes() {
 
       {/* 3. Filter bar */}
       <div
-        className="flex items-center gap-0 border-b border-[#f1f5f9]"
-        style={{ padding: '0 0' }}
+        className="flex items-center gap-0 border-b border-[#f1f5f9] mob-scroll"
+        style={{ padding: '0 0', minWidth: 0 }}
       >
         {yearTabs.map((y) => {
           const active = year === y
@@ -297,7 +297,7 @@ export default function Minutes() {
                   ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-6 py-4 text-sm'
                   : 'text-slate-500 px-6 py-4 text-sm hover:text-[#1e3a5f]'
               }
-              style={{ paddingLeft: y === yearTabs[0] ? '4.5rem' : undefined }}
+              style={{ paddingLeft: y === yearTabs[0] ? 'var(--px)' : undefined }}
             >
               {y === 'all' ? 'All' : y}
             </button>
@@ -310,13 +310,13 @@ export default function Minutes() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border border-[#e2e8f0] px-4 py-2 text-sm ml-auto outline-none"
-          style={{ marginRight: '4.5rem' }}
+          style={{ marginRight: 'var(--px)' }}
         />
       </div>
 
       {/* 4. Document rows */}
       {isLoading ? (
-        <div style={{ padding: '3rem 4.5rem' }}>
+        <div style={{ padding: '3rem var(--px)' }}>
           {[0, 1, 2].map((n) => (
             <div
               key={n}

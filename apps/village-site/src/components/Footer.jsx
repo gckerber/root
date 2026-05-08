@@ -15,8 +15,8 @@ export default function Footer() {
   return (
     <footer className="bg-[#0f172a]">
       <div
-        className="flex gap-16 py-16"
-        style={{ paddingLeft: '4.5rem', paddingRight: '4.5rem' }}
+        className="flex flex-wrap gap-10 py-12"
+        style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}
       >
         {/* Column 1 — Brand + address */}
         <div className="flex-1">
@@ -80,8 +80,8 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div
-        className="border-t border-slate-800 mt-0 pt-6 pb-6 flex justify-between text-xs text-slate-600"
-        style={{ paddingLeft: '4.5rem', paddingRight: '4.5rem' }}
+        className="border-t border-slate-800 mt-0 pt-6 pb-6 flex flex-wrap gap-2 justify-between text-xs text-slate-600"
+        style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}
       >
         <span>© 2026 Village of Saint Louisville, Ohio. All rights reserved.</span>
         <span>Built &amp; maintained by George Kerber, Tech Czar</span>

@@ -10,6 +10,32 @@
     @apply text-gray-800 antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
+
+  /* Responsive horizontal page padding — used as var(--px) in inline styles */
+  :root { --px: 4.5rem; }
+  @media (max-width: 1024px) { :root { --px: 2.5rem; } }
+  @media (max-width: 640px)  { :root { --px: 1.25rem; } }
+}
+
+@layer utilities {
+  /* Stack a flex row vertically on mobile */
+  .mob-stack { display: flex; }
+  @media (max-width: 640px) {
+    .mob-stack { flex-direction: column !important; }
+    .mob-stack > .mob-photo { order: -1; width: 100% !important; min-height: 220px; flex-shrink: 0; }
+    .mob-stack > .mob-full  { width: 100% !important; }
+  }
+
+  /* Hide on mobile */
+  .mob-hide { display: block; }
+  @media (max-width: 640px) { .mob-hide { display: none !important; } }
+
+  /* Horizontal scroll on mobile (filter tabs etc.) */
+  .mob-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 640px) {
+    .mob-scroll { flex-wrap: nowrap !important; }
+    .mob-scroll::-webkit-scrollbar { display: none; }
+  }
 }
 
 @layer utilities {

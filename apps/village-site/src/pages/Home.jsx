@@ -67,55 +67,44 @@ function Pulse({ className = '', style = {} }) {
 function PinnedBand({ items }) {
   if (!items || items.length === 0) return null
   return (
-    <div style={{ background: NAVY }}>
-      <div style={{ display: 'flex', alignItems: 'stretch', padding: '0 4.5rem' }}>
-        {/* Left label */}
-        <div style={{ flexShrink: 0, paddingRight: '2.5rem', paddingTop: '1.5rem', paddingBottom: '1.5rem', borderRight: '1px solid rgba(255,255,255,.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <p style={{ ...LABEL_STYLE, color: GOLD, marginBottom: '.3rem' }}>Pinned</p>
-          <p style={{ fontSize: '1.0625rem', fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-.01em' }}>Notices</p>
+    <div style={{ background: NAVY, padding: '0.875rem var(--px)' }}>
+      {/* Single flex row — wraps to next line on narrow screens */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 1.5rem' }}>
+
+        {/* Label — always anchors left */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0, paddingRight: '1.5rem', borderRight: '1px solid rgba(255,255,255,.2)' }}>
+          <p style={{ ...LABEL_STYLE, color: GOLD }}>Pinned</p>
+          <p style={{ fontSize: '.9375rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>Notices</p>
         </div>
 
-        {/* Items — each stacked, separated by vertical dividers */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'stretch', overflowX: 'auto' }}>
+        {/* Items — sit right of label when room, wrap below when not */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', flex: 1, alignItems: 'center', gap: '0.375rem 0' }}>
           {items.map((item, i) => (
             <div
               key={item.id}
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                padding: '1.5rem 2.5rem',
-                borderRight: '1px solid rgba(255,255,255,.1)',
-                flexShrink: 0,
-                gap: '.3rem',
+                alignItems: 'center',
+                gap: '0.5rem',
+                paddingRight: i < items.length - 1 ? '1.25rem' : 0,
+                marginRight: i < items.length - 1 ? '1.25rem' : 0,
+                borderRight: i < items.length - 1 ? '1px solid rgba(255,255,255,.15)' : 'none',
               }}
             >
-              <p style={{ ...LABEL_STYLE, color: GOLD, marginBottom: '.1rem' }}>
+              <span style={{ ...LABEL_STYLE, color: item.category === 'urgent' ? '#fca5a5' : GOLD, fontSize: '9px', flexShrink: 0 }}>
                 {(item.category || 'notice').toUpperCase()}
-              </p>
-              <p style={{ color: '#fff', fontSize: '.9rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              </span>
+              <span style={{ color: '#fff', fontSize: '.875rem', fontWeight: 600 }}>
                 {item.title}
-              </p>
+              </span>
             </div>
           ))}
         </div>
 
-        {/* All Notices link */}
+        {/* Link — floats right when room, wraps to its own line when not */}
         <Link
           to="/community"
-          style={{
-            flexShrink: 0,
-            paddingLeft: '2.5rem',
-            paddingRight: 0,
-            display: 'flex',
-            alignItems: 'center',
-            borderLeft: '1px solid rgba(255,255,255,.15)',
-            color: GOLD,
-            fontSize: '.875rem',
-            fontWeight: 700,
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
+          style={{ color: GOLD, fontSize: '.8125rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 'auto' }}
         >
           All Notices →
         </Link>
@@ -145,8 +134,8 @@ function EventStrip({ event, reversed = false, bgColor = '#fff' }) {
 
   const textBlock = (
     <div
-      className="flex flex-col justify-center h-full"
-      style={{ padding: '3rem 4.5rem', flex: '0 0 54%' }}
+      className="flex flex-col justify-center h-full mob-full"
+      style={{ padding: 'clamp(1.5rem, 4vw, 3rem) var(--px)', flex: '0 0 54%' }}
     >
       {dateBlock}
       <h2
@@ -178,7 +167,7 @@ function EventStrip({ event, reversed = false, bgColor = '#fff' }) {
 
   const photoBlock = (
     <div
-      className="relative overflow-hidden flex-shrink-0"
+      className="relative overflow-hidden flex-shrink-0 mob-photo"
       style={{ flex: '0 0 46%', minHeight: '380px' }}
     >
       {hasPhoto ? (
@@ -200,7 +189,7 @@ function EventStrip({ event, reversed = false, bgColor = '#fff' }) {
 
   return (
     <div
-      className="flex"
+      className="flex mob-stack"
       style={{ background: bgColor, minHeight: '380px' }}
     >
       {reversed ? (
@@ -252,7 +241,7 @@ export default function Home() {
   return (
     <div>
       {/* ── Hero ── */}
-      <section style={{ position: 'relative', minHeight: '540px', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0f172a' }}>
+      <section style={{ position: 'relative', minHeight: '420px', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0f172a' }}>
         {/* Background image — full opacity, let the gradient do the darkening */}
         {!imagesLoading && heroImage?.url && (
           <img
@@ -265,13 +254,13 @@ export default function Home() {
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,.15) 100%)' }} />
 
         {/* Content */}
-        <div style={{ position: 'relative', zIndex: 1, padding: '4rem 4.5rem', maxWidth: '640px' }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: 'clamp(2rem, 5vw, 4rem) var(--px)', maxWidth: '640px' }}>
           <p style={{ ...LABEL_STYLE, color: 'rgba(255,255,255,.7)', marginBottom: '1rem', letterSpacing: '.14em' }}>
             Village of Ohio · Licking County
           </p>
           <h1
             style={{
-              fontSize: '3.5rem',
+              fontSize: 'clamp(2rem, 6vw, 3.5rem)',
               fontWeight: 900,
               color: '#fff',
               lineHeight: 1.05,
@@ -322,7 +311,7 @@ export default function Home() {
 
       {/* ── Pinned notices band ── */}
       {bulletinLoading ? (
-        <div style={{ background: NAVY, padding: '1.25rem 4.5rem' }}>
+        <div style={{ background: NAVY, padding: '1.25rem var(--px)' }}>
           <div className="flex gap-8">
             <Pulse style={{ height: '20px', width: '180px' }} />
             <Pulse style={{ height: '20px', width: '240px' }} />
@@ -334,7 +323,7 @@ export default function Home() {
       )}
 
       {/* ── Calendar heading ── */}
-      <div style={{ padding: '2.5rem 4.5rem 1.5rem', borderTop: `1px solid ${DIV}` }}>
+      <div style={{ padding: '2.5rem var(--px) 1.5rem', borderTop: `1px solid ${DIV}` }}>
         <p style={LABEL_STYLE}>On the Calendar</p>
         <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.375rem' }}>Upcoming Events</h2>
       </div>
@@ -343,7 +332,7 @@ export default function Home() {
       {eventsLoading ? (
         <div className="flex" style={{ minHeight: '380px' }}>
           <Pulse style={{ flex: '0 0 46%', borderRadius: 0 }} />
-          <div style={{ flex: '0 0 54%', padding: '3rem 4.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ flex: '0 0 54%', padding: 'clamp(1.5rem, 4vw, 3rem) var(--px)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <Pulse style={{ height: '12px', width: '80px' }} />
             <Pulse style={{ height: '64px', width: '60px' }} />
             <Pulse style={{ height: '28px', width: '70%' }} />
@@ -358,7 +347,7 @@ export default function Home() {
       {/* ── Event strip 2 (photo right, reversed) ── */}
       {eventsLoading ? (
         <div className="flex" style={{ minHeight: '380px', background: BGALT }}>
-          <div style={{ flex: '0 0 54%', padding: '3rem 4.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ flex: '0 0 54%', padding: 'clamp(1.5rem, 4vw, 3rem) var(--px)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <Pulse style={{ height: '12px', width: '80px' }} />
             <Pulse style={{ height: '64px', width: '60px' }} />
             <Pulse style={{ height: '28px', width: '70%' }} />
@@ -372,7 +361,7 @@ export default function Home() {
 
       {/* ── Quick links row ── */}
       <div
-        className="flex"
+        className="flex flex-wrap"
         style={{ borderTop: `1px solid ${DIV}`, borderBottom: `1px solid ${DIV}` }}
       >
         {[
@@ -388,7 +377,7 @@ export default function Home() {
             to={item.to}
             className="flex-1 group"
             style={{
-              padding: '1.75rem 2rem',
+              padding: '1.25rem 1.25rem',
               borderRight: i < arr.length - 1 ? `1px solid ${DIV}` : 'none',
               textDecoration: 'none',
               display: 'flex',
@@ -411,7 +400,7 @@ export default function Home() {
       {/* ── Contact section ── */}
       <section
         id="contact"
-        style={{ background: NAVY, padding: '5rem 4.5rem' }}
+        style={{ background: NAVY, padding: 'clamp(3rem, 6vw, 5rem) var(--px)' }}
       >
         <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
           <p style={{ ...LABEL_STYLE, color: GOLD, marginBottom: '1rem' }}>Get In Touch</p>

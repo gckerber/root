@@ -42,13 +42,13 @@ function OfficialContact({ official }) {
 
 function MayorStrip({ official }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 420, background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
-      <div style={{ width: '40%', overflow: 'hidden', flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 420, background: '#f8fafc', borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+      <div style={{ width: 'min(40%, 100%)', overflow: 'hidden', flexShrink: 0 }}>
         <Avatar official={official} />
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem var(--px)' }}>
         <span style={{ ...LABEL, color: NAVY, marginBottom: '1.125rem', display: 'block' }}>Mayor</span>
-        <h2 style={{ fontSize: '2.75rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{official.name}</h2>
+        <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.75rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{official.name}</h2>
         {official.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 450, marginBottom: '1.5rem' }}>{official.bio}</p>}
         {official.committees?.length > 0 && (
           <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap' }}>
@@ -65,9 +65,9 @@ function CouncilStrip({ official, index }) {
   const photoLeft = index % 2 === 0
   const bg = index % 2 === 1 ? '#f8fafc' : '#fff'
   const content = (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3rem 4.5rem' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3rem var(--px)' }}>
       <span style={{ ...LABEL, marginBottom: '1rem', display: 'block' }}>Council Member</span>
-      <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{official.name}</h2>
+      <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{official.name}</h2>
       {official.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 400, marginBottom: '1.125rem' }}>{official.bio}</p>}
       {official.committees?.length > 0 && (
         <div style={{ marginBottom: '1.25rem', display: 'flex', flexWrap: 'wrap' }}>
@@ -78,12 +78,12 @@ function CouncilStrip({ official, index }) {
     </div>
   )
   const photo = (
-    <div style={{ width: '36%', overflow: 'hidden', flexShrink: 0 }}>
+    <div style={{ width: 'min(36%, 100%)', overflow: 'hidden', flexShrink: 0 }}>
       <Avatar official={official} />
     </div>
   )
   return (
-    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 320, background: bg, borderTop: '1px solid #f1f5f9' }}>
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 320, background: bg, borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
       {photoLeft ? <>{photo}{content}</> : <>{content}{photo}</>}
     </div>
   )
@@ -162,7 +162,7 @@ export default function Officials() {
 
   if (isLoading) {
     return (
-      <div style={{ padding: '4.5rem' }}>
+      <div style={{ padding: '4.5rem var(--px)' }}>
         {[1, 2, 3].map(i => (
           <div key={i} style={{ height: 200, background: '#f1f5f9', marginBottom: 8 }} className="animate-pulse" />
         ))}
@@ -177,9 +177,9 @@ export default function Officials() {
       <div style={{ position: 'relative', minHeight: 300, display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)' }} />
         <img src="https://picsum.photos/seed/officials-hero/1600/700" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: .2 }} />
-        <div style={{ position: 'relative', padding: '3.5rem 4.5rem', zIndex: 1 }}>
+        <div style={{ position: 'relative', padding: '3.5rem var(--px)', zIndex: 1 }}>
           <p style={{ ...LABEL, color: '#93c5fd', marginBottom: '1rem' }}>Your elected leaders</p>
-          <h1 style={{ fontSize: '3.25rem', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: '.875rem' }}>Village Officials</h1>
+          <h1 style={{ fontSize: 'clamp(1.75rem, 5vw, 3.25rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: '.875rem' }}>Village Officials</h1>
           <p style={{ color: '#cbd5e1', fontSize: '.9375rem', lineHeight: 1.8, maxWidth: 400 }}>
             Meet your mayor, council members, and staff — and see who serves on which committee.
           </p>
@@ -192,9 +192,9 @@ export default function Officials() {
       {/* Council */}
       {council.length > 0 && (
         <>
-          <div style={{ padding: '2rem 4.5rem 1.5rem', borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ padding: '2rem var(--px) 1.5rem', borderTop: '1px solid #f1f5f9' }}>
             <p style={LABEL}>Village Council</p>
-            <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Council Members</h2>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2rem)', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Council Members</h2>
           </div>
           {council.map((o, i) => <CouncilStrip key={o.id} official={o} index={i} />)}
         </>
@@ -203,11 +203,11 @@ export default function Officials() {
       {/* Staff */}
       {other.length > 0 && (
         <>
-          <div style={{ padding: '1.5rem 4.5rem 1rem', borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ padding: '1.5rem var(--px) 1rem', borderTop: '1px solid #f1f5f9' }}>
             <p style={LABEL}>Village Staff</p>
             <h2 style={{ fontSize: '1.625rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Other Officials &amp; Staff</h2>
           </div>
-          <div style={{ padding: '0 4.5rem 2.5rem' }}>
+          <div style={{ padding: '0 var(--px) 2.5rem' }}>
             {other.map((o, i) => <StaffRow key={o.id} official={o} index={i} />)}
           </div>
         </>
@@ -216,14 +216,14 @@ export default function Officials() {
       {/* Committees */}
       {committeeGroups.size > 0 && (
         <>
-          <div style={{ padding: '2rem 4.5rem 1.5rem', borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ padding: '2rem var(--px) 1.5rem', borderTop: '1px solid #f1f5f9' }}>
             <p style={LABEL}>Village Government</p>
-            <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Committees</h2>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2rem)', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Committees</h2>
             <p style={{ fontSize: '.9rem', color: '#64748b', marginTop: '.375rem', maxWidth: 520 }}>
               Standing committees advise the council on specific areas of village business.
             </p>
           </div>
-          <div style={{ margin: '0 4.5rem 3.5rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: '#f1f5f9' }}>
+          <div style={{ margin: '0 var(--px) 3.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1px', background: '#f1f5f9' }}>
             {[...committeeGroups.entries()].map(([name, members], i) => (
               <CommitteePanel key={name} name={name} members={members} index={i} />
             ))}

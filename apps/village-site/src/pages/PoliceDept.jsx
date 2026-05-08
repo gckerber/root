@@ -33,15 +33,15 @@ function initials(name = '') {
 function ChiefStrip({ officer }) {
   const phone = officer.phoneWork || officer.phone
   return (
-    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 400, background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
-      <div style={{ width: 340, overflow: 'hidden', flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 280, background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+      <div style={{ width: '40%', overflow: 'hidden', flexShrink: 0 }}>
         {officer.photoUrl
           ? <img src={officer.photoUrl} alt={officer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ width: '100%', height: '100%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '3rem', fontWeight: 900 }}>{initials(officer.name)}</div>}
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3rem 4.5rem' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '2rem var(--px)' }}>
         <span style={{ ...LABEL, color: NAVY, marginBottom: '1.125rem', display: 'block' }}>{officer.title || 'Chief of Police'}</span>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{officer.name}</h2>
+        <h2 style={{ fontSize: 'clamp(1.25rem, 4vw, 2.5rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{officer.name}</h2>
         {officer.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 460, marginBottom: '1.625rem' }}>{officer.bio}</p>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem', fontSize: '.875rem' }}>
           {phone && <div style={{ display: 'flex', gap: '1rem' }}><span style={LABEL}>Work</span><span style={{ fontWeight: 600 }}>{phone}</span></div>}
@@ -56,22 +56,22 @@ function OfficerStrip({ officer, index }) {
   const photoLeft = index % 2 !== 0
   const phone = officer.phoneWork || officer.phone
   const content = (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '2.5rem 4.5rem' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '2rem var(--px)' }}>
       <span style={{ ...LABEL, color: '#64748b', marginBottom: '.875rem', display: 'block' }}>{officer.title || 'Officer'}</span>
-      <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{officer.name}</h2>
+      <h2 style={{ fontSize: 'clamp(1.125rem, 3.5vw, 2rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{officer.name}</h2>
       {officer.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 400, marginBottom: '1.25rem' }}>{officer.bio}</p>}
       {phone && <div style={{ fontSize: '.875rem', display: 'flex', gap: '1rem' }}><span style={LABEL}>Work</span><span style={{ fontWeight: 600 }}>{phone}</span></div>}
     </div>
   )
   const photo = (
-    <div style={{ width: 300, overflow: 'hidden', flexShrink: 0 }}>
+    <div style={{ width: '35%', overflow: 'hidden', flexShrink: 0 }}>
       {officer.photoUrl
         ? <img src={officer.photoUrl} alt={officer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : <div style={{ width: '100%', height: '100%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '2rem', fontWeight: 900 }}>{initials(officer.name)}</div>}
     </div>
   )
   return (
-    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 300, background: index % 2 === 0 ? '#fff' : '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 220, background: index % 2 === 0 ? '#fff' : '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
       {photoLeft ? <>{photo}{content}</> : <>{content}{photo}</>}
     </div>
   )
@@ -131,7 +131,7 @@ export default function PoliceDept() {
           <img src={heroBg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.82)' }} />
         </div>
-        <div style={{ position: 'relative', zIndex: 1, padding: '3.5rem 4.5rem 3rem', width: '100%' }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: '3.5rem var(--px) 3rem', width: '100%' }}>
           <p style={{ ...LABEL, color: GOLD, marginBottom: '1rem' }}>Saint Louisville · Ohio</p>
           <h1 style={{ fontSize: '3.25rem', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: '1.25rem' }}>Police Department</h1>
           <p style={{ color: '#cbd5e1', fontSize: '.9375rem', lineHeight: 1.8, maxWidth: 380, marginBottom: '2rem' }}>Serving and protecting Saint Louisville with integrity and community partnership.</p>
@@ -155,7 +155,7 @@ export default function PoliceDept() {
       </div>
 
       {/* Sticky sub-nav */}
-      <div style={{ position: 'sticky', top: 60, zIndex: 10, display: 'flex', borderBottom: '1px solid #f1f5f9', paddingLeft: '4.5rem', background: '#fff' }}>
+      <div style={{ position: 'sticky', top: 60, zIndex: 10, display: 'flex', borderBottom: '1px solid #f1f5f9', paddingLeft: 'var(--px)', background: '#fff', overflowX: 'auto' }}>
         {SECTIONS.map(s => (
           <a
             key={s.id}
@@ -184,31 +184,31 @@ export default function PoliceDept() {
 
       {/* Officers */}
       <div id="officers" style={{ scrollMarginTop: 110, background: '#fff' }}>
-        <div style={{ padding: '2rem 4.5rem 1.5rem', borderTop: `4px solid ${NAVY}` }}>
+        <div style={{ padding: '2rem var(--px) 1.5rem', borderTop: `4px solid ${NAVY}` }}>
           <p style={LABEL}>Meet the team</p>
           <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Our Officers</h2>
         </div>
         {chief && <ChiefStrip officer={chief} />}
         {rest.map((o, i) => <OfficerStrip key={o.id} officer={o} index={i} />)}
         {officers.length === 0 && (
-          <p style={{ padding: '3rem 4.5rem', color: '#94a3b8', fontSize: '.9rem' }}>Officer information coming soon.</p>
+          <p style={{ padding: '3rem var(--px)', color: '#94a3b8', fontSize: '.9rem' }}>Officer information coming soon.</p>
         )}
       </div>
 
       {/* Mayor's Court */}
       <div id="court" style={{ scrollMarginTop: 110, borderTop: `4px solid ${GOLD}` }}>
         {/* Upcoming dates — dark navy band */}
-        <div style={{ background: NAVY, padding: '3rem 4.5rem' }}>
+        <div style={{ background: NAVY, padding: '3rem var(--px)' }}>
           <p style={{ ...LABEL, color: GOLD, marginBottom: '.375rem' }}>Scheduled Dates</p>
           <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', letterSpacing: '-.02em' }}>Mayor's Court</p>
           <p style={{ fontSize: '.875rem', color: '#94a3b8', marginTop: '.375rem', marginBottom: '1.5rem', maxWidth: 540 }}>
             Held at Village Hall. Sessions are open to the public unless otherwise noted. Questions? Call {phone}.
           </p>
-          <div style={{ display: 'flex', gap: 0, borderTop: '1px solid rgba(255,255,255,.1)', paddingTop: '1.5rem' }}>
+          <div style={{ display: 'flex', gap: 0, borderTop: '1px solid rgba(255,255,255,.1)', paddingTop: '1.5rem', flexWrap: 'wrap' }}>
             {(courtDates.length ? courtDates : ['TBD', 'TBD', 'TBD']).map((d, i) => {
               const { full, weekday } = typeof d === 'string' ? { full: 'To Be Scheduled', weekday: '' } : fmtCourtDate(d.date)
               return (
-                <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid rgba(255,255,255,.1)' : 'none', paddingRight: i < 2 ? '3rem' : 0, paddingLeft: i > 0 ? '3rem' : 0 }}>
+                <div key={i} style={{ flex: 1, minWidth: '200px', borderRight: i < 2 ? '1px solid rgba(255,255,255,.1)' : 'none', paddingRight: i < 2 ? '3rem' : 0, paddingLeft: i > 0 ? '3rem' : 0 }}>
                   <p style={{ fontSize: '1.875rem', fontWeight: 900, color: '#fff', letterSpacing: '-.03em', lineHeight: 1.1, marginBottom: '.375rem' }}>{full}</p>
                   <p style={{ fontSize: '.875rem', color: '#94a3b8' }}>{weekday ? `${weekday} · 6:00 PM · Village Hall` : 'Date TBD'}</p>
                 </div>
@@ -218,9 +218,9 @@ export default function PoliceDept() {
         </div>
 
         {/* How to Pay */}
-        <div style={{ display: 'flex', alignItems: 'stretch', borderTop: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'flex', alignItems: 'stretch', borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
           {/* Left — warning + methods */}
-          <div style={{ flex: 1, padding: '3rem 4.5rem', borderRight: '1px solid #f1f5f9' }}>
+          <div style={{ flex: 1, minWidth: '280px', padding: '2rem var(--px)', borderRight: '1px solid #f1f5f9' }}>
             <div style={{ display: 'inline-block', background: '#fef2f2', border: '1px solid #fecaca', padding: '.5rem 1.25rem', marginBottom: '1.5rem' }}>
               <p style={{ fontSize: '.8125rem', fontWeight: 800, color: '#991b1b', letterSpacing: '.04em', textTransform: 'uppercase' }}>
                 Payment is due by the court date
@@ -246,7 +246,7 @@ export default function PoliceDept() {
           </div>
 
           {/* Right — where to pay */}
-          <div style={{ flex: 1, padding: '3rem 4.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div style={{ flex: 1, minWidth: '280px', padding: '2rem var(--px)', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Mail */}
             <div>
               <p style={{ ...LABEL, marginBottom: '.5rem' }}>Mail payment (check or money order)</p>
@@ -281,7 +281,7 @@ export default function PoliceDept() {
 
       {/* PD Events */}
       <div id="events" style={{ scrollMarginTop: 110, background: '#f1f5f9', borderTop: `4px solid ${NAVY}` }}>
-        <div style={{ padding: '2rem 4.5rem 1.5rem' }}>
+        <div style={{ padding: '2rem var(--px) 1.5rem' }}>
           <p style={LABEL}>Police events</p>
           <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>PD Events &amp; Programs</h2>
         </div>
@@ -318,7 +318,7 @@ export default function PoliceDept() {
                 )
               }
               return (
-                <div key={e.id} className="flex items-center border-t" style={{ borderColor: '#f1f5f9', padding: '1.5rem 4.5rem', gap: '2rem', background: bg }}>
+                <div key={e.id} className="flex items-center border-t" style={{ borderColor: '#f1f5f9', padding: '1.5rem var(--px)', gap: '2rem', background: bg }}>
                   <div style={{ textAlign: 'center', flexShrink: 0, width: 56 }}>
                     <div style={{ fontSize: '3rem', fontWeight: 900, color: NAVY, lineHeight: 1 }}>{fmtEventDay(e.date)}</div>
                     <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#94a3b8' }}>{fmtEventMo(e.date)}</div>
@@ -339,13 +339,13 @@ export default function PoliceDept() {
             })}
           </div>
         ) : (
-          <p style={{ padding: '3rem 4.5rem', color: '#94a3b8', fontSize: '.9rem' }}>No upcoming police events.</p>
+          <p style={{ padding: '3rem var(--px)', color: '#94a3b8', fontSize: '.9rem' }}>No upcoming police events.</p>
         )}
       </div>
 
       {/* FAQ */}
       <div id="faq" style={{ scrollMarginTop: 110, background: '#fff', borderTop: `4px solid ${GOLD}` }}>
-        <div style={{ padding: '2rem 4.5rem 1.5rem' }}>
+        <div style={{ padding: '2rem var(--px) 1.5rem' }}>
           <p style={LABEL}>Common questions</p>
           <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Frequently Asked Questions</h2>
         </div>
@@ -354,7 +354,7 @@ export default function PoliceDept() {
             <div key={faq.id} style={{ borderTop: '1px solid #f1f5f9' }}>
               <button
                 onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 4.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem var(--px)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
               >
                 <span style={{ fontSize: '.9375rem', fontWeight: 700, color: '#0f172a' }}>{faq.question}</span>
                 <span style={{ fontSize: '1.25rem', fontWeight: 300, color: '#94a3b8', flexShrink: 0, marginLeft: '1rem' }}>
@@ -362,7 +362,7 @@ export default function PoliceDept() {
                 </span>
               </button>
               {openFaq === faq.id && (
-                <p style={{ padding: '0 4.5rem 1.25rem', fontSize: '.9rem', color: '#64748b', lineHeight: 1.85, maxWidth: 700 }}>
+                <p style={{ padding: '0 var(--px) 1.25rem', fontSize: '.9rem', color: '#64748b', lineHeight: 1.85, maxWidth: 700 }}>
                   {faq.answer}
                 </p>
               )}
@@ -374,11 +374,11 @@ export default function PoliceDept() {
 
       {/* Links & Resources */}
       <div id="links" style={{ scrollMarginTop: 110, background: '#f1f5f9', borderTop: `4px solid ${NAVY}` }}>
-        <div style={{ padding: '2rem 4.5rem 1.5rem' }}>
+        <div style={{ padding: '2rem var(--px) 1.5rem' }}>
           <p style={LABEL}>External</p>
           <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Links &amp; Resources</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#e2e8f0', margin: '0 4.5rem 2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1px', background: '#e2e8f0', margin: '0 var(--px) 2.5rem' }}>
           {links.map((lnk, i) => (
             <a
               key={lnk.id || i}

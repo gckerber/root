@@ -21,7 +21,7 @@ function PhotoMosaic({ photos = [], startIndex = 0, count = 5, sepia = 0 }) {
     : PLACEHOLDER_PHOTOS.slice(startIndex, startIndex + count)
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, margin: '0 4.5rem 3rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 4, margin: '0 var(--px) 3rem' }}>
       {tiles.map((p, i) => {
         const isWide = i === 0 && p.wide !== false
         return (
@@ -55,12 +55,12 @@ export default function History() {
     <div style={{ background: '#fff', minHeight: '100vh' }}>
 
       {/* Heading with 1837 watermark */}
-      <div style={{ position: 'relative', padding: '5rem 4.5rem 4rem', overflow: 'hidden', borderBottom: '1px solid #f1f5f9' }}>
+      <div style={{ position: 'relative', padding: '5rem var(--px) 4rem', overflow: 'hidden', borderBottom: '1px solid #f1f5f9' }}>
         <div style={{ position: 'absolute', right: '3rem', top: '50%', transform: 'translateY(-50%)', fontSize: '16rem', fontWeight: 900, color: '#f1f5f9', lineHeight: 1, pointerEvents: 'none', userSelect: 'none', letterSpacing: '-.06em' }}>
           1837
         </div>
         <p style={{ ...LABEL, marginBottom: '.875rem', position: 'relative' }}>Incorporated 1837 · Knox County, Ohio</p>
-        <h1 style={{ fontSize: '3.75rem', fontWeight: 900, letterSpacing: '-.04em', lineHeight: 1.05, maxWidth: 560, position: 'relative', color: '#0f172a' }}>
+        <h1 style={{ fontSize: 'clamp(1.75rem, 5vw, 3.75rem)', fontWeight: 900, letterSpacing: '-.04em', lineHeight: 1.05, maxWidth: 560, position: 'relative', color: '#0f172a' }}>
           The Story of<br />Saint Louisville
         </h1>
         <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.875, maxWidth: 540, marginTop: '1.125rem', position: 'relative' }}>
@@ -69,17 +69,17 @@ export default function History() {
       </div>
 
       {/* Era 1 — photo left */}
-      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 480, borderTop: '1px solid #f1f5f9' }}>
-        <div style={{ width: '46%', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 480, borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+        <div style={{ width: 'min(46%, 100%)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={photos[0]?.url || 'https://picsum.photos/seed/history1/900/700'}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(.45) contrast(1.05)' }}
           />
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem var(--px)' }}>
           <p style={{ ...LABEL, marginBottom: '.875rem' }}>Early History · 1837–1880</p>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>Founded on the frontier</h2>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>Founded on the frontier</h2>
           <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>
             {historyData?.text
               ? historyData.text.slice(0, 400)
@@ -92,16 +92,16 @@ export default function History() {
       </div>
 
       {/* Photo mosaic 1 */}
-      <div style={{ padding: '2.5rem 4.5rem 1.5rem', borderTop: '1px solid #f1f5f9' }}>
+      <div style={{ padding: '2.5rem var(--px) 1.5rem', borderTop: '1px solid #f1f5f9' }}>
         <p style={LABEL}>Photo archive — historical &amp; community photos</p>
       </div>
       <PhotoMosaic photos={photos} startIndex={0} count={5} sepia={0.35} />
 
       {/* Era 2 — photo right */}
-      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 460, background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 460, background: '#f8fafc', borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem var(--px)' }}>
           <p style={{ ...LABEL, marginBottom: '.875rem' }}>Growth &amp; Change · 1880–1950</p>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>Into the modern age</h2>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>Into the modern age</h2>
           <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>
             The late 19th and early 20th centuries brought change to Saint Louisville. The arrival of improved roads and later the automobile transformed how residents connected to the wider world. A formal village government was organized, and the first dedicated Village Hall was built in 1921.
           </p>
@@ -109,7 +109,7 @@ export default function History() {
             The Great Depression tested the community, but neighbors supported one another through hard times. By the postwar era, the village was growing steadily, with new families and returning veterans putting down roots.
           </p>
         </div>
-        <div style={{ width: '46%', overflow: 'hidden', flexShrink: 0 }}>
+        <div style={{ width: 'min(46%, 100%)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={photos[1]?.url || 'https://picsum.photos/seed/history2/900/700'}
             alt=""
@@ -122,17 +122,17 @@ export default function History() {
       <PhotoMosaic photos={photos} startIndex={5} count={3} sepia={0.15} />
 
       {/* Era 3 — photo left */}
-      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 420, borderTop: '1px solid #f1f5f9' }}>
-        <div style={{ width: '46%', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 420, borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+        <div style={{ width: 'min(46%, 100%)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={photos[2]?.url || 'https://picsum.photos/seed/history3/900/700'}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem var(--px)' }}>
           <p style={{ ...LABEL, marginBottom: '.875rem' }}>Today · 1950–Present</p>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>A community that endures</h2>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>A community that endures</h2>
           <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>
             Through the postwar boom, shifting agricultural trends, and the challenges of the modern economy, Saint Louisville has remained a place where neighbors know each other's names.
           </p>
