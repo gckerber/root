@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MapPin, Phone, Mail, ArrowRight } from 'lucide-react'
 import { api } from '../api'
+import HeroCarousel from '../components/HeroCarousel'
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
 const NAVY  = '#1e3a5f'
@@ -210,7 +211,7 @@ function EventStrip({ event, reversed = false, bgColor = '#fff' }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Home() {
   // Data queries
-  const { data: imagesData, isLoading: imagesLoading } = useQuery({
+  const { data: imagesData } = useQuery({
     queryKey: ['village-images'],
     queryFn: () => api.villageImages(),
     staleTime: 5 * 60 * 1000,
@@ -229,7 +230,7 @@ export default function Home() {
   })
 
   // Resolve data
-  const heroImage = imagesData?.items?.find((i) => i.type === 'image') || imagesData?.find?.((i) => i.type === 'image')
+  const heroImages = (imagesData?.items || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   const pinnedItems = (bulletinData?.items || bulletinData || []).filter((i) => i.pinned)
   const eventsRaw = eventsData?.items || eventsData || []
   const now = new Date()
@@ -241,73 +242,67 @@ export default function Home() {
   return (
     <div>
       {/* ── Hero ── */}
-      <section style={{ position: 'relative', minHeight: '420px', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0f172a' }}>
-        {/* Background image — full opacity, let the gradient do the darkening */}
-        {!imagesLoading && heroImage?.url && (
-          <img
-            src={heroImage.url}
-            alt=""
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-          />
-        )}
-        {/* Light overlay — transparent enough to see the photo */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,.15) 100%)' }} />
-
-        {/* Content */}
-        <div style={{ position: 'relative', zIndex: 1, padding: 'clamp(2rem, 5vw, 4rem) var(--px)', maxWidth: '640px' }}>
-          <p style={{ ...LABEL_STYLE, color: 'rgba(255,255,255,.7)', marginBottom: '1rem', letterSpacing: '.14em' }}>
-            Village of Ohio · Licking County
-          </p>
-          <h1
-            style={{
-              fontSize: 'clamp(2rem, 6vw, 3.5rem)',
-              fontWeight: 900,
-              color: '#fff',
-              lineHeight: 1.05,
-              letterSpacing: '-.025em',
-              marginBottom: '0.75rem',
-            }}
-          >
-            Saint Louisville
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,.75)', fontSize: '1.125rem', marginBottom: '2rem', fontStyle: 'italic' }}>
-            Serving our community since 1837
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <Link
-              to="/community"
+      <HeroCarousel
+        images={heroImages}
+        gradient="bg-gradient-to-r from-black/55 via-black/35 to-black/15"
+        heightClass="min-h-[420px] h-[62vh] max-h-[700px]"
+      >
+        <div className="flex items-center h-full" style={{ padding: 'clamp(2rem, 5vw, 4rem) var(--px)', maxWidth: '640px' }}>
+          <div>
+            <p style={{ ...LABEL_STYLE, color: 'rgba(255,255,255,.7)', marginBottom: '1rem', letterSpacing: '.14em' }}>
+              Village of Ohio · Licking County
+            </p>
+            <h1
               style={{
-                background: '#1d4ed8',
+                fontSize: 'clamp(2rem, 6vw, 3.5rem)',
+                fontWeight: 900,
                 color: '#fff',
-                fontWeight: 800,
-                padding: '0.8rem 1.875rem',
-                textDecoration: 'none',
-                fontSize: '0.8125rem',
-                letterSpacing: '.08em',
-                textTransform: 'uppercase',
+                lineHeight: 1.05,
+                letterSpacing: '-.025em',
+                marginBottom: '0.75rem',
               }}
             >
-              What's Happening
-            </Link>
-            <Link
-              to="/officials"
-              style={{
-                border: '2px solid rgba(255,255,255,.6)',
-                color: '#fff',
-                fontWeight: 700,
-                padding: '0.8rem 1.875rem',
-                textDecoration: 'none',
-                fontSize: '0.8125rem',
-                letterSpacing: '.08em',
-                textTransform: 'uppercase',
-                background: 'transparent',
-              }}
-            >
-              Meet the Council
-            </Link>
+              Saint Louisville
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,.75)', fontSize: '1.125rem', marginBottom: '2rem', fontStyle: 'italic' }}>
+              Serving our community since 1837
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <Link
+                to="/community"
+                style={{
+                  background: '#1d4ed8',
+                  color: '#fff',
+                  fontWeight: 800,
+                  padding: '0.8rem 1.875rem',
+                  textDecoration: 'none',
+                  fontSize: '0.8125rem',
+                  letterSpacing: '.08em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                What's Happening
+              </Link>
+              <Link
+                to="/officials"
+                style={{
+                  border: '2px solid rgba(255,255,255,.6)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  padding: '0.8rem 1.875rem',
+                  textDecoration: 'none',
+                  fontSize: '0.8125rem',
+                  letterSpacing: '.08em',
+                  textTransform: 'uppercase',
+                  background: 'transparent',
+                }}
+              >
+                Meet the Council
+              </Link>
+            </div>
           </div>
         </div>
-      </section>
+      </HeroCarousel>
 
       {/* ── Pinned notices band ── */}
       {bulletinLoading ? (

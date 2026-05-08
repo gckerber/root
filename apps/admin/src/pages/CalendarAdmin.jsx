@@ -8,50 +8,6 @@ import { format, parseISO } from 'date-fns'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
-// ── Photo grid ────────────────────────────────────────────────────────────────
-function PhotoGrid({ savedUrls, pendingFiles, onRemoveSaved, onRemovePending, onAddClick }) {
-  return (
-    <div>
-      <label className="label">Event Photos</label>
-      <div className="flex flex-wrap gap-2 mt-1">
-        {savedUrls.map((url) => (
-          <div key={url} className="relative w-24 h-20 group">
-            <img src={url} alt="" className="w-full h-full object-cover rounded-lg border border-slate-700" />
-            <button
-              type="button"
-              onClick={() => onRemoveSaved(url)}
-              className="absolute top-1 right-1 w-5 h-5 bg-red-600 rounded-full text-white text-xs hidden group-hover:flex items-center justify-center leading-none"
-            >×</button>
-          </div>
-        ))}
-        {pendingFiles.map((file, i) => (
-          <div key={i} className="relative w-24 h-20 group">
-            <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover rounded-lg border border-blue-500/50" />
-            <div className="absolute inset-0 bg-blue-600/10 rounded-lg pointer-events-none" />
-            <button
-              type="button"
-              onClick={() => onRemovePending(i)}
-              className="absolute top-1 right-1 w-5 h-5 bg-red-600 rounded-full text-white text-xs hidden group-hover:flex items-center justify-center leading-none"
-            >×</button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={onAddClick}
-          className="w-24 h-20 border-2 border-dashed border-slate-700 rounded-lg flex flex-col items-center justify-center gap-1 text-slate-500 hover:border-slate-500 hover:text-slate-400 transition-colors"
-        >
-          <Upload size={16} />
-          <span className="text-xs">Add</span>
-        </button>
-      </div>
-      {(savedUrls.length + pendingFiles.length) > 0 && (
-        <p className="text-slate-600 text-xs mt-1.5">
-          {savedUrls.length + pendingFiles.length} photo{savedUrls.length + pendingFiles.length !== 1 ? 's' : ''} · first photo used as card thumbnail
-        </p>
-      )}
-    </div>
-  )
-}
 
 // ── Event form ────────────────────────────────────────────────────────────────
 function EventForm({ item, onSave, onCancel, adminKey }) {
@@ -60,16 +16,14 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
   const [form, setForm] = useState(item || {
     title: '', date: '', time: '', location: 'Village Hall', description: '', month: '',
   })
-  const [savedUrls, setSavedUrls] = useState(
-    item?.photoUrls?.length ? item.photoUrls : (item?.photoUrl ? [item.photoUrl] : [])
-  )
-  const [pendingFiles, setPendingFiles] = useState([])
+  const [photoUrl, setPhotoUrl] = useState(item?.photoUrl || item?.photoUrls?.[0] || '')
+  const [pendingFile, setPendingFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }))
 
   function handlePhotoSelect(e) {
-    const files = Array.from(e.target.files || [])
-    if (files.length) setPendingFiles((prev) => [...prev, ...files])
+    const file = e.target.files?.[0]
+    if (file) setPendingFile(file)
     e.target.value = ''
   }
 
@@ -96,8 +50,8 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
     }
     setUploading(true)
     try {
-      const newUrls = await Promise.all(pendingFiles.map(uploadFile))
-      const allUrls = [...savedUrls, ...newUrls]
+      let finalPhotoUrl = photoUrl
+      if (pendingFile) finalPhotoUrl = await uploadFile(pendingFile)
 
       const dateObj = new Date(form.date)
       const month = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`
@@ -106,8 +60,7 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
         ...form,
         month,
         date: dateObj.toISOString(),
-        photoUrls: allUrls,
-        photoUrl: allUrls[0] || '',
+        photoUrl: finalPhotoUrl,
         department: 'village',
       })
     } catch (err) {
@@ -149,14 +102,33 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
           placeholder="Additional details residents should know..." />
       </div>
 
-      <PhotoGrid
-        savedUrls={savedUrls}
-        pendingFiles={pendingFiles}
-        onRemoveSaved={(url) => setSavedUrls((prev) => prev.filter((u) => u !== url))}
-        onRemovePending={(i) => setPendingFiles((prev) => prev.filter((_, idx) => idx !== i))}
-        onAddClick={() => fileRef.current?.click()}
-      />
-      <input ref={fileRef} type="file" accept="image/*" multiple onChange={handlePhotoSelect} className="hidden" />
+      <div>
+        <label className="label">Event Photo</label>
+        <div className="flex items-center gap-3 mt-1">
+          {(pendingFile ? URL.createObjectURL(pendingFile) : photoUrl) ? (
+            <div className="relative w-24 h-20 group flex-shrink-0">
+              <img
+                src={pendingFile ? URL.createObjectURL(pendingFile) : photoUrl}
+                alt=""
+                className="w-full h-full object-cover rounded-lg border border-slate-700"
+              />
+              <button
+                type="button"
+                onClick={() => { setPendingFile(null); setPhotoUrl('') }}
+                className="absolute top-1 right-1 w-5 h-5 bg-red-600 rounded-full text-white text-xs hidden group-hover:flex items-center justify-center leading-none"
+              >×</button>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-2 btn-ghost text-sm"
+          >
+            <Upload size={14} /> {photoUrl || pendingFile ? 'Replace photo' : 'Add photo'}
+          </button>
+        </div>
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
 
       <div className="flex gap-2">
         <button onClick={handleSave} disabled={uploading} className="btn-primary">

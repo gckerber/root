@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
+import HeroCarousel from '../components/HeroCarousel'
 
 const NAVY  = '#1e3a5f'
 const GOLD  = '#fbbf24'
@@ -117,42 +118,38 @@ export default function PoliceDept() {
   const pdEvents   = useMemo(() => (eventsData?.items || []).filter(e => e.department === 'police').slice(0, 3), [eventsData])
   const faqs       = faqData?.items?.length ? faqData.items : FALLBACK_FAQ
   const links      = linksData?.items?.length ? linksData.items : FALLBACK_LINKS
-  const heroBg     = imagesData?.items?.[0]?.url || 'https://picsum.photos/seed/pd-hero2/1600/700'
+  const heroImages = (imagesData?.items || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-  const phone    = contact.phone    || '(740) 867-5309'
-  const tipLine  = '(740) 867-5399'
+  const phone = contact.phone || '(740) 867-5309'
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
 
       {/* Hero */}
-      <div style={{ position: 'relative', minHeight: 420, display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <img src={heroBg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.82)' }} />
-        </div>
-        <div style={{ position: 'relative', zIndex: 1, padding: '3.5rem var(--px) 3rem', width: '100%' }}>
-          <p style={{ ...LABEL, color: GOLD, marginBottom: '1rem' }}>Saint Louisville · Ohio</p>
-          <h1 style={{ fontSize: '3.25rem', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: '1.25rem' }}>Police Department</h1>
-          <p style={{ color: '#cbd5e1', fontSize: '.9375rem', lineHeight: 1.8, maxWidth: 380, marginBottom: '2rem' }}>Serving and protecting Saint Louisville with integrity and community partnership.</p>
-          <div style={{ display: 'flex', gap: '3rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Emergency</p>
-              <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>911</p>
-            </div>
-            <div style={{ width: 1, height: '2.5rem', background: 'rgba(255,255,255,.2)' }} />
-            <div>
-              <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Non-Emergency</p>
-              <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>{phone}</p>
-            </div>
-            <div style={{ width: 1, height: '2.5rem', background: 'rgba(255,255,255,.2)' }} />
-            <div>
-              <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Anonymous Tip</p>
-              <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>{tipLine}</p>
+      <HeroCarousel
+        images={heroImages}
+        gradient="bg-gradient-to-t from-slate-950/85 via-slate-900/50 to-slate-900/20"
+        heightClass="min-h-[420px] h-[62vh] max-h-[700px]"
+      >
+        <div className="flex items-end h-full" style={{ padding: '3.5rem var(--px) 3rem', width: '100%' }}>
+          <div>
+            <p style={{ ...LABEL, color: GOLD, marginBottom: '1rem' }}>Saint Louisville · Ohio</p>
+            <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: '1.25rem' }}>Police Department</h1>
+            <p style={{ color: '#cbd5e1', fontSize: '.9375rem', lineHeight: 1.8, maxWidth: 380, marginBottom: '2rem' }}>Serving and protecting Saint Louisville with integrity and community partnership.</p>
+            <div style={{ display: 'flex', gap: '3rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div>
+                <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Emergency</p>
+                <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>911</p>
+              </div>
+              <div style={{ width: 1, height: '2.5rem', background: 'rgba(255,255,255,.2)' }} />
+              <div>
+                <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Non-Emergency</p>
+                <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>{phone}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </HeroCarousel>
 
       {/* Sticky sub-nav */}
       <div style={{ position: 'sticky', top: 60, zIndex: 10, display: 'flex', borderBottom: '1px solid #f1f5f9', paddingLeft: 'var(--px)', background: '#fff', overflowX: 'auto' }}>
