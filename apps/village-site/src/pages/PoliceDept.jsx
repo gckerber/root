@@ -1,560 +1,414 @@
 // apps/village-site/src/pages/PoliceDept.jsx
-import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import {
-  Shield, Phone, MapPin, Clock, Gavel, CreditCard,
-  ChevronDown, ChevronUp, AlertTriangle, Mail,
-  Calendar, Users, Home,
-} from 'lucide-react'
-import axios from 'axios'
-import HeroCarousel from '../components/HeroCarousel'
-import { OfficialGrid } from '../components/OfficialCards'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '../api'
 
-const API = 'https://func-village-prod.azurewebsites.net'
+const NAVY  = '#1e3a5f'
+const GOLD  = '#fbbf24'
+const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
 
-const DEFAULTS = {
-  address: '100 N. High Street',
-  address2: 'Saint Louisville, OH 43071',
-  phone: '(740) 568-7800',
-  email: 'pd@saintlouisvilleohio.gov',
-  hours: 'Monday – Friday: 8:00 AM – 4:30 PM\nAfter hours: call non-emergency line',
-  chief: 'Contact Village Hall',
-  courtPresidedBy: 'Mayor Zack Allen',
+// ─── small helpers ────────────────────────────────────────────────────────────
+function fmtCourtDate(iso) {
+  try {
+    const d = new Date(iso)
+    return {
+      full: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      weekday: d.toLocaleDateString('en-US', { weekday: 'long' }),
+    }
+  } catch { return { full: iso, weekday: '' } }
 }
 
-const TABS = [
-  { id: 'home',     label: 'Home',           icon: Home },
-  { id: 'officers', label: 'Officers',        icon: Users },
-  { id: 'court',    label: "Mayor's Court",   icon: Gavel },
-  { id: 'events',   label: 'Events',          icon: Calendar },
+function fmtEventDay(iso) {
+  try { return new Date(iso).getDate() } catch { return '—' }
+}
+function fmtEventMo(iso) {
+  try { return new Date(iso).toLocaleString('en-US', { month: 'short' }).toUpperCase() } catch { return '' }
+}
+
+function initials(name = '') {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+}
+
+// ─── Officer strip ────────────────────────────────────────────────────────────
+function ChiefStrip({ officer }) {
+  const phone = officer.phoneWork || officer.phone
+  return (
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 400, background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+      <div style={{ width: 340, overflow: 'hidden', flexShrink: 0 }}>
+        {officer.photoUrl
+          ? <img src={officer.photoUrl} alt={officer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <div style={{ width: '100%', height: '100%', background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '3rem', fontWeight: 900 }}>{initials(officer.name)}</div>}
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3rem 4.5rem' }}>
+        <span style={{ ...LABEL, color: NAVY, marginBottom: '1.125rem', display: 'block' }}>{officer.title || 'Chief of Police'}</span>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{officer.name}</h2>
+        {officer.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 460, marginBottom: '1.625rem' }}>{officer.bio}</p>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem', fontSize: '.875rem' }}>
+          {phone && <div style={{ display: 'flex', gap: '1rem' }}><span style={LABEL}>Work</span><span style={{ fontWeight: 600 }}>{phone}</span></div>}
+          {officer.email && <div style={{ display: 'flex', gap: '1rem' }}><span style={LABEL}>Email</span><a href={`mailto:${officer.email}`} style={{ color: '#2563eb' }}>{officer.email}</a></div>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OfficerStrip({ officer, index }) {
+  const photoLeft = index % 2 !== 0
+  const phone = officer.phoneWork || officer.phone
+  const content = (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '2.5rem 4.5rem' }}>
+      <span style={{ ...LABEL, color: '#64748b', marginBottom: '.875rem', display: 'block' }}>{officer.title || 'Officer'}</span>
+      <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{officer.name}</h2>
+      {officer.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 400, marginBottom: '1.25rem' }}>{officer.bio}</p>}
+      {phone && <div style={{ fontSize: '.875rem', display: 'flex', gap: '1rem' }}><span style={LABEL}>Work</span><span style={{ fontWeight: 600 }}>{phone}</span></div>}
+    </div>
+  )
+  const photo = (
+    <div style={{ width: 300, overflow: 'hidden', flexShrink: 0 }}>
+      {officer.photoUrl
+        ? <img src={officer.photoUrl} alt={officer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <div style={{ width: '100%', height: '100%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '2rem', fontWeight: 900 }}>{initials(officer.name)}</div>}
+    </div>
+  )
+  return (
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 300, background: index % 2 === 0 ? '#fff' : '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+      {photoLeft ? <>{photo}{content}</> : <>{content}{photo}</>}
+    </div>
+  )
+}
+
+// ─── Section nav ──────────────────────────────────────────────────────────────
+const SECTIONS = [
+  { id: 'officers', label: 'Officers' },
+  { id: 'court',    label: "Mayor's Court" },
+  { id: 'events',   label: 'PD Events' },
+  { id: 'faq',      label: 'FAQ' },
+  { id: 'links',    label: 'Links & Resources' },
 ]
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function formatDate(dateStr) {
-  try {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    })
-  } catch { return dateStr }
-}
+const FALLBACK_LINKS = [
+  { id: '1', label: 'Ohio BMV',    title: 'License & Registration', description: 'Ohio Bureau of Motor Vehicles',  url: 'https://www.bmv.ohio.gov' },
+  { id: '2', label: 'Knox County', title: "Sheriff's Office",       description: 'County law enforcement',          url: '#' },
+  { id: '3', label: 'Ohio State',  title: 'Sex Offender Registry',  description: 'OHLEG public database',           url: 'https://www.icrimewatch.net/ohio.php' },
+  { id: '4', label: 'Report',      title: 'Anonymous Tip',          description: '(740) 867-5399 · Confidential',   url: '#' },
+]
 
-function formatTime(timeStr) {
-  if (!timeStr) return null
-  try {
-    const [h, m] = timeStr.split(':').map(Number)
-    const ampm = h >= 12 ? 'PM' : 'AM'
-    const hour = h % 12 || 12
-    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
-  } catch { return timeStr }
-}
+const FALLBACK_FAQ = [
+  { id: 'f1', question: 'How do I pay a traffic citation?', answer: 'Citations can be paid online through the "Pay Now" link below, by mail, or in person at Village Hall during business hours. To contest a citation, request a Mayor\'s Court hearing by calling (740) 867-5309 before the due date on your ticket.' },
+  { id: 'f2', question: "What is Mayor's Court?", answer: "Mayor's Court is held at Village Hall on the last Wednesday of each month at 6:00 PM. It handles minor misdemeanors and traffic violations within the village. Sessions are open to the public." },
+]
 
-// ── Main page ─────────────────────────────────────────────────────────────────
 export default function PoliceDept() {
-  const [tab,          setTab]          = useState('home')
-  const [contact,      setContact]      = useState(DEFAULTS)
-  const [siteSettings, setSiteSettings] = useState({})
-  const [images,       setImages]       = useState([])
-  const [faqs,         setFaqs]         = useState([])
-  const [openFaq,      setOpenFaq]      = useState(null)
-  const [officers,     setOfficers]     = useState([])
-  const [courtDates,   setCourtDates]   = useState([])
-  const [events,       setEvents]       = useState([])
-  const [tabLoading,   setTabLoading]   = useState({ officers: false, court: false, events: false })
+  const [openFaq, setOpenFaq] = useState(null)
 
-  // Track which tabs have already been fetched
-  const loadedTabs = useRef(new Set())
+  const { data: contactData  } = useQuery({ queryKey: ['pd-contact'],  queryFn: api.pdContact })
+  const { data: officialsData} = useQuery({ queryKey: ['officials'],   queryFn: api.officials })
+  const { data: courtData    } = useQuery({ queryKey: ['pd-court'],    queryFn: () => api.pdCourtSchedule(true) })
+  const { data: eventsData   } = useQuery({ queryKey: ['events'],      queryFn: () => api.events() })
+  const { data: faqData      } = useQuery({ queryKey: ['pd-faq'],      queryFn: api.pdFaq })
+  const { data: linksData    } = useQuery({ queryKey: ['pd-links'],    queryFn: api.pdLinks })
+  const { data: imagesData   } = useQuery({ queryKey: ['pd-images'],   queryFn: api.pdImages })
 
-  // Core data — loaded on mount
-  useEffect(() => {
-    axios.get(`${API}/api/pd-contact`).then((r) => setContact({ ...DEFAULTS, ...r.data })).catch(() => {})
-    axios.get(`${API}/api/pd-images`).then((r) => setImages(r.data.items || [])).catch(() => {})
-    axios.get(`${API}/api/pd-faq`).then((r) => setFaqs(r.data.items || [])).catch(() => {})
-    axios.get(`${API}/api/site-settings`).then((r) => setSiteSettings(r.data || {})).catch(() => {})
-  }, [])
+  const contact  = contactData || {}
+  const officers = useMemo(() => (officialsData?.items || []).filter(o => o.department === 'police').sort((a, b) => a.order - b.order), [officialsData])
+  const chief    = officers[0]
+  const rest     = officers.slice(1)
+  const courtDates = (courtData?.items || []).slice(0, 3)
+  const pdEvents   = useMemo(() => (eventsData?.items || []).filter(e => e.department === 'police').slice(0, 3), [eventsData])
+  const faqs       = faqData?.items?.length ? faqData.items : FALLBACK_FAQ
+  const links      = linksData?.items?.length ? linksData.items : FALLBACK_LINKS
+  const heroBg     = imagesData?.items?.[0]?.url || 'https://picsum.photos/seed/pd-hero2/1600/700'
 
-  // Lazy-load tab-specific data on first visit
-  useEffect(() => {
-    if (tab === 'officers' && !loadedTabs.current.has('officers')) {
-      loadedTabs.current.add('officers')
-      setTabLoading((l) => ({ ...l, officers: true }))
-      axios.get(`${API}/api/officials`)
-        .then((r) => {
-          const pd = (r.data.items || [])
-            .filter((o) => o.department === 'police')
-            .sort((a, b) => a.order - b.order)
-          setOfficers(pd)
-        })
-        .catch(() => {})
-        .finally(() => setTabLoading((l) => ({ ...l, officers: false })))
-    }
-
-    if (tab === 'court' && !loadedTabs.current.has('court')) {
-      loadedTabs.current.add('court')
-      setTabLoading((l) => ({ ...l, court: true }))
-      axios.get(`${API}/api/pd-court-schedule?upcoming=true`)
-        .then((r) => setCourtDates(r.data.items || []))
-        .catch(() => {})
-        .finally(() => setTabLoading((l) => ({ ...l, court: false })))
-    }
-
-    if (tab === 'events' && !loadedTabs.current.has('events')) {
-      loadedTabs.current.add('events')
-      setTabLoading((l) => ({ ...l, events: true }))
-      axios.get(`${API}/api/events?department=police`)
-        .then((r) => {
-          const sorted = (r.data.items || []).sort((a, b) => new Date(a.date) - new Date(b.date))
-          setEvents(sorted)
-        })
-        .catch(() => {})
-        .finally(() => setTabLoading((l) => ({ ...l, events: false })))
-    }
-  }, [tab])
-
-  const upcomingEvents = events.filter((e) => new Date(e.date) >= new Date())
-  const pastEvents     = events.filter((e) => new Date(e.date) < new Date())
-  const officerLayout  = siteSettings.pdOfficerLayout || 'grid'
+  const phone    = contact.phone    || '(740) 867-5309'
+  const tipLine  = '(740) 867-5399'
 
   return (
-    <div>
-      {/* ── Emergency banner — pinned at very top ────────────────── */}
-      <div className="bg-red-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap gap-6 items-center">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-red-200 flex-shrink-0" />
-            <span className="font-extrabold">Emergency: 911</span>
-            <span className="text-red-300 text-sm hidden sm:inline">— For all life-threatening emergencies</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Phone size={15} className="text-red-200 flex-shrink-0" />
-            <span className="font-semibold">Non-Emergency: {contact.phone}</span>
-          </div>
-        </div>
-      </div>
+    <div style={{ background: '#fff', minHeight: '100vh' }}>
 
-      {/* ── Full-width hero carousel ─────────────────────────────── */}
-      <HeroCarousel
-        images={images}
-        heightClass="h-[55vh] min-h-[380px] max-h-[680px]"
-        gradient="bg-gradient-to-t from-blue-950/85 via-blue-900/40 to-transparent"
-      >
-        <div className="h-full flex flex-col justify-end pb-10 px-6 sm:px-12 lg:px-20 max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-blue-700/80 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-500/30">
-              <Shield size={28} className="text-yellow-400" />
-            </div>
+      {/* Hero */}
+      <div style={{ position: 'relative', minHeight: 420, display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <img src={heroBg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.82)' }} />
+        </div>
+        <div style={{ position: 'relative', zIndex: 1, padding: '3.5rem 4.5rem 3rem', width: '100%' }}>
+          <p style={{ ...LABEL, color: GOLD, marginBottom: '1rem' }}>Saint Louisville · Ohio</p>
+          <h1 style={{ fontSize: '3.25rem', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: '1.25rem' }}>Police Department</h1>
+          <p style={{ color: '#cbd5e1', fontSize: '.9375rem', lineHeight: 1.8, maxWidth: 380, marginBottom: '2rem' }}>Serving and protecting Saint Louisville with integrity and community partnership.</p>
+          <div style={{ display: 'flex', gap: '3rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <div>
-              <p className="text-blue-300 text-sm font-medium uppercase tracking-widest drop-shadow">
-                Village of Saint Louisville
-              </p>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg">
-                Police Department
-              </h1>
+              <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Emergency</p>
+              <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>911</p>
+            </div>
+            <div style={{ width: 1, height: '2.5rem', background: 'rgba(255,255,255,.2)' }} />
+            <div>
+              <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Non-Emergency</p>
+              <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>{phone}</p>
+            </div>
+            <div style={{ width: 1, height: '2.5rem', background: 'rgba(255,255,255,.2)' }} />
+            <div>
+              <p style={{ ...LABEL, color: GOLD, marginBottom: '.25rem' }}>Anonymous Tip</p>
+              <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>{tipLine}</p>
             </div>
           </div>
-          <p className="mt-3 text-blue-200 max-w-xl text-sm leading-relaxed drop-shadow">
-            Committed to protecting and serving our community with professionalism,
-            integrity, and respect for every resident.
-          </p>
-        </div>
-      </HeroCarousel>
-
-      {/* ── Tab bar ──────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex gap-0 overflow-x-auto">
-            {TABS.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setTab(id)}
-                className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-                  tab === id
-                    ? 'border-blue-700 text-blue-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Icon size={15} />
-                {label}
-              </button>
-            ))}
-          </nav>
         </div>
       </div>
 
-      {/* ── Tab content ──────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Sticky sub-nav */}
+      <div style={{ position: 'sticky', top: 60, zIndex: 10, display: 'flex', borderBottom: '1px solid #f1f5f9', paddingLeft: '4.5rem', background: '#fff' }}>
+        {SECTIONS.map(s => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            onClick={e => {
+              e.preventDefault()
+              document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
+            style={{
+              display: 'block',
+              padding: '1rem 1.25rem',
+              fontSize: '.875rem',
+              fontWeight: 500,
+              color: '#64748b',
+              borderBottom: '2px solid transparent',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = NAVY }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#64748b' }}
+          >
+            {s.label}
+          </a>
+        ))}
+      </div>
 
-        {/* ════ HOME TAB ════ */}
-        {tab === 'home' && (
-          <>
-            {/* Quick action cards */}
-            <div className="grid sm:grid-cols-3 gap-4 mb-10">
-              <button
-                onClick={() => setTab('court')}
-                className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md p-5 flex items-center gap-4 transition-all group text-left w-full"
-              >
-                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors flex-shrink-0">
-                  <Gavel size={22} className="text-blue-700" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800">Mayor's Court</p>
-                  <p className="text-sm text-gray-500">Upcoming court dates</p>
-                </div>
-              </button>
+      {/* Officers */}
+      <div id="officers" style={{ scrollMarginTop: 110, background: '#fff' }}>
+        <div style={{ padding: '2rem 4.5rem 1.5rem', borderTop: `4px solid ${NAVY}` }}>
+          <p style={LABEL}>Meet the team</p>
+          <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Our Officers</h2>
+        </div>
+        {chief && <ChiefStrip officer={chief} />}
+        {rest.map((o, i) => <OfficerStrip key={o.id} officer={o} index={i} />)}
+        {officers.length === 0 && (
+          <p style={{ padding: '3rem 4.5rem', color: '#94a3b8', fontSize: '.9rem' }}>Officer information coming soon.</p>
+        )}
+      </div>
 
-              <Link
-                to="/police/fines"
-                className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md p-5 flex items-center gap-4 transition-all group"
-              >
-                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors flex-shrink-0">
-                  <CreditCard size={22} className="text-green-700" />
+      {/* Mayor's Court */}
+      <div id="court" style={{ scrollMarginTop: 110, borderTop: `4px solid ${GOLD}` }}>
+        {/* Upcoming dates — dark navy band */}
+        <div style={{ background: NAVY, padding: '3rem 4.5rem' }}>
+          <p style={{ ...LABEL, color: GOLD, marginBottom: '.375rem' }}>Scheduled Dates</p>
+          <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', letterSpacing: '-.02em' }}>Mayor's Court</p>
+          <p style={{ fontSize: '.875rem', color: '#94a3b8', marginTop: '.375rem', marginBottom: '1.5rem', maxWidth: 540 }}>
+            Held at Village Hall. Sessions are open to the public unless otherwise noted. Questions? Call {phone}.
+          </p>
+          <div style={{ display: 'flex', gap: 0, borderTop: '1px solid rgba(255,255,255,.1)', paddingTop: '1.5rem' }}>
+            {(courtDates.length ? courtDates : ['TBD', 'TBD', 'TBD']).map((d, i) => {
+              const { full, weekday } = typeof d === 'string' ? { full: 'To Be Scheduled', weekday: '' } : fmtCourtDate(d.date)
+              return (
+                <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid rgba(255,255,255,.1)' : 'none', paddingRight: i < 2 ? '3rem' : 0, paddingLeft: i > 0 ? '3rem' : 0 }}>
+                  <p style={{ fontSize: '1.875rem', fontWeight: 900, color: '#fff', letterSpacing: '-.03em', lineHeight: 1.1, marginBottom: '.375rem' }}>{full}</p>
+                  <p style={{ fontSize: '.875rem', color: '#94a3b8' }}>{weekday ? `${weekday} · 6:00 PM · Village Hall` : 'Date TBD'}</p>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-800">Pay a Fine</p>
-                  <p className="text-sm text-gray-500">Payment options &amp; info</p>
-                </div>
-              </Link>
+              )
+            })}
+          </div>
+        </div>
 
+        {/* How to Pay */}
+        <div style={{ display: 'flex', alignItems: 'stretch', borderTop: '1px solid #f1f5f9' }}>
+          {/* Left — warning + methods */}
+          <div style={{ flex: 1, padding: '3rem 4.5rem', borderRight: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'inline-block', background: '#fef2f2', border: '1px solid #fecaca', padding: '.5rem 1.25rem', marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '.8125rem', fontWeight: 800, color: '#991b1b', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+                Payment is due by the court date
+              </p>
+            </div>
+            <p style={{ ...LABEL, marginBottom: '.75rem' }}>Accepted Methods of Payment</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '.625rem', marginBottom: '1.75rem' }}>
+              {[
+                { icon: '💵', label: 'Cash' },
+                { icon: '🖊️', label: 'Check — payable to Violations Bureau' },
+                { icon: '📮', label: 'Money order — payable to Violations Bureau' },
+                { icon: '💳', label: 'Credit card — addl. 3.5% processing fee' },
+              ].map(m => (
+                <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', fontSize: '.9rem', color: '#374151' }}>
+                  <span style={{ fontSize: '1rem' }}>{m.icon}</span>
+                  <span>{m.label}</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: '.8125rem', color: '#94a3b8', fontWeight: 600 }}>
+              Office Hours: <span style={{ color: '#374151' }}>Monday 9 AM – 12 PM</span>
+            </p>
+          </div>
+
+          {/* Right — where to pay */}
+          <div style={{ flex: 1, padding: '3rem 4.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Mail */}
+            <div>
+              <p style={{ ...LABEL, marginBottom: '.5rem' }}>Mail payment (check or money order)</p>
+              <p style={{ fontSize: '.9375rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.5 }}>
+                Violations Bureau<br />P.O. Box 149<br />St. Louisville, OH 43071
+              </p>
+            </div>
+            {/* Drop box */}
+            <div>
+              <p style={{ ...LABEL, marginBottom: '.5rem' }}>Drop box — no cash</p>
+              <p style={{ fontSize: '.9375rem', color: '#374151', lineHeight: 1.6 }}>
+                Located next to the main door at<br />
+                <span style={{ fontWeight: 700 }}>1 School Street, St. Louisville OH 43071</span>
+              </p>
+            </div>
+            {/* Online */}
+            <div>
+              <p style={{ ...LABEL, marginBottom: '.5rem' }}>Pay by credit card online</p>
               <a
-                href={`mailto:${contact.email}`}
-                className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md p-5 flex items-center gap-4 transition-all group"
+                href="https://www.ohioticketpayments.com/SaintLouisville/DocketSearch.php"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '.875rem', color: '#2563eb', fontWeight: 600, wordBreak: 'break-all' }}
               >
-                <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors flex-shrink-0">
-                  <Mail size={22} className="text-amber-700" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800">Email the Department</p>
-                  <p className="text-sm text-gray-500">{contact.email}</p>
-                </div>
+                ohioticketpayments.com/SaintLouisville/DocketSearch.php
               </a>
+              <p style={{ fontSize: '.8125rem', color: '#94a3b8', marginTop: '.25rem' }}>Additional 3.5% processing fee applies</p>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Contact + Department Details */}
-            <div className="grid sm:grid-cols-2 gap-6 mb-10">
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                <h2 className="font-bold text-gray-800 text-lg mb-4">Contact &amp; Location</h2>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-gray-700">{contact.address}</p>
-                      <p className="text-sm text-gray-500">{contact.address2}</p>
+      {/* PD Events */}
+      <div id="events" style={{ scrollMarginTop: 110, background: '#f1f5f9', borderTop: `4px solid ${NAVY}` }}>
+        <div style={{ padding: '2rem 4.5rem 1.5rem' }}>
+          <p style={LABEL}>Police events</p>
+          <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>PD Events &amp; Programs</h2>
+        </div>
+        {pdEvents.length > 0 ? (
+          <div>
+            {pdEvents.map((e, i) => {
+              const bg = i % 2 === 0 ? '#fff' : '#f8fafc'
+              if (e.photoUrl) {
+                return (
+                  <div key={e.id} className="flex items-stretch border-t" style={{ borderColor: '#f1f5f9', minHeight: 280, background: bg }}>
+                    <div style={{ width: '40%', flexShrink: 0, overflow: 'hidden' }}>
+                      <img src={e.photoUrl} alt={e.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Phone size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-gray-700">{contact.phone}</p>
-                      <p className="text-xs text-gray-400">Non-emergency line</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Clock size={18} className="text-blue-700 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-600 whitespace-pre-line">{contact.hours}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                <h2 className="font-bold text-gray-800 text-lg mb-4">Department Details</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Chief of Police</p>
-                    <p className="font-medium text-gray-800 text-sm">{contact.chief}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Court Presided By</p>
-                    <p className="font-medium text-gray-800 text-sm">{contact.courtPresidedBy}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 col-span-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Jurisdiction</p>
-                    <p className="font-medium text-gray-800 text-sm">Village of Saint Louisville, OH</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* FAQ */}
-            {faqs.length > 0 && (
-              <div>
-                <h2 className="font-bold text-gray-800 text-xl mb-4">Frequently Asked Questions</h2>
-                <div className="space-y-2">
-                  {faqs.map((faq, i) => (
-                    <div key={faq.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                      <button
-                        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
-                        onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                      >
-                        <span className="font-medium text-gray-800 pr-4">{faq.question}</span>
-                        {openFaq === i
-                          ? <ChevronUp   size={18} className="text-gray-400 flex-shrink-0" />
-                          : <ChevronDown size={18} className="text-gray-400 flex-shrink-0" />}
-                      </button>
-                      {openFaq === i && (
-                        <div className="px-6 pb-5 text-sm text-gray-600 leading-relaxed border-t border-gray-50 pt-3">
-                          {faq.answer}
+                    <div style={{ padding: '2rem 3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
+                      <span style={LABEL}>Police Event</span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '3rem', fontWeight: 900, color: NAVY, lineHeight: 1 }}>{fmtEventDay(e.date)}</span>
+                        <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>{fmtEventMo(e.date)}</span>
+                      </div>
+                      <h3 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>{e.title}</h3>
+                      {(e.location || e.time) && (
+                        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: '#64748b' }}>
+                          {e.location && <span>{e.location}</span>}
+                          {e.time && <span>{e.time}</span>}
                         </div>
                       )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ════ OFFICERS TAB ════ */}
-        {tab === 'officers' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Meet Our Officers</h2>
-              <p className="text-gray-500">The dedicated men and women serving the Village of Saint Louisville.</p>
-            </div>
-
-            {tabLoading.officers ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((n) => (
-                  <div key={n} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 animate-pulse">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-full bg-gray-200 flex-shrink-0" />
-                      <div className="space-y-2 flex-grow">
-                        <div className="h-4 bg-gray-200 rounded w-3/4" />
-                        <div className="h-3 bg-gray-200 rounded w-1/2" />
-                      </div>
-                    </div>
-                    <div className="h-12 bg-gray-200 rounded" />
-                  </div>
-                ))}
-              </div>
-            ) : officers.length === 0 ? (
-              <div className="bg-gray-50 rounded-xl border border-gray-100 p-12 text-center">
-                <Shield size={40} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-700 font-semibold text-lg">Officer profiles coming soon</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Contact the department to learn more about our team.
-                </p>
-              </div>
-            ) : (
-              <OfficialGrid officials={officers} layout={officerLayout} />
-            )}
-          </div>
-        )}
-
-        {/* ════ MAYOR'S COURT TAB ════ */}
-        {tab === 'court' && (
-          <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Mayor's Court</h2>
-              <p className="text-gray-500">
-                Upcoming court sessions presided over by {contact.courtPresidedBy}.
-              </p>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-8 flex gap-3">
-              <AlertTriangle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-800 leading-relaxed">
-                <p className="font-semibold mb-1">Important Notice</p>
-                <p>
-                  If you have received a citation and have questions about your court date,
-                  contact the Saint Louisville Police Department at <strong>{contact.phone}</strong>.
-                  For fine payment options, visit the{' '}
-                  <Link to="/police/fines" className="underline font-semibold hover:text-amber-900">
-                    Pay a Fine
-                  </Link>{' '}
-                  page.
-                </p>
-              </div>
-            </div>
-
-            {tabLoading.court ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((n) => (
-                  <div key={n} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 animate-pulse">
-                    <div className="h-5 bg-gray-200 rounded w-1/3 mb-3" />
-                    <div className="h-4 bg-gray-200 rounded w-1/4" />
-                  </div>
-                ))}
-              </div>
-            ) : courtDates.length === 0 ? (
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-12 text-center">
-                <Gavel size={40} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-700 font-semibold text-lg">No Upcoming Court Dates</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  There are no Mayor's Court sessions currently scheduled.
-                  Check back later or call <strong>{contact.phone}</strong>.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {courtDates.map((d) => (
-                  <div key={d.id}
-                    className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Calendar size={22} className="text-blue-700" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-800 text-lg">{formatDate(d.date)}</p>
-                          <div className="flex flex-wrap gap-4 mt-1.5">
-                            {d.time && (
-                              <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                                <Clock size={14} className="text-gray-400" />{formatTime(d.time)}
-                              </span>
-                            )}
-                            {d.location && (
-                              <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                                <MapPin size={14} className="text-gray-400" />{d.location}
-                              </span>
-                            )}
-                          </div>
-                          {d.notes && <p className="text-sm text-gray-400 mt-2 italic">{d.notes}</p>}
-                        </div>
-                      </div>
-                      {d.judge && (
-                        <div className="sm:text-right flex-shrink-0">
-                          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Presiding</p>
-                          <p className="text-sm font-medium text-gray-700 mt-0.5">{d.judge}</p>
-                        </div>
+                      {e.description && (
+                        <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0, lineHeight: 1.6, WebkitLineClamp: 3, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {e.description}
+                        </p>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-              <p className="text-sm text-gray-400">
-                Court dates are subject to change. Always confirm with the police department before appearing.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ════ EVENTS TAB ════ */}
-        {tab === 'events' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Police Department Events</h2>
-              <p className="text-gray-500">
-                Community events and programs hosted by the Saint Louisville Police Department.
-              </p>
-            </div>
-
-            {tabLoading.events ? (
-              <div className="space-y-4">
-                {[1, 2].map((n) => (
-                  <div key={n} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 animate-pulse">
-                    <div className="flex gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gray-200 flex-shrink-0" />
-                      <div className="flex-grow space-y-2">
-                        <div className="h-5 bg-gray-200 rounded w-1/2" />
-                        <div className="h-4 bg-gray-200 rounded w-1/3" />
-                      </div>
-                    </div>
+                )
+              }
+              return (
+                <div key={e.id} className="flex items-center border-t" style={{ borderColor: '#f1f5f9', padding: '1.5rem 4.5rem', gap: '2rem', background: bg }}>
+                  <div style={{ textAlign: 'center', flexShrink: 0, width: 56 }}>
+                    <div style={{ fontSize: '3rem', fontWeight: 900, color: NAVY, lineHeight: 1 }}>{fmtEventDay(e.date)}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#94a3b8' }}>{fmtEventMo(e.date)}</div>
                   </div>
-                ))}
-              </div>
-            ) : upcomingEvents.length === 0 && pastEvents.length === 0 ? (
-              <div className="bg-gray-50 rounded-xl border border-gray-100 p-12 text-center">
-                <Calendar size={40} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-700 font-semibold text-lg">No upcoming events</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Check back soon for community events from the Police Department.
+                  <div style={{ width: 1, alignSelf: 'stretch', background: '#e2e8f0', flexShrink: 0 }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flexGrow: 1 }}>
+                    <span style={LABEL}>Police Event</span>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>{e.title}</h3>
+                    {(e.location || e.time) && (
+                      <div style={{ display: 'flex', gap: '1.25rem', fontSize: '0.875rem', color: '#64748b' }}>
+                        {e.location && <span>{e.location}</span>}
+                        {e.time && <span>{e.time}</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p style={{ padding: '3rem 4.5rem', color: '#94a3b8', fontSize: '.9rem' }}>No upcoming police events.</p>
+        )}
+      </div>
+
+      {/* FAQ */}
+      <div id="faq" style={{ scrollMarginTop: 110, background: '#fff', borderTop: `4px solid ${GOLD}` }}>
+        <div style={{ padding: '2rem 4.5rem 1.5rem' }}>
+          <p style={LABEL}>Common questions</p>
+          <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Frequently Asked Questions</h2>
+        </div>
+        <div style={{ paddingBottom: '3.5rem' }}>
+          {faqs.map(faq => (
+            <div key={faq.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+              <button
+                onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 4.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span style={{ fontSize: '.9375rem', fontWeight: 700, color: '#0f172a' }}>{faq.question}</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: 300, color: '#94a3b8', flexShrink: 0, marginLeft: '1rem' }}>
+                  {openFaq === faq.id ? '−' : '+'}
+                </span>
+              </button>
+              {openFaq === faq.id && (
+                <p style={{ padding: '0 4.5rem 1.25rem', fontSize: '.9rem', color: '#64748b', lineHeight: 1.85, maxWidth: 700 }}>
+                  {faq.answer}
                 </p>
-              </div>
-            ) : (
-              <>
-                {upcomingEvents.length > 0 && (
-                  <div className="space-y-4">
-                    {upcomingEvents.map((event) => (
-                      <div key={event.id}
-                        className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        {(() => {
-                          const photos = event.photoUrls?.length ? event.photoUrls : (event.photoUrl ? [event.photoUrl] : [])
-                          if (photos.length === 0) return null
-                          if (photos.length === 1) return (
-                            <img src={photos[0]} alt={event.title} className="w-full h-40 object-cover" />
-                          )
-                          return (
-                            <div className="flex gap-0.5 h-36 overflow-hidden">
-                              {photos.slice(0, 3).map((url, i) => (
-                                <div key={i} className="flex-1 relative overflow-hidden">
-                                  <img src={url} alt="" className="w-full h-full object-cover" />
-                                  {i === 2 && photos.length > 3 && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                      <span className="text-white font-bold text-lg">+{photos.length - 3}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )
-                        })()}
-                        <div className="p-6 flex gap-4">
-                          <div className="w-12 h-14 bg-blue-50 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
-                            <span className="text-blue-700 text-xs font-medium leading-none">
-                              {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
-                            </span>
-                            <span className="text-blue-900 font-bold text-lg leading-none">
-                              {new Date(event.date).getDate()}
-                            </span>
-                          </div>
-                          <div className="flex-grow">
-                            <h3 className="font-bold text-gray-800 text-lg">{event.title}</h3>
-                            <div className="flex flex-wrap gap-4 mt-1">
-                              {event.time && (
-                                <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                                  <Clock size={14} />{formatTime(event.time)}
-                                </span>
-                              )}
-                              {event.location && (
-                                <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                                  <MapPin size={14} />{event.location}
-                                </span>
-                              )}
-                            </div>
-                            {event.description && (
-                              <p className="text-sm text-gray-600 mt-2 leading-relaxed">{event.description}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              )}
+            </div>
+          ))}
+          <div style={{ borderTop: '1px solid #f1f5f9' }} />
+        </div>
+      </div>
 
-                {pastEvents.length > 0 && (
-                  <details className="mt-6">
-                    <summary className="text-gray-400 text-sm cursor-pointer hover:text-gray-600 transition-colors pt-4 border-t border-gray-100">
-                      Show {pastEvents.length} past event{pastEvents.length !== 1 ? 's' : ''}
-                    </summary>
-                    <div className="mt-3 space-y-3 opacity-60">
-                      {pastEvents.map((event) => (
-                        <div key={event.id}
-                          className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex gap-4 items-start"
-                        >
-                          <div className="text-gray-500 text-sm w-28 flex-shrink-0 pt-0.5">
-                            {new Date(event.date).toLocaleDateString('en-US', {
-                              month: 'short', day: 'numeric', year: 'numeric',
-                            })}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-700">{event.title}</p>
-                            {event.location && (
-                              <p className="text-xs text-gray-400 mt-0.5">{event.location}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                )}
-              </>
-            )}
-          </div>
-        )}
+      {/* Links & Resources */}
+      <div id="links" style={{ scrollMarginTop: 110, background: '#f1f5f9', borderTop: `4px solid ${NAVY}` }}>
+        <div style={{ padding: '2rem 4.5rem 1.5rem' }}>
+          <p style={LABEL}>External</p>
+          <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Links &amp; Resources</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#e2e8f0', margin: '0 4.5rem 2.5rem' }}>
+          {links.map((lnk, i) => (
+            <a
+              key={lnk.id || i}
+              href={lnk.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ padding: '2rem', textDecoration: 'none', display: 'block', background: '#fff' }}
+            >
+              <p style={{ ...LABEL, color: '#2563eb', marginBottom: '.375rem' }}>{lnk.label}</p>
+              <p style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-.01em', color: '#0f172a' }}>{lnk.title}</p>
+              {lnk.description && <p style={{ fontSize: '.8125rem', color: '#94a3b8', marginTop: '.25rem' }}>{lnk.description}</p>}
+              <span style={{ display: 'inline-block', marginTop: '.5rem', color: NAVY, fontSize: '.875rem', fontWeight: 700 }}>Visit →</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Pay Fines CTA — always visible */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2rem 4.5rem', background: NAVY, borderTop: '1px solid #162d4a' }}>
+        <div>
+          <p style={{ ...LABEL, color: '#93c5fd', marginBottom: '.375rem' }}>Online payments accepted</p>
+          <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', letterSpacing: '-.02em', marginBottom: '.25rem' }}>Pay a Citation or Court Fine</p>
+          <p style={{ fontSize: '.875rem', color: '#94a3b8' }}>Traffic citations and Mayor's Court fines can be paid securely online.</p>
+        </div>
+        <a
+          href="#pay-fines"
+          style={{ display: 'inline-block', background: GOLD, color: NAVY, fontSize: '.875rem', fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', textDecoration: 'none', padding: '.875rem 2rem', flexShrink: 0, marginLeft: '3rem' }}
+        >
+          Pay Now →
+        </a>
       </div>
     </div>
   )

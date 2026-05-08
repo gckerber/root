@@ -4,90 +4,49 @@ import { Link, NavLink } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 
 const links = [
-  { to: '/', label: 'Home' },
-  { to: '/about', label: 'Get to Know Us' },
-  { to: '/minutes', label: 'Council Minutes' },
-  { to: '/bulletin', label: 'Bulletin Board' },
+  { to: '/',           label: 'Home',       end: true },
+  { to: '/community',  label: 'Community' },
+  { to: '/minutes',    label: 'Minutes' },
+  { to: '/officials',  label: 'Officials' },
+  { to: '/police',     label: 'Police' },
   { to: '/ordinances', label: 'Ordinances' },
-  { to: '/calendar', label: 'Calendar' },
-  { to: '/history', label: 'History' },
-  { to: '/police', label: 'Police Dept' },
+  { to: '/history',    label: 'History' },
 ]
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
 
   return (
-    <nav className="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo / Village name */}
-          <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <span
-              style={{ fontFamily: "'Great Vibes', cursive" }}
-              className="text-5xl text-yellow-400 leading-none select-none"
-            >
-              SL
-            </span>
-            <div className="hidden sm:block border-l border-blue-700 pl-3">
-              <div className="text-xs font-medium text-blue-300 tracking-widest uppercase leading-tight">Village of</div>
-              <div className="text-base font-bold leading-tight tracking-wide">
-                Saint Louisville
-              </div>
-            </div>
-          </Link>
-
-          {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-1">
-            {links.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/'}
-                className={({ isActive }) =>
-                  `px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
-                    isActive
-                      ? 'bg-blue-700 text-yellow-300'
-                      : 'text-blue-100 hover:bg-blue-800 hover:text-white'
-                  }`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-            <a
-              href="https://water.saintlouisvilleohio.gov"
-              className="ml-3 px-4 py-2 bg-yellow-400 text-blue-900 rounded-md text-sm font-bold hover:bg-yellow-300 transition-colors"
-            >
-              Pay Water Bill
-            </a>
+    <nav className="bg-white border-b border-slate-100 sticky top-0 z-50">
+      <div
+        className="flex items-center justify-between h-[60px]"
+        style={{ paddingLeft: '4.5rem', paddingRight: '4.5rem' }}
+      >
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-3 flex-shrink-0">
+          <div className="w-9 h-9 bg-[#1e3a5f] flex items-center justify-center text-white text-sm font-black">
+            SL
           </div>
+          <div>
+            <div className="text-sm font-bold text-[#0f172a] leading-tight">Saint Louisville</div>
+            <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 leading-tight">
+              Village of Ohio
+            </div>
+          </div>
+        </Link>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setOpen(!open)}
-            className="lg:hidden p-2 rounded-md text-blue-200 hover:bg-blue-800 hover:text-white transition-colors"
-            aria-label="Toggle menu"
-          >
-            {open ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile dropdown */}
-      {open && (
-        <div className="lg:hidden bg-blue-900 border-t border-blue-800 px-4 py-3 space-y-1">
-          {links.map(({ to, label }) => (
+        {/* Desktop nav */}
+        <div className="hidden lg:flex items-center">
+          {links.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
-              onClick={() => setOpen(false)}
+              end={end}
               className={({ isActive }) =>
-                `block px-3 py-2 rounded-md text-sm font-medium ${
+                `text-[13px] font-medium px-3 py-2 transition-colors ${
                   isActive
-                    ? 'bg-blue-700 text-yellow-300'
-                    : 'text-blue-100 hover:bg-blue-800'
+                    ? 'text-[#1e3a5f] font-bold border-b-2 border-[#1e3a5f]'
+                    : 'text-slate-600 hover:text-[#1e3a5f]'
                 }`
               }
             >
@@ -95,10 +54,49 @@ export default function Navbar() {
             </NavLink>
           ))}
           <a
-            href="https://water.saintlouisvilleohio.gov"
-            className="block px-3 py-2 bg-yellow-400 text-blue-900 rounded-md text-sm font-bold text-center mt-2"
+            href="/#contact"
+            className="ml-4 px-4 py-2 bg-[#1e3a5f] text-white text-[13px] font-bold hover:bg-[#162d4a] transition-colors"
           >
-            Pay Water Bill
+            Contact
+          </a>
+        </div>
+
+        {/* Mobile menu button */}
+        <button
+          onClick={() => setOpen(!open)}
+          className="lg:hidden p-2 text-slate-600 hover:text-[#1e3a5f] transition-colors"
+          aria-label="Toggle menu"
+        >
+          {open ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+
+      {/* Mobile dropdown */}
+      {open && (
+        <div className="lg:hidden bg-white border-t border-slate-100 px-6 py-3 space-y-1">
+          {links.map(({ to, label, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `block px-3 py-2 text-[13px] font-medium transition-colors ${
+                  isActive
+                    ? 'text-[#1e3a5f] font-bold'
+                    : 'text-slate-600 hover:text-[#1e3a5f]'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+          <a
+            href="/#contact"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 mt-2 bg-[#1e3a5f] text-white text-[13px] font-bold text-center hover:bg-[#162d4a] transition-colors"
+          >
+            Contact
           </a>
         </div>
       )}

@@ -339,3 +339,23 @@ public class FinePaymentRequest
     [JsonPropertyName("amount")]
     public decimal Amount { get; set; }
 }
+
+public class PdLink
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    [JsonPropertyName("label")]
+    public string Label { get; set; } = string.Empty;
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = string.Empty;
+    [JsonPropertyName("order")]
+    public int Order { get; set; }
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "link";
+    [JsonPropertyName("createdAt")]
+    public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
+}

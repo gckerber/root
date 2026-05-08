@@ -25,6 +25,7 @@ public class PdSiteFunctions : FunctionBase
     private Container PdImages() => _cosmos.GetContainer("pddb", "pdImages");
     private Container PdSettings() => _cosmos.GetContainer("pddb", "pdSettings");
     private Container PdFaq() => _cosmos.GetContainer("pddb", "pdFaq");
+    private Container PdLinks() => _cosmos.GetContainer("pddb", "pdLinks");
 
     // ═══════════════════════════════════════════════════════════════
     // COURT SCHEDULE
@@ -595,6 +596,142 @@ public class PdSiteFunctions : FunctionBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "DeletePdFaqItem error: {msg}", ex.Message);
+            return await ErrorJson(req, HttpStatusCode.InternalServerError, ex.Message);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PD LINKS
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── GET /api/pd-links (public) ────────────────────────────────
+    [Function("GetPdLinks")]
+    public async Task<HttpResponseData> GetPdLinks(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "pd-links")] HttpRequestData req)
+    {
+        if (req.Method == "OPTIONS") return Cors(req);
+        if (!_cosmos.IsAvailable) return await OkJson(req, new { items = Array.Empty<PdLink>(), total = 0 });
+
+        try
+        {
+            var container = PdLinks();
+            // Cross-partition query — works regardless of partition key setup
+            var query = new QueryDefinition("SELECT * FROM c ORDER BY c['order'] ASC");
+            var items = new List<PdLink>();
+            using var feed = container.GetItemQueryIterator<PdLink>(query);
+            while (feed.HasMoreResults)
+            {
+                var batch = await feed.ReadNextAsync();
+                items.AddRange(batch);
+            }
+
+            return await OkJson(req, new { items, total = items.Count });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetPdLinks error: {msg}", ex.Message);
+            return await OkJson(req, new { items = Array.Empty<PdLink>(), total = 0 });
+        }
+    }
+
+    // ── POST /api/pd-links (admin) ────────────────────────────────
+    [Function("CreatePdLink")]
+    public async Task<HttpResponseData> CreatePdLink(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "pd-links")] HttpRequestData req)
+    {
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database unavailable");
+
+        try
+        {
+            var body = await ReadBodyAsync<PdLink>(req);
+            if (body == null || string.IsNullOrWhiteSpace(body.Label) || string.IsNullOrWhiteSpace(body.Url))
+                return await ErrorJson(req, HttpStatusCode.BadRequest, "label and url are required");
+
+            body.Id = Guid.NewGuid().ToString();
+            body.Type = "link";
+            body.CreatedAt = DateTime.UtcNow.ToString("o");
+
+            var container = PdLinks();
+            var res = await container.UpsertItemAsync(body, new PartitionKey("link"));
+            return await CreatedJson(req, res.Resource);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "CreatePdLink error: {msg}", ex.Message);
+            return await ErrorJson(req, HttpStatusCode.InternalServerError, ex.Message);
+        }
+    }
+
+    // ── PUT /api/pd-links?id= (admin) ─────────────────────────────
+    [Function("UpdatePdLink")]
+    public async Task<HttpResponseData> UpdatePdLink(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "pd-links")] HttpRequestData req)
+    {
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database unavailable");
+
+        try
+        {
+            var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
+            var id = qs["id"];
+            if (string.IsNullOrWhiteSpace(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+
+            var body = await ReadBodyAsync<PdLink>(req);
+            if (body == null) return await ErrorJson(req, HttpStatusCode.BadRequest, "Invalid body");
+
+            body.Id = id;
+            body.Type = "link";
+
+            var container = PdLinks();
+            var res = await container.UpsertItemAsync(body, new PartitionKey("link"));
+            return await OkJson(req, res.Resource);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdatePdLink error: {msg}", ex.Message);
+            return await ErrorJson(req, HttpStatusCode.InternalServerError, ex.Message);
+        }
+    }
+
+    // ── DELETE /api/pd-links?id= (admin) ──────────────────────────
+    [Function("DeletePdLink")]
+    public async Task<HttpResponseData> DeletePdLink(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "pd-links")] HttpRequestData req)
+    {
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database unavailable");
+
+        try
+        {
+            var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
+            var id = qs["id"];
+            if (string.IsNullOrWhiteSpace(id)) return await ErrorJson(req, HttpStatusCode.BadRequest, "id required");
+
+            var container = PdLinks();
+            // Try known partition key first, then fall back to cross-partition lookup
+            try
+            {
+                await container.DeleteItemAsync<PdLink>(id, new PartitionKey("link"));
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @id").WithParameter("@id", id);
+                PdLink? found = null;
+                using var feed = container.GetItemQueryIterator<PdLink>(query);
+                while (feed.HasMoreResults && found == null)
+                {
+                    var batch = await feed.ReadNextAsync();
+                    found = batch.FirstOrDefault();
+                }
+                if (found != null)
+                    await container.DeleteItemAsync<PdLink>(id, new PartitionKey(found.Type ?? "link"));
+            }
+            return await OkJson(req, new { success = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DeletePdLink error: {msg}", ex.Message);
             return await ErrorJson(req, HttpStatusCode.InternalServerError, ex.Message);
         }
     }
