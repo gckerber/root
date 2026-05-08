@@ -58,6 +58,8 @@ jobs:
 
       - name: Build frontend
         working-directory: apps/village-site
+        env:
+          VITE_API_BASE_URL: 'https://func-village-prod.azurewebsites.net'
         run: npm run build
 
       - name: Install API dependencies
