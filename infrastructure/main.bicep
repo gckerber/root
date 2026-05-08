@@ -10,6 +10,12 @@ param contactEmail string
 @description('Object ID of the user running the bootstrap script — grants Key Vault write access.')
 param deployerObjectId string = ''
 
+@secure()
+param cosmosConnectionString string = ''
+
+@secure()
+param adminApiKey string = ''
+
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: 'rg-saintlouisville-${environment}'
   location: location
@@ -73,6 +79,8 @@ module villageStaticApp 'modules/staticWebApp.bicep' = {
     contactEmail: contactEmail
     adminEmail: adminEmail
     storageConnectionString: storage.outputs.connectionString
+    cosmosConnectionString: cosmosConnectionString
+    adminApiKey: adminApiKey
   }
 }
 

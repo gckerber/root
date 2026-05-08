@@ -8,9 +8,11 @@ param contactEmail string
 param adminEmail string
 param storageConnectionString string
 
-// Removed unused cosmosConnectionString and communicationConnectionString params.
-// Sensitive connection strings are fetched at runtime by function code
-// using DefaultAzureCredential → Key Vault. Only the KV URI is needed here.
+@secure()
+param cosmosConnectionString string = ''
+
+@secure()
+param adminApiKey string = ''
 
 var siteName = 'stapp-${appName}-${environment}-${take(uniqueSuffix, 8)}'
 
@@ -42,6 +44,8 @@ resource swaAppSettings 'Microsoft.Web/staticSites/config@2022-09-01' = {
     ADMIN_EMAIL: adminEmail
     STORAGE_CONNECTION_STRING: storageConnectionString
     ENVIRONMENT: environment
+    COSMOS_CONNECTION_STRING: cosmosConnectionString
+    ADMIN_API_KEY: adminApiKey
   }
 }
 
