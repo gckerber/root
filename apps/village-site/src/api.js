@@ -1,8 +1,10 @@
 // apps/village-site/src/api.js
-const BASE = ''  // Vite proxy handles /api/* → Azure Functions
+// In dev: Vite proxy forwards /api/* → Azure Functions (see vite.config.js)
+// In prod: VITE_API_BASE_URL is set at build time to the full Functions host
+const BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 async function get(path) {
-  const r = await fetch(`/api/${path}`)
+  const r = await fetch(`${BASE}/api/${path}`)
   if (!r.ok) throw new Error(`API ${path} failed: ${r.status}`)
   return r.json()
 }
