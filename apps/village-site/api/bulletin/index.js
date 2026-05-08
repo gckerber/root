@@ -22,14 +22,22 @@ module.exports = async function (context, req) {
   }
   try {
     const container = getContainer()
-    const { category, search, limit: limitStr } = req.query
+    const { category, search, limit: limitStr, pinned } = req.query
     const limit = Math.min(parseInt(limitStr) || 20, 50)
+    const pinnedOnly = pinned === 'true'
 
     let query = 'SELECT * FROM c'
     const params = []
+    const conditions = []
     if (category && VALID_CATEGORIES.includes(category)) {
-      query += ' WHERE c.category = @cat'
+      conditions.push('c.category = @cat')
       params.push({ name: '@cat', value: category })
+    }
+    if (pinnedOnly) {
+      conditions.push('c.pinned = true')
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
     }
 
     const { resources } = await container.items

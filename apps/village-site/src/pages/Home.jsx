@@ -241,7 +241,7 @@ export default function Home() {
 
   // Resolve data
   const heroImage = imagesData?.items?.find((i) => i.type === 'image') || imagesData?.find?.((i) => i.type === 'image')
-  const pinnedItems = bulletinData?.items || bulletinData || []
+  const pinnedItems = (bulletinData?.items || bulletinData || []).filter((i) => i.pinned)
   const eventsRaw = eventsData?.items || eventsData || []
   const now = new Date()
   const upcomingEvents = eventsRaw.filter((e) => e.date && new Date(e.date) >= now)
