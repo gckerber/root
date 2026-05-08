@@ -1,6 +1,7 @@
 // apps/village-site/src/pages/Minutes.jsx
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { api } from '../api'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -160,8 +161,7 @@ export default function Minutes() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['minutes', year, search],
-    queryFn: () =>
-      fetch(`/api/minutes${year !== 'all' ? `?year=${year}` : ''}`).then((r) => r.json()),
+    queryFn: () => api.minutes(year !== 'all' ? `?year=${year}` : ''),
     placeholderData: { items: [] },
   })
 

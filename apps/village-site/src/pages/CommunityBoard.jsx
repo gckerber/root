@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { api } from '../api'
 
 const LABEL_STYLE = {
   fontSize: '10px',
@@ -12,14 +13,14 @@ const LABEL_STYLE = {
 function useBulletins() {
   return useQuery({
     queryKey: ['bulletins'],
-    queryFn: () => fetch('/api/bulletin').then((r) => r.json()),
+    queryFn: () => api.bulletin(),
   })
 }
 
 function useEvents() {
   return useQuery({
     queryKey: ['events'],
-    queryFn: () => fetch('/api/events').then((r) => r.json()),
+    queryFn: () => api.events(),
   })
 }
 
