@@ -126,7 +126,7 @@ function PinnedBand({ items }) {
 
 /** Event strip (photo left or right) */
 function EventStrip({ event, reversed = false, bgColor = '#fff' }) {
-  const hasPhoto = Boolean(event?.imageUrl)
+  const hasPhoto = Boolean(event?.photoUrl)
 
   const dateBlock = (
     <div className="flex flex-col gap-1 mb-4">
@@ -183,7 +183,7 @@ function EventStrip({ event, reversed = false, bgColor = '#fff' }) {
     >
       {hasPhoto ? (
         <img
-          src={event.imageUrl}
+          src={event.photoUrl}
           alt={event.title}
           className="absolute inset-0 w-full h-full object-cover"
         />
