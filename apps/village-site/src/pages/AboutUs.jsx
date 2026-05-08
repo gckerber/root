@@ -1,134 +1,130 @@
-// apps/village-site/src/pages/AboutUs.jsx
-import { useState, useEffect, useMemo } from 'react'
-import { Mail, Phone, Award, Users } from 'lucide-react'
-import ContactForm from '../components/ContactForm'
-import { OfficialGrid } from '../components/OfficialCards'
+// apps/village-site/src/pages/AboutUs.jsx  (route: /officials)
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '../api'
 
-const API = 'https://func-village-prod.azurewebsites.net'
+const NAVY = '#1e3a5f'
+const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
 
-// Soft colour palette — cycles by committee index
-const COMMITTEE_COLOURS = [
-  'bg-blue-100 text-blue-700 border-blue-200',
-  'bg-green-100 text-green-700 border-green-200',
-  'bg-purple-100 text-purple-700 border-purple-200',
-  'bg-amber-100 text-amber-700 border-amber-200',
-  'bg-rose-100 text-rose-700 border-rose-200',
-  'bg-teal-100 text-teal-700 border-teal-200',
-  'bg-orange-100 text-orange-700 border-orange-200',
-  'bg-indigo-100 text-indigo-700 border-indigo-200',
-  'bg-cyan-100 text-cyan-700 border-cyan-200',
-]
-
-// Build a stable committee→colour map so the same colour always means the same committee
-function buildColourMap(allCommittees) {
-  const map = new Map()
-  ;[...new Set(allCommittees)].forEach((c, i) => {
-    map.set(c, COMMITTEE_COLOURS[i % COMMITTEE_COLOURS.length])
-  })
-  return map
+function initials(name) {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 }
 
-// ── Full official card (Mayor / Council) ─────────────────────────────────────
-function OfficialCard({ official, colourMap }) {
-  const initials = official.name.split(' ').map((n) => n[0]).join('').slice(0, 2)
-  const isMayor = official.title === 'Mayor'
-
+function Avatar({ official, size = 'full' }) {
+  const s = size === 'full' ? { width: '100%', height: '100%' } : { width: size, height: size, flexShrink: 0 }
+  if (official.photoUrl) {
+    return <img src={official.photoUrl} alt={official.name} style={{ ...s, objectFit: 'cover' }} />
+  }
   return (
-    <div className={`bg-white rounded-xl shadow-sm border p-6 flex flex-col gap-4 hover:shadow-md transition-shadow ${
-      isMayor ? 'border-yellow-300 ring-2 ring-yellow-200' : 'border-gray-100'
-    }`}>
-      <div className="flex items-center gap-4">
-        {official.photoUrl ? (
-          <img src={official.photoUrl} alt={official.name}
-            className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-gray-100" />
-        ) : (
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0 ${
-            isMayor ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
-          }`}>
-            {initials}
-          </div>
-        )}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-bold text-gray-900 leading-tight">{official.name}</h3>
-            {isMayor && <Award size={16} className="text-yellow-500 flex-shrink-0" />}
-          </div>
-          <p className={`text-sm font-medium ${isMayor ? 'text-yellow-700' : 'text-gray-500'}`}>
-            {official.title}
-          </p>
-          {/* Show work phone (or legacy phone), cell, home */}
-          {(official.phoneWork || official.phone) && (
-            <a href={`tel:${(official.phoneWork || official.phone).replace(/\D/g, '')}`}
-              className="text-xs text-gray-400 hover:text-blue-600 transition-colors">
-              {official.phoneWork || official.phone}
-            </a>
-          )}
-          {official.phoneCell && (
-            <span className="text-xs text-gray-400">Cell: {official.phoneCell}</span>
-          )}
-          {official.phoneHome && (
-            <span className="text-xs text-gray-400">Home: {official.phoneHome}</span>
-          )}
-        </div>
-      </div>
-
-      {official.bio && (
-        <p className="text-sm text-gray-600 leading-relaxed flex-grow">{official.bio}</p>
-      )}
-
-      {/* Committee tags */}
-      {official.committees?.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {official.committees.map((c) => {
-            const baseCommittee = c.replace(/\s*\(Chair\)/i, '').trim()
-            const isChair = /\(Chair\)/i.test(c)
-            const colour = colourMap?.get(baseCommittee) || colourMap?.get(c) || COMMITTEE_COLOURS[0]
-            return (
-              <span
-                key={c}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${colour}`}
-              >
-                {isChair && <span className="font-bold">★</span>}
-                {baseCommittee}
-                {isChair && <span className="opacity-60 text-xs">(Chair)</span>}
-              </span>
-            )
-          })}
-        </div>
-      )}
-
-      {official.email && (
-        <a href={`mailto:${official.email}`}
-          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium mt-auto">
-          <Mail size={15} />{official.email}
-        </a>
-      )}
+    <div style={{ ...s, background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: size === 'full' ? '2rem' : '0.75rem' }}>
+      {initials(official.name)}
     </div>
   )
 }
 
-// ── Compact committee card ────────────────────────────────────────────────────
-function CommitteeCard({ name, members, colour }) {
-  const chair = members.find((m) => m.isChair)
-  const others = members.filter((m) => !m.isChair)
-
+function CommTag({ label }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
-      <div className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border mb-3 ${colour}`}>
-        {name}
+    <span style={{ background: '#f1f5f9', color: NAVY, fontSize: '11px', fontWeight: 700, padding: '3px 10px', marginRight: 4, marginBottom: 4, display: 'inline-block' }}>
+      {label}
+    </span>
+  )
+}
+
+function OfficialContact({ official }) {
+  const phone = official.phoneWork || official.phone
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '.3rem', fontSize: '.875rem' }}>
+      {phone && <div style={{ display: 'flex', gap: '1rem' }}><span style={LABEL}>Phone</span><span style={{ fontWeight: 600 }}>{phone}</span></div>}
+      {official.email && <div style={{ display: 'flex', gap: '1rem' }}><span style={LABEL}>Email</span><a href={`mailto:${official.email}`} style={{ color: '#2563eb' }}>{official.email}</a></div>}
+    </div>
+  )
+}
+
+function MayorStrip({ official }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 420, background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+      <div style={{ width: '40%', overflow: 'hidden', flexShrink: 0 }}>
+        <Avatar official={official} />
       </div>
-      <div className="space-y-1">
-        {chair && (
-          <div className="flex items-center gap-2">
-            <span className="text-yellow-500 text-xs">★</span>
-            <span className="text-sm font-semibold text-gray-800">{chair.name}</span>
-            <span className="text-xs text-gray-400">Chair</span>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+        <span style={{ ...LABEL, color: NAVY, marginBottom: '1.125rem', display: 'block' }}>Mayor</span>
+        <h2 style={{ fontSize: '2.75rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{official.name}</h2>
+        {official.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 450, marginBottom: '1.5rem' }}>{official.bio}</p>}
+        {official.committees?.length > 0 && (
+          <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap' }}>
+            {official.committees.map(c => <CommTag key={c} label={c} />)}
           </div>
         )}
-        {others.map((m) => (
-          <div key={m.name} className="flex items-center gap-2">
-            <span className="w-3 h-3 flex-shrink-0" />
-            <span className="text-sm text-gray-600">{m.name}</span>
+        <OfficialContact official={official} />
+      </div>
+    </div>
+  )
+}
+
+function CouncilStrip({ official, index }) {
+  const photoLeft = index % 2 === 0
+  const bg = index % 2 === 1 ? '#f8fafc' : '#fff'
+  const content = (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3rem 4.5rem' }}>
+      <span style={{ ...LABEL, marginBottom: '1rem', display: 'block' }}>Council Member</span>
+      <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.5rem', color: '#0f172a' }}>{official.name}</h2>
+      {official.bio && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.85, maxWidth: 400, marginBottom: '1.125rem' }}>{official.bio}</p>}
+      {official.committees?.length > 0 && (
+        <div style={{ marginBottom: '1.25rem', display: 'flex', flexWrap: 'wrap' }}>
+          {official.committees.map(c => <CommTag key={c} label={c} />)}
+        </div>
+      )}
+      <OfficialContact official={official} />
+    </div>
+  )
+  const photo = (
+    <div style={{ width: '36%', overflow: 'hidden', flexShrink: 0 }}>
+      <Avatar official={official} />
+    </div>
+  )
+  return (
+    <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 320, background: bg, borderTop: '1px solid #f1f5f9' }}>
+      {photoLeft ? <>{photo}{content}</> : <>{content}{photo}</>}
+    </div>
+  )
+}
+
+function StaffRow({ official, index }) {
+  const phone = official.phoneWork || official.phone
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: index % 2 === 0 ? '#fff' : '#f8fafc', padding: '1.25rem 1.75rem', borderTop: '1px solid #f1f5f9' }}>
+      <div style={{ width: 72, height: 72, overflow: 'hidden', flexShrink: 0 }}>
+        <Avatar official={official} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: '.875rem', fontWeight: 700, color: NAVY, marginBottom: '.125rem' }}>{official.name}</p>
+        <p style={LABEL}>{official.title}</p>
+        {official.bio && <p style={{ fontSize: '.8125rem', color: '#64748b', lineHeight: 1.6, marginTop: '.25rem' }}>{official.bio}</p>}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '.25rem', textAlign: 'right', fontSize: '.8125rem', flexShrink: 0 }}>
+        {phone && <span style={{ fontWeight: 600, color: '#0f172a' }}>{phone}</span>}
+        {official.email && <a href={`mailto:${official.email}`} style={{ color: '#2563eb' }}>{official.email}</a>}
+      </div>
+    </div>
+  )
+}
+
+function CommitteePanel({ name, members, index }) {
+  return (
+    <div style={{ background: index % 2 === 0 ? '#fff' : '#f8fafc', padding: '1.75rem 2rem' }}>
+      <p style={{ ...LABEL, color: NAVY, marginBottom: '.875rem' }}>{name}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+        {members.map(m => (
+          <div key={m.name + m.officeTitle} style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+            <div style={{ width: 38, height: 38, overflow: 'hidden', flexShrink: 0, background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '11px', fontWeight: 900 }}>
+              {m.photoUrl
+                ? <img src={m.photoUrl} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : initials(m.name)}
+            </div>
+            <div>
+              <p style={{ fontSize: '.8125rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>{m.name}</p>
+              <p style={{ fontSize: '.6875rem', color: '#94a3b8' }}>{m.officeTitle}{m.isChair ? ' · Chair' : ''}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -136,167 +132,104 @@ function CommitteeCard({ name, members, colour }) {
   )
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
-export default function AboutUs() {
-  const [officials,    setOfficials]    = useState([])
-  const [siteSettings, setSiteSettings] = useState({})
-  const [loaded,       setLoaded]       = useState(false)
+export default function Officials() {
+  const { data, isLoading } = useQuery({ queryKey: ['officials'], queryFn: api.officials })
 
-  useEffect(() => {
-    fetch(`${API}/api/officials`)
-      .then((r) => r.json())
-      .then((d) => { if (d.items?.length) setOfficials(d.items) })
-      .catch(() => {})
-      .finally(() => setLoaded(true))
-    fetch(`${API}/api/site-settings`)
-      .then((r) => r.json())
-      .then((d) => setSiteSettings(d || {}))
-      .catch(() => {})
-  }, [])
+  const officials = useMemo(
+    () => (data?.items || []).filter(o => o.department !== 'police').sort((a, b) => a.order - b.order),
+    [data]
+  )
 
-  // Police Department officers are shown on the PD page, not here
-  const mayor   = officials.filter((o) => o.department !== 'police' && o.title === 'Mayor')
-  const council = officials.filter((o) => o.department !== 'police' && o.title === 'Village Council').sort((a, b) => a.order - b.order)
-  const other   = officials.filter((o) => o.department !== 'police' && o.title !== 'Mayor' && o.title !== 'Village Council').sort((a, b) => a.order - b.order)
+  const mayor   = useMemo(() => officials.filter(o => o.title === 'Mayor'), [officials])
+  const council = useMemo(() => officials.filter(o => /council/i.test(o.title)), [officials])
+  const other   = useMemo(() => officials.filter(o => o.title !== 'Mayor' && !/council/i.test(o.title)), [officials])
 
-  const mayorLayout   = siteSettings.mayorLayout   || 'grid'
-  const councilLayout = siteSettings.councilLayout || 'grid'
-  const otherLayout   = siteSettings.otherLayout   || 'grid'
-
-  // Build a stable list of all unique base-committee names and a colour map
-  const { committeeList, colourMap } = useMemo(() => {
-    const allTags = council.flatMap((o) => o.committees || [])
-    const baseNames = [...new Set(allTags.map((t) => t.replace(/\s*\(Chair\)/i, '').trim()))]
-    const map = buildColourMap(baseNames)
-    return { committeeList: baseNames, colourMap: map }
-  }, [council])
-
-  // Build committee→members map for the committees section
   const committeeGroups = useMemo(() => {
     const groups = new Map()
-    council.forEach((official) => {
-      ;(official.committees || []).forEach((tag) => {
-        const isChair = /\(Chair\)/i.test(tag)
-        const baseName = tag.replace(/\s*\(Chair\)/i, '').trim()
+    ;[...mayor, ...council, ...other].forEach(official => {
+      ;(official.committees || []).forEach(tag => {
+        const isChair = /—\s*chair|\(chair\)/i.test(tag)
+        const baseName = tag.replace(/\s*—\s*chair|\s*\(chair\)/i, '').trim()
         if (!groups.has(baseName)) groups.set(baseName, [])
-        groups.get(baseName).push({ name: official.name, isChair })
+        groups.get(baseName).push({ name: official.name, officeTitle: official.title, photoUrl: official.photoUrl, isChair })
       })
     })
-    // Sort each group: chair first
-    groups.forEach((members, key) => {
+    groups.forEach((members, key) =>
       groups.set(key, members.sort((a, b) => (b.isChair ? 1 : 0) - (a.isChair ? 1 : 0)))
-    })
+    )
     return groups
-  }, [council])
+  }, [mayor, council, other])
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: '4.5rem' }}>
+        {[1, 2, 3].map(i => (
+          <div key={i} style={{ height: 200, background: '#f1f5f9', marginBottom: 8 }} className="animate-pulse" />
+        ))}
+      </div>
+    )
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-3">Get to Know Us</h1>
-        <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-          Meet the dedicated officials who serve the Village of Saint Louisville, Ohio
-        </p>
+    <div style={{ background: '#fff', minHeight: '100vh' }}>
+
+      {/* Hero */}
+      <div style={{ position: 'relative', minHeight: 300, display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)' }} />
+        <img src="https://picsum.photos/seed/officials-hero/1600/700" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: .2 }} />
+        <div style={{ position: 'relative', padding: '3.5rem 4.5rem', zIndex: 1 }}>
+          <p style={{ ...LABEL, color: '#93c5fd', marginBottom: '1rem' }}>Your elected leaders</p>
+          <h1 style={{ fontSize: '3.25rem', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-.04em', marginBottom: '.875rem' }}>Village Officials</h1>
+          <p style={{ color: '#cbd5e1', fontSize: '.9375rem', lineHeight: 1.8, maxWidth: 400 }}>
+            Meet your mayor, council members, and staff — and see who serves on which committee.
+          </p>
+        </div>
       </div>
 
       {/* Mayor */}
-      {mayor.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 bg-yellow-400 rounded-full" />Village Mayor
-          </h2>
-          {mayorLayout === 'grid' ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mayor.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
-            </div>
-          ) : (
-            <OfficialGrid officials={mayor} layout={mayorLayout} />
-          )}
-        </section>
+      {mayor.map(o => <MayorStrip key={o.id} official={o} />)}
+
+      {/* Council */}
+      {council.length > 0 && (
+        <>
+          <div style={{ padding: '2rem 4.5rem 1.5rem', borderTop: '1px solid #f1f5f9' }}>
+            <p style={LABEL}>Village Council</p>
+            <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Council Members</h2>
+          </div>
+          {council.map((o, i) => <CouncilStrip key={o.id} official={o} index={i} />)}
+        </>
       )}
 
-      {/* Village Council */}
-      {council.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full" />Village Council
-          </h2>
-          {councilLayout === 'grid' ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {council.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
-            </div>
-          ) : (
-            <OfficialGrid officials={council} layout={councilLayout} />
-          )}
-        </section>
+      {/* Staff */}
+      {other.length > 0 && (
+        <>
+          <div style={{ padding: '1.5rem 4.5rem 1rem', borderTop: '1px solid #f1f5f9' }}>
+            <p style={LABEL}>Village Staff</p>
+            <h2 style={{ fontSize: '1.625rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Other Officials &amp; Staff</h2>
+          </div>
+          <div style={{ padding: '0 4.5rem 2.5rem' }}>
+            {other.map((o, i) => <StaffRow key={o.id} official={o} index={i} />)}
+          </div>
+        </>
       )}
 
       {/* Committees */}
       {committeeGroups.size > 0 && (
-        <section className="mb-10">
-          <h2 className="text-lg font-bold text-gray-700 mb-1 flex items-center gap-2">
-            <span className="w-2 h-2 bg-teal-500 rounded-full" />Committees
-          </h2>
-          <p className="text-sm text-gray-400 mb-4">★ denotes committee chairperson</p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[...committeeGroups.entries()].map(([name, members]) => (
-              <CommitteeCard
-                key={name}
-                name={name}
-                members={members}
-                colour={colourMap.get(name) || COMMITTEE_COLOURS[0]}
-              />
+        <>
+          <div style={{ padding: '2rem 4.5rem 1.5rem', borderTop: '1px solid #f1f5f9' }}>
+            <p style={LABEL}>Village Government</p>
+            <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.5rem' }}>Committees</h2>
+            <p style={{ fontSize: '.9rem', color: '#64748b', marginTop: '.375rem', maxWidth: 520 }}>
+              Standing committees advise the council on specific areas of village business.
+            </p>
+          </div>
+          <div style={{ margin: '0 4.5rem 3.5rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: '#f1f5f9' }}>
+            {[...committeeGroups.entries()].map(([name, members], i) => (
+              <CommitteePanel key={name} name={name} members={members} index={i} />
             ))}
           </div>
-        </section>
+        </>
       )}
-
-      {/* Other officials */}
-      {other.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 bg-gray-400 rounded-full" />Other Officials &amp; Staff
-          </h2>
-          {otherLayout === 'grid' ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {other.map((o) => <OfficialCard key={o.id} official={o} colourMap={colourMap} />)}
-            </div>
-          ) : (
-            <OfficialGrid officials={other} layout={otherLayout} />
-          )}
-        </section>
-      )}
-
-      {/* Contact */}
-      <div className="border-t border-gray-200 pt-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Contact Us</h2>
-        <p className="text-gray-500 text-center mb-8">
-          Have a question or concern? Send us a message and we'll get back to you.
-        </p>
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          <div className="space-y-6">
-            <div className="bg-blue-50 rounded-xl p-6 space-y-4">
-              <h3 className="font-bold text-gray-800">Village Hall</h3>
-              <div className="flex items-start gap-3 text-sm text-gray-600">
-                <Phone size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="font-medium">Phone</div>
-                  <a href="tel:+17405687800" className="hover:text-blue-600">(740) 568-7800</a>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 text-sm text-gray-600">
-                <Mail size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="font-medium">Email</div>
-                  <a href="mailto:info@saintlouisvilleohio.gov" className="hover:text-blue-600">
-                    info@saintlouisvilleohio.gov
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-          <ContactForm />
-        </div>
-      </div>
     </div>
   )
 }

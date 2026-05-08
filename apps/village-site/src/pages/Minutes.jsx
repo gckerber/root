@@ -1,68 +1,150 @@
 // apps/village-site/src/pages/Minutes.jsx
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { FileText, Download, Search, Filter, ChevronDown } from 'lucide-react'
-import axios from 'axios'
-import { format, parseISO } from 'date-fns'
 
-const API = 'https://func-village-prod.azurewebsites.net'
+// ── helpers ──────────────────────────────────────────────────────────────────
 
-function useMinutes(year, search) {
-  return useQuery({
-    queryKey: ['minutes', year, search],
-    queryFn: () =>
-      axios.get(`${API}/api/minutes`, { params: { year, search } }).then((r) => r.data),
-    placeholderData: { items: [] },
-  })
+function fmtSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1048576) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / 1048576).toFixed(1)} MB`
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso)
+  return {
+    day: d.getDate(),
+    month: d.toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+    year: d.getFullYear(),
+    weekday: d.toLocaleString('en-US', { weekday: 'long' }),
+    full: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+  }
+}
+
+const LABEL_STYLE = {
+  fontSize: '10px',
+  fontWeight: 700,
+  letterSpacing: '.12em',
+  textTransform: 'uppercase',
+  color: '#94a3b8',
 }
 
 const currentYear = new Date().getFullYear()
-const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
 
-function MinuteCard({ doc }) {
-  const date = parseISO(doc.meetingDate)
+// ── sub-components ────────────────────────────────────────────────────────────
+
+function PdfIcon() {
+  return (
+    <svg
+      width="32"
+      height="40"
+      viewBox="0 0 32 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="flex-shrink-0"
+    >
+      <rect width="32" height="40" rx="4" fill="#f1f5f9" />
+      <path
+        d="M8 10h11l5 5v15a2 2 0 01-2 2H8a2 2 0 01-2-2V12a2 2 0 012-2z"
+        fill="#cbd5e1"
+      />
+      <path d="M19 10l5 5h-5V10z" fill="#94a3b8" />
+      <rect x="6" y="22" width="20" height="10" rx="2" fill="#94a3b8" />
+      <text x="16" y="30" textAnchor="middle" fill="white" fontSize="6" fontWeight="700">
+        PDF
+      </text>
+    </svg>
+  )
+}
+
+function MinuteRow({ doc, altBg }) {
+  const d = fmtDate(doc.meetingDate)
+  const size = fmtSize(doc.fileSize)
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4 flex-grow min-w-0">
-          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-            <FileText size={22} className="text-blue-600" />
-          </div>
-          <div className="flex-grow min-w-0">
-            <h3 className="font-semibold text-gray-900">
-              {doc.title || `${format(date, 'MMMM d, yyyy')} — Council Meeting`}
-            </h3>
-            <div className="flex items-center gap-3 mt-1 flex-wrap">
-              <span className="text-xs text-gray-500">{doc.type || 'Regular Session'}</span>
-              <span className="text-xs text-gray-400">{format(date, 'MMMM d, yyyy')}</span>
-              {doc.fileSize && (
-                <span className="text-xs text-gray-400">
-                  {(doc.fileSize / 1024).toFixed(0)} KB
-                </span>
-              )}
-              {doc.approved && (
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                  Approved
-                </span>
-              )}
-            </div>
-            {doc.summary && (
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">{doc.summary}</p>
-            )}
-          </div>
+    <div
+      className="flex items-start gap-6 border-t border-[#f1f5f9]"
+      style={{
+        padding: '1.5rem 4.5rem',
+        backgroundColor: altBg ? '#f8fafc' : '#ffffff',
+      }}
+    >
+      {/* Date column */}
+      <div className="flex-shrink-0 w-16 text-center">
+        <div
+          className="leading-none"
+          style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1e3a5f' }}
+        >
+          {d.day}
+        </div>
+        <div style={LABEL_STYLE}>
+          {d.month} {d.year}
+        </div>
+      </div>
+
+      {/* PDF icon */}
+      <div className="flex-shrink-0 mt-1">
+        <PdfIcon />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        {/* Row 1: title + badge */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{doc.title}</span>
+          {doc.approved ? (
+            <span
+              className="bg-[#f0fdf4] text-[#166534] px-2 py-0.5 uppercase tracking-wide"
+              style={{ fontSize: '10px', fontWeight: 700 }}
+            >
+              Approved
+            </span>
+          ) : (
+            <span
+              className="bg-[#fef3c7] text-[#92400e] px-2 py-0.5 uppercase tracking-wide"
+              style={{ fontSize: '10px', fontWeight: 700 }}
+            >
+              Pending Approval
+            </span>
+          )}
         </div>
 
+        {/* Row 2: description */}
+        {doc.description && (
+          <p
+            className="text-slate-500 leading-relaxed mt-1 max-w-xl"
+            style={{ fontSize: '0.875rem' }}
+          >
+            {doc.description}
+          </p>
+        )}
+
+        {/* Row 3: meta */}
+        <div className="text-slate-400 mt-1" style={{ fontSize: '0.8125rem' }}>
+          {doc.fileUrl ? (
+            <>
+              {doc.type || 'Regular Session'}
+              {size ? ` · ${size}` : ''}
+            </>
+          ) : (
+            'Draft · No file yet'
+          )}
+        </div>
+      </div>
+
+      {/* Download */}
+      <div className="flex-shrink-0 self-center">
         {doc.fileUrl && (
           <a
             href={doc.fileUrl}
+            download={doc.fileName || true}
             target="_blank"
             rel="noopener noreferrer"
-            download
-            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
+            className="text-sm font-bold hover:underline"
+            style={{ color: '#1e3a5f' }}
           >
-            <Download size={15} />
-            <span className="hidden sm:inline">Download</span>
+            Download
           </a>
         )}
       </div>
@@ -70,76 +152,196 @@ function MinuteCard({ doc }) {
   )
 }
 
+// ── main page ─────────────────────────────────────────────────────────────────
+
 export default function Minutes() {
-  const [year, setYear] = useState(String(currentYear))
+  const [year, setYear] = useState(currentYear)
   const [search, setSearch] = useState('')
 
-  const { data, isLoading, isError } = useMinutes(year, search)
-  const minutes = data?.items || []
+  const { data, isLoading } = useQuery({
+    queryKey: ['minutes', year, search],
+    queryFn: () =>
+      fetch(`/api/minutes${year !== 'all' ? `?year=${year}` : ''}`).then((r) => r.json()),
+    placeholderData: { items: [] },
+  })
+
+  const allItems = data?.items || []
+  const now = new Date()
+
+  // Upcoming: future meetings sorted ascending
+  const upcoming = allItems
+    .filter((m) => new Date(m.meetingDate) > now)
+    .sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate))
+    .slice(0, 3)
+
+  // Pad to 3 slots
+  const upcomingSlots = [
+    ...upcoming,
+    ...Array(Math.max(0, 3 - upcoming.length)).fill(null),
+  ]
+
+  // Past/current: filtered + sorted desc
+  const filtered = allItems
+    .filter((m) => {
+      if (!search.trim()) return true
+      const q = search.toLowerCase()
+      return (
+        (m.title || '').toLowerCase().includes(q) ||
+        (m.description || '').toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate))
+
+  const yearTabs = [currentYear, currentYear - 1, currentYear - 2, 'all']
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Council Meeting Minutes</h1>
-        <p className="text-gray-500">
-          Official minutes from Village Council meetings. Browse, filter, and download below.
+    <div className="min-h-screen bg-white">
+      {/* 1. Section heading */}
+      <div
+        className="border-b border-[#f1f5f9]"
+        style={{ padding: '2.5rem 4.5rem' }}
+      >
+        <div style={LABEL_STYLE} className="mb-3">
+          Village Government
+        </div>
+        <h1
+          className="tracking-tight"
+          style={{ fontSize: '3rem', fontWeight: 900, color: '#1e3a5f', lineHeight: 1.05 }}
+        >
+          Council Minutes &amp; Records
+        </h1>
+        <p className="text-slate-500 mt-3 max-w-2xl text-base leading-relaxed">
+          Upcoming meetings you can attend, approved minutes, and all official documents from
+          council sessions.
         </p>
       </div>
 
-      {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6 flex flex-wrap gap-3">
-        <div className="relative flex-grow max-w-sm">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="search"
-            placeholder="Search minutes…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      {/* 2. Upcoming meetings band */}
+      <div style={{ backgroundColor: '#1e3a5f', padding: '2rem 4.5rem' }}>
+        <div
+          style={{
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '.12em',
+            textTransform: 'uppercase',
+            color: '#f59e0b',
+          }}
+          className="mb-1"
+        >
+          Scheduled &amp; Open to the Public
         </div>
+        <h2 className="text-white" style={{ fontSize: '1.5rem', fontWeight: 900 }}>
+          Upcoming Meetings
+        </h2>
 
-        <div className="relative">
-          <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className="pl-9 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-          >
-            <option value="">All Years</option>
-            {years.map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <div
+          className="flex gap-0 border-t border-white/10 mt-4 pt-6"
+          style={{ borderTopColor: 'rgba(255,255,255,0.1)' }}
+        >
+          {upcomingSlots.map((m, i) => {
+            const isLast = i === upcomingSlots.length - 1
+            return (
+              <div
+                key={i}
+                className={[
+                  'flex-1',
+                  'border-r border-white/10',
+                  isLast ? 'border-r-0' : '',
+                  'px-8',
+                  i === 0 ? 'pl-0' : '',
+                ].join(' ')}
+                style={{ borderRightColor: 'rgba(255,255,255,0.1)' }}
+              >
+                {m ? (
+                  <>
+                    <div
+                      className="text-white font-black"
+                      style={{ fontSize: '1.875rem', lineHeight: 1.1 }}
+                    >
+                      {fmtDate(m.meetingDate).full}
+                    </div>
+                    <div className="text-slate-400 text-sm mt-1">
+                      {fmtDate(m.meetingDate).weekday} · 7:00 PM · Village Hall
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      className="text-white/40 font-black"
+                      style={{ fontSize: '1.875rem', lineHeight: 1.1 }}
+                    >
+                      TBD
+                    </div>
+                    <div className="text-slate-500 text-sm mt-1">To be scheduled</div>
+                  </>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {/* Results */}
+      {/* 3. Filter bar */}
+      <div
+        className="flex items-center gap-0 border-b border-[#f1f5f9]"
+        style={{ padding: '0 0' }}
+      >
+        {yearTabs.map((y) => {
+          const active = year === y
+          return (
+            <button
+              key={y}
+              onClick={() => setYear(y)}
+              className={
+                active
+                  ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-6 py-4 text-sm'
+                  : 'text-slate-500 px-6 py-4 text-sm hover:text-[#1e3a5f]'
+              }
+              style={{ paddingLeft: y === yearTabs[0] ? '4.5rem' : undefined }}
+            >
+              {y === 'all' ? 'All' : y}
+            </button>
+          )
+        })}
+
+        <input
+          type="search"
+          placeholder="Search minutes…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border border-[#e2e8f0] px-4 py-2 text-sm ml-auto outline-none"
+          style={{ marginRight: '4.5rem' }}
+        />
+      </div>
+
+      {/* 4. Document rows */}
       {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="bg-white rounded-xl border border-gray-100 p-5 animate-pulse">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg" />
-                <div className="space-y-2 flex-grow">
-                  <div className="h-4 bg-gray-200 rounded w-1/2" />
-                  <div className="h-3 bg-gray-200 rounded w-1/4" />
-                </div>
+        <div style={{ padding: '3rem 4.5rem' }}>
+          {[0, 1, 2].map((n) => (
+            <div
+              key={n}
+              className="flex items-center gap-6 border-t border-[#f1f5f9] py-6 animate-pulse"
+            >
+              <div className="w-16 h-12 bg-slate-100 rounded" />
+              <div className="w-8 h-10 bg-slate-100 rounded" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-slate-100 rounded w-1/3" />
+                <div className="h-3 bg-slate-100 rounded w-1/2" />
               </div>
             </div>
           ))}
         </div>
-      ) : isError ? (
-        <div className="text-center py-16 text-red-500">
-          Unable to load minutes. Please try again or contact Village Hall.
-        </div>
-      ) : minutes.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          No minutes found for the selected filters.
+      ) : filtered.length === 0 ? (
+        <div
+          className="text-center text-slate-400 py-20"
+          style={{ fontSize: '0.9375rem' }}
+        >
+          No minutes found for this period.
         </div>
       ) : (
-        <div className="space-y-3">
-          {minutes.map((doc) => <MinuteCard key={doc.id} doc={doc} />)}
-        </div>
+        filtered.map((doc, i) => (
+          <MinuteRow key={doc.id} doc={doc} altBg={i % 2 === 1} />
+        ))
       )}
     </div>
   )

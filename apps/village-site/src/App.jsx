@@ -1,18 +1,15 @@
 // apps/village-site/src/App.jsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
-import AboutUs from './pages/AboutUs'
+import Officials from './pages/AboutUs'
 import Minutes from './pages/Minutes'
-import Bulletin from './pages/Bulletin'
+import CommunityBoard from './pages/CommunityBoard'
 import OrdinancesPage from './pages/OrdinancesPage'
-import CalendarPage from './pages/CalendarPage'
 import History from './pages/History'
 import PoliceDept from './pages/PoliceDept'
-import PoliceMayorsCourt from './pages/PoliceMayorsCourt'
-import PolicePayFine from './pages/PolicePayFine'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,20 +21,22 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="min-h-screen flex flex-col bg-stone-50">
+        <div className="min-h-screen flex flex-col bg-white">
           <Navbar />
           <main className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/about" element={<AboutUs />} />
+              <Route path="/community" element={<CommunityBoard />} />
               <Route path="/minutes" element={<Minutes />} />
-              <Route path="/bulletin" element={<Bulletin />} />
-              <Route path="/ordinances" element={<OrdinancesPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/history" element={<History />} />
+              <Route path="/officials" element={<Officials />} />
               <Route path="/police" element={<PoliceDept />} />
-              <Route path="/police/mayors-court" element={<PoliceMayorsCourt />} />
-              <Route path="/police/fines" element={<PolicePayFine />} />
+              <Route path="/ordinances" element={<OrdinancesPage />} />
+              <Route path="/history" element={<History />} />
+
+              {/* Redirects from old routes */}
+              <Route path="/about" element={<Navigate to="/officials" replace />} />
+              <Route path="/bulletin" element={<Navigate to="/community" replace />} />
+              <Route path="/calendar" element={<Navigate to="/community" replace />} />
             </Routes>
           </main>
           <Footer />

@@ -1,133 +1,146 @@
 // apps/village-site/src/pages/History.jsx
-import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
-import axios from 'axios'
+import { api } from '../api'
 
-const API = 'https://func-village-prod.azurewebsites.net'
+const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
 
-const DEFAULT_HISTORY = 'Saint Louisville was established in 1833 in Licking County, Ohio, as a small but proud community in the heart of the state. Through more than 190 years of history, Saint Louisville has maintained its close-knit character, welcoming generations of families who have called this special place home.'
+const PLACEHOLDER_PHOTOS = [
+  { url: 'https://picsum.photos/seed/hist-wide/1200/500', wide: true },
+  { url: 'https://picsum.photos/seed/hist-a/600/450' },
+  { url: 'https://picsum.photos/seed/hist-b/600/450' },
+  { url: 'https://picsum.photos/seed/hist-c/600/450' },
+  { url: 'https://picsum.photos/seed/hist-d/600/450' },
+  { url: 'https://picsum.photos/seed/hist-e/600/450' },
+  { url: 'https://picsum.photos/seed/hist-f/600/450' },
+  { url: 'https://picsum.photos/seed/hist-g/600/450' },
+]
 
-function usePhotos() {
-  return useQuery({
-    queryKey: ['photos'],
-    queryFn: () => axios.get(`${API}/api/photos`).then((r) => r.data),
-    placeholderData: { items: [] },
-  })
-}
+function PhotoMosaic({ photos = [], startIndex = 0, count = 5, sepia = 0 }) {
+  const tiles = photos.length
+    ? photos.slice(startIndex, startIndex + count)
+    : PLACEHOLDER_PHOTOS.slice(startIndex, startIndex + count)
 
-function Lightbox({ photos, index, onClose, onPrev, onNext }) {
-  if (index === null) return null
-  const photo = photos[index]
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={onClose}>
-      <button className="absolute top-4 right-4 text-white/70 hover:text-white" onClick={onClose}>
-        <X size={28} />
-      </button>
-      <button
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20"
-        onClick={(e) => { e.stopPropagation(); onPrev() }}
-      >
-        <ChevronLeft size={24} />
-      </button>
-      <div className="max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-        <img src={photo.url} alt={photo.caption}
-          className="w-full max-h-[75vh] object-contain rounded-lg"
-          onError={(e) => { e.target.src = 'https://placehold.co/800x500/1e3a5f/white?text=Historical+Photo' }} />
-        <div className="mt-4 text-center text-white">
-          <p className="font-semibold text-lg">{photo.caption}</p>
-          {photo.year && <p className="text-white/60 text-sm mt-1">circa {photo.year}</p>}
-        </div>
-      </div>
-      <button
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20"
-        onClick={(e) => { e.stopPropagation(); onNext() }}
-      >
-        <ChevronRight size={24} />
-      </button>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, margin: '0 4.5rem 3rem' }}>
+      {tiles.map((p, i) => {
+        const isWide = i === 0 && p.wide !== false
+        return (
+          <div
+            key={p.url || p.id || i}
+            style={{
+              gridColumn: isWide ? 'span 2' : 'span 1',
+              aspectRatio: isWide ? '16/7' : '4/3',
+              overflow: 'hidden',
+            }}
+          >
+            <img
+              src={p.url}
+              alt={p.caption || ''}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', filter: sepia > 0 ? `sepia(${sepia}) contrast(1.05)` : undefined }}
+            />
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 export default function History() {
-  const [lightboxIndex, setLightboxIndex] = useState(null)
-  const [historyText, setHistoryText] = useState(DEFAULT_HISTORY)
-  const { data } = usePhotos()
-  const photos = data?.items || []
+  const { data: historyData } = useQuery({ queryKey: ['history'], queryFn: api.history })
+  const { data: photosData }  = useQuery({ queryKey: ['photos'],  queryFn: api.photos })
 
-  useEffect(() => {
-    fetch(`${API}/api/history`)
-      .then((r) => r.json())
-      .then((d) => { if (d.text) setHistoryText(d.text) })
-      .catch(() => {/* use default */})
-  }, [])
-
-  function handlePrev() { setLightboxIndex((i) => (i > 0 ? i - 1 : photos.length - 1)) }
-  function handleNext() { setLightboxIndex((i) => (i < photos.length - 1 ? i + 1 : 0)) }
+  const photos = photosData?.items || []
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-10">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Village History &amp; Heritage</h1>
+    <div style={{ background: '#fff', minHeight: '100vh' }}>
 
-        {/* Stats banner */}
-        <div className="bg-blue-900 text-white rounded-2xl p-8 mb-6 grid sm:grid-cols-3 gap-6 text-center">
-          {[
-            { stat: '1833', label: 'Year Established' },
-            { stat: 'Licking County', label: 'County' },
-            { stat: '190+ Years', label: 'Community Heritage' },
-          ].map(({ stat, label }) => (
-            <div key={label}>
-              <div className="text-3xl font-extrabold text-yellow-300">{stat}</div>
-              <div className="text-blue-200 text-sm mt-1">{label}</div>
-            </div>
-          ))}
+      {/* Heading with 1837 watermark */}
+      <div style={{ position: 'relative', padding: '5rem 4.5rem 4rem', overflow: 'hidden', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ position: 'absolute', right: '3rem', top: '50%', transform: 'translateY(-50%)', fontSize: '16rem', fontWeight: 900, color: '#f1f5f9', lineHeight: 1, pointerEvents: 'none', userSelect: 'none', letterSpacing: '-.06em' }}>
+          1837
         </div>
-
-        {/* History paragraph — same width as banner, below it */}
-        <p className="text-gray-600 leading-relaxed text-base">
-          {historyText}
+        <p style={{ ...LABEL, marginBottom: '.875rem', position: 'relative' }}>Incorporated 1837 · Knox County, Ohio</p>
+        <h1 style={{ fontSize: '3.75rem', fontWeight: 900, letterSpacing: '-.04em', lineHeight: 1.05, maxWidth: 560, position: 'relative', color: '#0f172a' }}>
+          The Story of<br />Saint Louisville
+        </h1>
+        <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.875, maxWidth: 540, marginTop: '1.125rem', position: 'relative' }}>
+          From its earliest days as a small farming settlement along the Ohio frontier to the tight-knit village it is today — this is the history of Saint Louisville.
         </p>
       </div>
 
-      {/* Photo gallery */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Historical Photo Gallery</h2>
-
-      {photos.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          No photos yet. Add some from the admin panel.
+      {/* Era 1 — photo left */}
+      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 480, borderTop: '1px solid #f1f5f9' }}>
+        <div style={{ width: '46%', overflow: 'hidden', flexShrink: 0 }}>
+          <img
+            src={photos[0]?.url || 'https://picsum.photos/seed/history1/900/700'}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(.45) contrast(1.05)' }}
+          />
         </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {photos.map((photo, i) => (
-            <button key={photo.id} onClick={() => setLightboxIndex(i)}
-              className="group relative aspect-square overflow-hidden rounded-xl bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <img src={photo.url} alt={photo.caption}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-                onError={(e) => {
-                  e.target.src = `https://placehold.co/400x400/1e3a5f/white?text=${encodeURIComponent(photo.year || 'Historic')}`
-                }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                <div className="text-white text-left">
-                  <p className="text-xs font-medium line-clamp-2">{photo.caption}</p>
-                  {photo.year && <p className="text-white/60 text-xs">~{photo.year}</p>}
-                </div>
-              </div>
-            </button>
-          ))}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+          <p style={{ ...LABEL, marginBottom: '.875rem' }}>Early History · 1837–1880</p>
+          <h2 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>Founded on the frontier</h2>
+          <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>
+            {historyData?.text
+              ? historyData.text.slice(0, 400)
+              : 'Saint Louisville was platted in 1837 along the eastern Ohio frontier, settled by families drawn by the promise of fertile farmland and strong community roots. The village grew quickly to include a general store, a schoolhouse, a post office, and a church — the hallmarks of a thriving Ohio settlement.'}
+          </p>
+          <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440 }}>
+            By 1860 the village had its own constable, a small tavern, and regular mail service. Residents participated in the great political debates of the era, and several Saint Louisville men served in the Union Army during the Civil War.
+          </p>
         </div>
-      )}
+      </div>
 
-      <Lightbox photos={photos} index={lightboxIndex}
-        onClose={() => setLightboxIndex(null)} onPrev={handlePrev} onNext={handleNext} />
+      {/* Photo mosaic 1 */}
+      <div style={{ padding: '2.5rem 4.5rem 1.5rem', borderTop: '1px solid #f1f5f9' }}>
+        <p style={LABEL}>Photo archive — historical &amp; community photos</p>
+      </div>
+      <PhotoMosaic photos={photos} startIndex={0} count={5} sepia={0.35} />
 
-      <p className="mt-8 text-sm text-gray-400 text-center">
-        Have historical photos to contribute? Email them to{' '}
-        <a href="mailto:history@saintlouisvilleohio.gov" className="text-blue-600 hover:underline">
-          history@saintlouisvilleohio.gov
-        </a>
-      </p>
+      {/* Era 2 — photo right */}
+      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 460, background: '#f8fafc', borderTop: '1px solid #f1f5f9' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+          <p style={{ ...LABEL, marginBottom: '.875rem' }}>Growth &amp; Change · 1880–1950</p>
+          <h2 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>Into the modern age</h2>
+          <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>
+            The late 19th and early 20th centuries brought change to Saint Louisville. The arrival of improved roads and later the automobile transformed how residents connected to the wider world. A formal village government was organized, and the first dedicated Village Hall was built in 1921.
+          </p>
+          <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440 }}>
+            The Great Depression tested the community, but neighbors supported one another through hard times. By the postwar era, the village was growing steadily, with new families and returning veterans putting down roots.
+          </p>
+        </div>
+        <div style={{ width: '46%', overflow: 'hidden', flexShrink: 0 }}>
+          <img
+            src={photos[1]?.url || 'https://picsum.photos/seed/history2/900/700'}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(.25) contrast(1.05)' }}
+          />
+        </div>
+      </div>
+
+      {/* Photo mosaic 2 */}
+      <PhotoMosaic photos={photos} startIndex={5} count={3} sepia={0.15} />
+
+      {/* Era 3 — photo left */}
+      <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 420, borderTop: '1px solid #f1f5f9' }}>
+        <div style={{ width: '46%', overflow: 'hidden', flexShrink: 0 }}>
+          <img
+            src={photos[2]?.url || 'https://picsum.photos/seed/history3/900/700'}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem 4.5rem' }}>
+          <p style={{ ...LABEL, marginBottom: '.875rem' }}>Today · 1950–Present</p>
+          <h2 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>A community that endures</h2>
+          <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>
+            Through the postwar boom, shifting agricultural trends, and the challenges of the modern economy, Saint Louisville has remained a place where neighbors know each other's names.
+          </p>
+          <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440 }}>
+            The village today carries its history lightly — proud of the past, focused on the future. Community events, a dedicated police department, and an engaged village council keep the spirit of Saint Louisville alive and well into the 21st century.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

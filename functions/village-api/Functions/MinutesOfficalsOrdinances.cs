@@ -74,6 +74,7 @@ public class MinutesFunctions : FunctionBase
             MeetingDate = date.ToString("o"),
             Year = date.Year,
             Title = title,
+            Description = body.Description?.Trim(),
             Type = body.Type ?? "Regular Session",
             Approved = body.Approved,
             FileUrl = body.FileUrl,
@@ -106,6 +107,7 @@ public class MinutesFunctions : FunctionBase
         if (existing == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Not found");
 
         existing.Title = !string.IsNullOrWhiteSpace(body.Title) ? body.Title.Trim() : existing.Title;
+        existing.Description = body.Description?.Trim() ?? existing.Description;
         existing.Type = body.Type ?? existing.Type;
         existing.Approved = body.Approved;
         existing.FileUrl = body.FileUrl ?? existing.FileUrl;
