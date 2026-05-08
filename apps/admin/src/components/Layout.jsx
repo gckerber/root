@@ -4,7 +4,7 @@ import { useAuth } from '../utils/context'
 import {
   LayoutDashboard, Image, Users, FileText, Megaphone,
   BookOpen, Calendar, Camera, LogOut, Menu, X, ChevronRight,
-  Shield, Gavel, HelpCircle, Phone
+  Shield, Gavel, HelpCircle, Phone, Link2
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -20,12 +20,13 @@ const NAV = [
 ]
 
 const PD_NAV = [
-  { to: '/pd-officials', icon: Users,      label: 'Officers',       color: 'text-amber-400', desc: 'Officer profiles' },
-  { to: '/pd-calendar',  icon: Calendar,   label: 'Events',         color: 'text-amber-300', desc: 'PD community events' },
-  { to: '/court',        icon: Gavel,      label: 'Court Schedule', color: 'text-amber-200', desc: "Mayor's Court dates" },
-  { to: '/pd-hero',      icon: Image,      label: 'Hero Images',    color: 'text-amber-200', desc: 'Carousel photos' },
-  { to: '/pd-faq',       icon: HelpCircle, label: 'FAQ',            color: 'text-amber-200', desc: "Mayor's Court FAQ" },
-  { to: '/pd-contact',   icon: Phone,      label: 'Contact Info',   color: 'text-amber-200', desc: 'Address & hours' },
+  { to: '/pd-officials', icon: Users,      label: 'Officers',         color: 'text-amber-400', desc: 'Officer profiles' },
+  { to: '/pd-calendar',  icon: Calendar,   label: 'Events',           color: 'text-amber-300', desc: 'PD community events' },
+  { to: '/court',        icon: Gavel,      label: 'Court Schedule',   color: 'text-amber-200', desc: "Mayor's Court dates" },
+  { to: '/pd-hero',      icon: Image,      label: 'Hero Images',      color: 'text-amber-200', desc: 'Carousel photos' },
+  { to: '/pd-faq',       icon: HelpCircle, label: 'FAQ',              color: 'text-amber-200', desc: "Mayor's Court FAQ" },
+  { to: '/pd-contact',   icon: Phone,      label: 'Contact Info',     color: 'text-amber-200', desc: 'Address & hours' },
+  { to: '/pd-links',     icon: Link2,      label: 'Links & Resources',color: 'text-amber-200', desc: 'External link cards' },
 ]
 
 export default function Layout() {

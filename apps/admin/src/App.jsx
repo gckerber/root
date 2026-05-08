@@ -16,6 +16,7 @@ import CourtAdmin from './pages/CourtAdmin'
 import PDHeroAdmin from './pages/PDHeroAdmin'
 import FAQAdmin from './pages/FAQAdmin'
 import PDContactAdmin from './pages/PDContactAdmin'
+import PDLinksAdmin from './pages/PDLinksAdmin'
 import Layout from './components/Layout'
 
 function ProtectedRoute({ children }) {
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="pd-hero" element={<PDHeroAdmin />} />
               <Route path="pd-faq" element={<FAQAdmin />} />
               <Route path="pd-contact" element={<PDContactAdmin />} />
+              <Route path="pd-links" element={<PDLinksAdmin />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
