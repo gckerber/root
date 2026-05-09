@@ -1,208 +1,400 @@
-// src/pages/HistoryAdmin.jsx
+// apps/admin/src/pages/HistoryAdmin.jsx
+// Manage history page sections — each section has title, subtitle, body text,
+// main photo, gallery photos, enable/disable toggle, and left/right photo side.
+// Data is stored as JSON in the history API's "text" field (no backend changes needed).
 import { useState, useEffect, useRef } from 'react'
-import { Save, Plus, Trash2, Upload, Image, Camera, X } from 'lucide-react'
+import { Save, Plus, Trash2, Upload, Image, ChevronDown, ChevronUp, Eye, EyeOff, X, ArrowUp, ArrowDown } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
+function newSection(order) {
+  return {
+    id: `s${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    title: '',
+    subtitle: '',
+    body: '',
+    body2: '',
+    mainPhotoUrl: '',
+    galleryPhotos: [],
+    enabled: true,
+    order,
+    photoSide: 'left',
+  }
+}
+
+function parseData(raw) {
+  try {
+    const parsed = JSON.parse(raw || '{}')
+    if (Array.isArray(parsed.sections)) return parsed
+  } catch {}
+  // Legacy: plain text in body field of first section
+  return {
+    pageTitle: 'History',
+    sections: [
+      {
+        id: 's-legacy',
+        title: 'Founded on the frontier',
+        subtitle: 'Early History · 1837–1880',
+        body: typeof raw === 'string' && !raw.startsWith('{') ? raw : '',
+        body2: '',
+        mainPhotoUrl: '',
+        galleryPhotos: [],
+        enabled: true,
+        order: 0,
+        photoSide: 'left',
+      },
+    ],
+  }
+}
+
+// ── Single gallery photo thumbnail ───────────────────────────────────────────
+function GalleryThumb({ photo, onRemove }) {
+  return (
+    <div className="relative group w-20 h-16 flex-shrink-0">
+      <img src={photo.url} alt={photo.caption || ''} className="w-full h-full object-cover rounded-lg border border-slate-700" />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-600 rounded-full text-white text-xs hidden group-hover:flex items-center justify-center"
+      >×</button>
+    </div>
+  )
+}
+
+// ── Section editor (expanded) ────────────────────────────────────────────────
+function SectionEditor({ section, onChange, onUploadMain, onUploadGallery, uploadingMain, uploadingGallery }) {
+  const mainRef = useRef()
+  const galleryRef = useRef()
+  const f = (k) => (e) => onChange({ ...section, [k]: e.target.value })
+
+  return (
+    <div className="border-t border-slate-700 pt-4 mt-2 space-y-3">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label className="label">Section Title</label>
+          <input className="input" value={section.title} onChange={f('title')} placeholder="e.g. Founded on the frontier" />
+        </div>
+        <div>
+          <label className="label">Subtitle / Era Label</label>
+          <input className="input" value={section.subtitle} onChange={f('subtitle')} placeholder="e.g. Early History · 1837–1880" />
+        </div>
+      </div>
+
+      <div>
+        <label className="label">Body Text (first paragraph)</label>
+        <textarea className="input resize-y text-sm leading-relaxed" rows={4} value={section.body} onChange={f('body')}
+          placeholder="Main text for this section..." />
+      </div>
+
+      <div>
+        <label className="label">Body Text (second paragraph, optional)</label>
+        <textarea className="input resize-y text-sm leading-relaxed" rows={3} value={section.body2} onChange={f('body2')}
+          placeholder="Additional text..." />
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        {/* Main photo */}
+        <div>
+          <label className="label">Main Photo</label>
+          <div className="flex items-center gap-3 mt-1">
+            {section.mainPhotoUrl ? (
+              <div className="relative group w-28 h-20 flex-shrink-0">
+                <img src={section.mainPhotoUrl} alt="" className="w-full h-full object-cover rounded-lg border border-slate-700" />
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...section, mainPhotoUrl: '' })}
+                  className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-600 rounded-full text-white text-xs hidden group-hover:flex items-center justify-center"
+                >×</button>
+              </div>
+            ) : (
+              <div className="w-28 h-20 border-2 border-dashed border-slate-700 rounded-lg flex items-center justify-center">
+                <Image size={20} className="text-slate-600" />
+              </div>
+            )}
+            <button type="button" onClick={() => mainRef.current?.click()} disabled={uploadingMain} className="btn-ghost text-sm flex items-center gap-1.5">
+              {uploadingMain
+                ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Uploading…</>
+                : <><Upload size={13} /> {section.mainPhotoUrl ? 'Replace' : 'Upload'}</>}
+            </button>
+            <input ref={mainRef} type="file" accept="image/*" onChange={(e) => onUploadMain(e, section.id)} className="hidden" />
+          </div>
+        </div>
+
+        {/* Photo side */}
+        <div>
+          <label className="label">Photo Side</label>
+          <div className="flex gap-2 mt-1">
+            {['left', 'right'].map(side => (
+              <button
+                key={side}
+                type="button"
+                onClick={() => onChange({ ...section, photoSide: side })}
+                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all ${
+                  section.photoSide === side
+                    ? 'bg-teal-600 border-teal-500 text-white'
+                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                Photo {side.charAt(0).toUpperCase() + side.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Gallery photos */}
+      <div>
+        <label className="label">Gallery Photos</label>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {section.galleryPhotos.map((photo, i) => (
+            <GalleryThumb
+              key={photo.url + i}
+              photo={photo}
+              onRemove={() => onChange({
+                ...section,
+                galleryPhotos: section.galleryPhotos.filter((_, idx) => idx !== i),
+              })}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => galleryRef.current?.click()}
+            disabled={uploadingGallery}
+            className="w-20 h-16 border-2 border-dashed border-slate-700 rounded-lg flex flex-col items-center justify-center gap-1 text-slate-500 hover:border-slate-500 hover:text-slate-400 transition-colors text-xs"
+          >
+            {uploadingGallery ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Upload size={14} /><span>Add</span></>}
+          </button>
+        </div>
+        <input ref={galleryRef} type="file" accept="image/*" multiple onChange={(e) => onUploadGallery(e, section.id)} className="hidden" />
+      </div>
+    </div>
+  )
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
 export default function HistoryAdmin() {
   const { auth } = useAuth()
   const toast = useToast()
-  const fileRef = useRef()
 
-  const [historyText, setHistoryText] = useState('')
-  const [savingText, setSavingText] = useState(false)
-  const [photos, setPhotos] = useState([])
-  const [loadingPhotos, setLoadingPhotos] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [newPhoto, setNewPhoto] = useState({ file: null, preview: null, caption: '', year: '' })
+  const [pageTitle, setPageTitle] = useState('History')
+  const [sections, setSections] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [expandedId, setExpandedId] = useState(null)
+  const [uploadingMain, setUploadingMain] = useState(null)   // section id
+  const [uploadingGallery, setUploadingGallery] = useState(null) // section id
 
-  // Load history text
+  // Load existing data
   useEffect(() => {
     fetch(`${API}/api/history`)
-      .then((r) => r.json())
-      .then((d) => setHistoryText(d.text || ''))
-      .catch(() => {})
+      .then(r => r.json())
+      .then(d => {
+        const parsed = parseData(d.text)
+        setPageTitle(parsed.pageTitle || 'History')
+        setSections([...parsed.sections].sort((a, b) => a.order - b.order))
+      })
+      .catch(() => toast('Could not load history data', 'error'))
+      .finally(() => setLoading(false))
   }, [])
 
-  // Load photos
-  useEffect(() => {
-    fetch(`${API}/api/photos`)
-      .then((r) => r.json())
-      .then((d) => setPhotos(d.items || []))
-      .catch(() => toast('Could not load photos', 'error'))
-      .finally(() => setLoadingPhotos(false))
-  }, [])
-
-  async function saveHistoryText() {
-    setSavingText(true)
+  async function saveAll() {
+    setSaving(true)
     try {
+      const payload = { pageTitle, sections: sections.map((s, i) => ({ ...s, order: i })) }
       const res = await fetch(`${API}/api/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
-        body: JSON.stringify({ text: historyText }),
+        body: JSON.stringify({ text: JSON.stringify(payload) }),
       })
-      if (!res.ok) throw new Error()
-      toast('History text saved!', 'success')
-    } catch { toast('Save failed', 'error') }
-    setSavingText(false)
-  }
-
-  function handleFileSelect(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    setNewPhoto((p) => ({ ...p, file, preview: URL.createObjectURL(file) }))
-  }
-
-  async function handlePhotoUpload() {
-    if (!newPhoto.file || !newPhoto.caption.trim()) {
-      toast('Please select a photo and add a caption', 'error')
-      return
+      if (!res.ok) throw new Error(await res.text())
+      toast('History saved!', 'success')
+    } catch (err) {
+      toast(err.message || 'Save failed', 'error')
     }
-    setUploading(true)
-    try {
-      const urlRes = await fetch(`${API}/api/upload-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
-        body: JSON.stringify({ container: 'photos', filename: newPhoto.file.name, contentType: newPhoto.file.type }),
-      })
-      if (!urlRes.ok) throw new Error('Could not get upload URL')
-      const { uploadUrl, publicUrl } = await urlRes.json()
-
-      await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': newPhoto.file.type },
-        body: newPhoto.file,
-      })
-
-      const res = await fetch(`${API}/api/photos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
-        body: JSON.stringify({ caption: newPhoto.caption, year: newPhoto.year ? parseInt(newPhoto.year) : null, url: publicUrl }),
-      })
-      const saved = await res.json()
-      setPhotos((prev) => [...prev, saved])
-      setNewPhoto({ file: null, preview: null, caption: '', year: '' })
-      toast('Photo added to gallery!', 'success')
-    } catch (err) { toast(err.message || 'Upload failed', 'error') }
-    setUploading(false)
+    setSaving(false)
   }
 
-  async function handleDeletePhoto(photo) {
-    if (!confirm(`Remove "${photo.caption}" from the gallery?`)) return
-    try {
-      await fetch(`${API}/api/photos?id=${photo.id}`, { method: 'DELETE', headers: { 'x-admin-key': auth.key } })
-      setPhotos((prev) => prev.filter((p) => p.id !== photo.id))
-      toast('Photo removed', 'success')
-    } catch { toast('Delete failed', 'error') }
+  async function uploadPhoto(file, container) {
+    const urlRes = await fetch(`${API}/api/upload-url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
+      body: JSON.stringify({ container, filename: file.name, contentType: file.type }),
+    })
+    if (!urlRes.ok) throw new Error('Could not get upload URL')
+    const { uploadUrl, publicUrl } = await urlRes.json()
+    const up = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type },
+      body: file,
+    })
+    if (!up.ok) throw new Error('Upload failed')
+    return publicUrl
   }
+
+  async function handleUploadMain(e, sectionId) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingMain(sectionId)
+    e.target.value = ''
+    try {
+      const url = await uploadPhoto(file, 'history')
+      setSections(prev => prev.map(s => s.id === sectionId ? { ...s, mainPhotoUrl: url } : s))
+      toast('Photo uploaded!', 'success')
+    } catch (err) {
+      toast(err.message || 'Upload failed', 'error')
+    }
+    setUploadingMain(null)
+  }
+
+  async function handleUploadGallery(e, sectionId) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setUploadingGallery(sectionId)
+    e.target.value = ''
+    try {
+      const urls = await Promise.all(files.map(f => uploadPhoto(f, 'history')))
+      setSections(prev => prev.map(s => s.id === sectionId
+        ? { ...s, galleryPhotos: [...s.galleryPhotos, ...urls.map(u => ({ url: u, caption: '' }))] }
+        : s
+      ))
+      toast(`${urls.length} photo${urls.length !== 1 ? 's' : ''} added!`, 'success')
+    } catch (err) {
+      toast(err.message || 'Upload failed', 'error')
+    }
+    setUploadingGallery(null)
+  }
+
+  function updateSection(updated) {
+    setSections(prev => prev.map(s => s.id === updated.id ? updated : s))
+  }
+
+  function moveSection(id, dir) {
+    setSections(prev => {
+      const arr = [...prev]
+      const i = arr.findIndex(s => s.id === id)
+      const j = i + dir
+      if (j < 0 || j >= arr.length) return arr
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      return arr
+    })
+  }
+
+  function deleteSection(id) {
+    if (!confirm('Remove this section?')) return
+    setSections(prev => prev.filter(s => s.id !== id))
+    if (expandedId === id) setExpandedId(null)
+  }
+
+  function addSection() {
+    const s = newSection(sections.length)
+    setSections(prev => [...prev, s])
+    setExpandedId(s.id)
+  }
+
+  if (loading) return <div className="text-slate-500 text-sm">Loading history…</div>
 
   return (
-    <div className="max-w-3xl space-y-8">
-      {/* ── History paragraph ── */}
-      <div className="card p-6">
-        <h2 className="text-white font-semibold mb-1 flex items-center gap-2">
-          <Camera size={18} className="text-teal-400" /> Village History Paragraph
-        </h2>
-        <p className="text-slate-500 text-sm mb-4">
-          This text appears at the top of the History page. Tell the story of Saint Louisville here.
-        </p>
-        <textarea
-          className="input resize-y text-sm leading-relaxed"
-          rows={6}
-          value={historyText}
-          onChange={(e) => setHistoryText(e.target.value)}
-          placeholder="Saint Louisville was established in 1833 in Licking County, Ohio..."
-        />
-        <div className="mt-3">
-          <button onClick={saveHistoryText} disabled={savingText} className="btn-primary">
-            {savingText
+    <div className="max-w-3xl space-y-4">
+      {/* Page settings */}
+      <div className="card p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex-grow">
+            <label className="label">Page Title</label>
+            <input
+              className="input mt-1"
+              value={pageTitle}
+              onChange={e => setPageTitle(e.target.value)}
+              placeholder="History"
+            />
+            <p className="text-slate-600 text-xs mt-1">Shown as the nav link and page heading (e.g. "History", "Photos", "Our Story")</p>
+          </div>
+          <button onClick={saveAll} disabled={saving} className="btn-primary self-end">
+            {saving
               ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving…</>
-              : <><Save size={14} /> Save History Text</>}
+              : <><Save size={14} /> Save All</>}
           </button>
         </div>
       </div>
 
-      {/* ── Add new photo ── */}
-      <div className="card p-6">
-        <h2 className="text-white font-semibold mb-1 flex items-center gap-2">
-          <Plus size={18} className="text-teal-400" /> Add Photo to Gallery
-        </h2>
-        <p className="text-slate-500 text-sm mb-4">Upload a historical or community photo. Add a caption so residents know what they're looking at.</p>
+      {/* Sections */}
+      {sections.map((section, idx) => (
+        <div key={section.id} className="card overflow-hidden">
+          {/* Section header row */}
+          <div className="p-4 flex items-center gap-3">
+            {/* Reorder */}
+            <div className="flex flex-col gap-0.5 flex-shrink-0">
+              <button onClick={() => moveSection(section.id, -1)} disabled={idx === 0} className="btn-ghost py-0.5 px-1 disabled:opacity-30">
+                <ArrowUp size={12} />
+              </button>
+              <button onClick={() => moveSection(section.id, 1)} disabled={idx === sections.length - 1} className="btn-ghost py-0.5 px-1 disabled:opacity-30">
+                <ArrowDown size={12} />
+              </button>
+            </div>
 
-        <div
-          className="border-2 border-dashed border-slate-700 rounded-xl aspect-video mb-4 flex items-center justify-center cursor-pointer hover:border-slate-600 transition-colors overflow-hidden relative group"
-          onClick={() => fileRef.current?.click()}
-        >
-          {newPhoto.preview ? (
-            <>
-              <img src={newPhoto.preview} alt="Preview" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="bg-white/20 backdrop-blur rounded-xl px-4 py-2 text-white text-sm">Click to change photo</span>
+            {/* Preview thumb */}
+            {section.mainPhotoUrl ? (
+              <img src={section.mainPhotoUrl} alt="" className="w-12 h-10 object-cover rounded-lg flex-shrink-0" />
+            ) : (
+              <div className="w-12 h-10 rounded-lg bg-teal-600/20 flex items-center justify-center flex-shrink-0">
+                <Image size={16} className="text-teal-400" />
               </div>
-            </>
-          ) : (
-            <div className="text-center p-8">
-              <Image size={36} className="text-slate-600 mx-auto mb-2" />
-              <p className="text-slate-400 text-sm font-medium">Click to select a photo</p>
-              <p className="text-slate-600 text-xs mt-1">JPG, PNG or WebP</p>
+            )}
+
+            {/* Title + subtitle */}
+            <div className="flex-grow min-w-0">
+              <div className="text-white font-medium truncate">{section.title || <span className="text-slate-600 italic">Untitled section</span>}</div>
+              {section.subtitle && <div className="text-slate-500 text-xs truncate">{section.subtitle}</div>}
+              <div className="text-slate-600 text-xs">
+                {section.galleryPhotos.length} gallery photo{section.galleryPhotos.length !== 1 ? 's' : ''} · photo {section.photoSide}
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => updateSection({ ...section, enabled: !section.enabled })}
+                className={`btn-ghost py-1.5 px-2 text-xs ${section.enabled ? 'text-teal-400' : 'text-slate-600'}`}
+                title={section.enabled ? 'Visible — click to hide' : 'Hidden — click to show'}
+              >
+                {section.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
+              </button>
+              <button
+                onClick={() => setExpandedId(expandedId === section.id ? null : section.id)}
+                className="btn-ghost py-1.5 px-2"
+              >
+                {expandedId === section.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                <span className="text-xs ml-1">Edit</span>
+              </button>
+              <button onClick={() => deleteSection(section.id)} className="btn-danger py-1.5 px-2">
+                <Trash2 size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Expanded editor */}
+          {expandedId === section.id && (
+            <div className="px-4 pb-4">
+              <SectionEditor
+                section={section}
+                onChange={updateSection}
+                onUploadMain={handleUploadMain}
+                onUploadGallery={handleUploadGallery}
+                uploadingMain={uploadingMain === section.id}
+                uploadingGallery={uploadingGallery === section.id}
+              />
             </div>
           )}
         </div>
-        <input ref={fileRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+      ))}
 
-        <div className="grid sm:grid-cols-3 gap-3 mb-3">
-          <div className="sm:col-span-2">
-            <label className="label">Caption <span className="text-red-400">*</span></label>
-            <input className="input" value={newPhoto.caption} onChange={(e) => setNewPhoto((p) => ({ ...p, caption: e.target.value }))} placeholder="e.g. Main Street looking north, circa 1920" />
-          </div>
-          <div>
-            <label className="label">Year (optional)</label>
-            <input className="input" type="number" value={newPhoto.year} onChange={(e) => setNewPhoto((p) => ({ ...p, year: e.target.value }))} placeholder="1955" min="1800" max={new Date().getFullYear()} />
-          </div>
-        </div>
+      {/* Add section */}
+      <button onClick={addSection} className="btn-ghost w-full py-3 flex items-center justify-center gap-2 border border-dashed border-slate-700 hover:border-teal-600 hover:text-teal-400 transition-colors">
+        <Plus size={16} /> Add Section
+      </button>
 
-        <button onClick={handlePhotoUpload} disabled={uploading || !newPhoto.file} className="btn-primary">
-          {uploading
-            ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Uploading…</>
-            : <><Upload size={14} /> Add to Gallery</>}
-        </button>
-      </div>
-
-      {/* ── Photo gallery management ── */}
-      <div>
-        <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
-          <Image size={18} className="text-teal-400" /> Gallery Photos ({photos.length})
-        </h2>
-        {loadingPhotos ? (
-          <div className="text-slate-500 text-sm">Loading photos…</div>
-        ) : photos.length === 0 ? (
-          <div className="card p-10 text-center text-slate-600">No photos yet. Upload one above to get started.</div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {photos.map((photo) => (
-              <div key={photo.id} className="relative group rounded-xl overflow-hidden bg-slate-800 aspect-square">
-                <img
-                  src={photo.url}
-                  alt={photo.caption}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { e.target.src = 'https://placehold.co/400x400/1e293b/475569?text=Photo' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                  <p className="text-white text-xs font-medium line-clamp-2 mb-2">{photo.caption}</p>
-                  {photo.year && <p className="text-white/60 text-xs mb-2">~{photo.year}</p>}
-                  <button
-                    onClick={() => handleDeletePhoto(photo)}
-                    className="self-start flex items-center gap-1.5 px-2 py-1 bg-red-600/80 hover:bg-red-600 rounded-lg text-white text-xs transition-colors"
-                  >
-                    <Trash2 size={11} /> Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Save reminder */}
+      <p className="text-slate-600 text-xs text-center">Click "Save All" at the top to publish all changes.</p>
     </div>
   )
 }

@@ -89,9 +89,9 @@ const SECTIONS = [
 
 const FALLBACK_LINKS = [
   { id: '1', label: 'Ohio BMV',    title: 'License & Registration', description: 'Ohio Bureau of Motor Vehicles',  url: 'https://www.bmv.ohio.gov' },
-  { id: '2', label: 'Knox County', title: "Sheriff's Office",       description: 'County law enforcement',          url: '#' },
+  { id: '2', label: 'Knox County', title: "Sheriff's Office",       description: 'County law enforcement',          url: 'https://www.knoxcountysheriff.com' },
   { id: '3', label: 'Ohio State',  title: 'Sex Offender Registry',  description: 'OHLEG public database',           url: 'https://www.icrimewatch.net/ohio.php' },
-  { id: '4', label: 'Report',      title: 'Anonymous Tip',          description: '(740) 867-5399 · Confidential',   url: '#' },
+  { id: '4', label: 'OSHP',       title: 'Ohio State Highway Patrol', description: 'Statewide law enforcement',    url: 'https://www.statepatrol.ohio.gov' },
 ]
 
 const FALLBACK_FAQ = [

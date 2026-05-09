@@ -1,15 +1,8 @@
 // apps/admin/src/pages/Officials.jsx
 // Manage village officials (excludes Police Department officers — managed under PD section).
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Pencil, Trash2, Save, X, User, Tag, Monitor } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save, X, User, Tag } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
-
-const LAYOUT_MODES = [
-  { id: 'grid',      label: 'Grid',       desc: '3 columns · round photo' },
-  { id: 'wide',      label: '2-Column',   desc: '2 columns · photo on left' },
-  { id: 'full',      label: 'Full Width', desc: '1 column · large photo' },
-  { id: 'spotlight', label: 'Spotlight',  desc: 'One at a time · auto-cycles' },
-]
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
@@ -256,33 +249,6 @@ export default function Officials() {
   const [loading,      setLoading]      = useState(true)
   const [editingId,    setEditingId]    = useState(null)
   const [adding,       setAdding]       = useState(false)
-  const [siteSettings, setSiteSettings] = useState(null)
-  const [savingLayout, setSavingLayout] = useState(false)
-
-  useEffect(() => {
-    fetch(`${API}/api/site-settings`)
-      .then((r) => r.json())
-      .then((d) => setSiteSettings(d || {}))
-      .catch(() => setSiteSettings({}))
-  }, [])
-
-  async function saveLayout(field, layoutId) {
-    setSavingLayout(true)
-    try {
-      const next = { ...(siteSettings || {}), [field]: layoutId }
-      const res = await fetch(`${API}/api/site-settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': auth.key },
-        body: JSON.stringify(next),
-      })
-      if (!res.ok) throw new Error(await res.text())
-      setSiteSettings(await res.json())
-      toast('Layout updated!', 'success')
-    } catch {
-      toast('Could not save layout', 'error')
-    }
-    setSavingLayout(false)
-  }
 
   useEffect(() => {
     fetch(`${API}/api/officials`)
@@ -334,45 +300,8 @@ export default function Officials() {
 
   if (loading) return <div className="text-slate-500 text-sm">Loading officials…</div>
 
-  const LayoutPicker = ({ field, label }) => (
-    <div>
-      <p className="text-slate-400 text-xs font-semibold uppercase tracking-wide mb-2">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {LAYOUT_MODES.map(({ id, modeLabel = id, label: ml, desc }) => (
-          <button
-            key={id}
-            onClick={() => saveLayout(field, id)}
-            disabled={savingLayout}
-            className={`px-3 py-2 rounded-lg text-left transition-all border ${
-              (siteSettings?.[field] || 'grid') === id
-                ? 'bg-blue-600 border-blue-500 text-white'
-                : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            <div className="text-sm font-medium">{ml}</div>
-            <div className="text-xs opacity-60">{desc}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-
   return (
     <div className="max-w-2xl space-y-3">
-      {/* Layout pickers */}
-      {siteSettings !== null && (
-        <div className="card p-4 mb-2 space-y-5">
-          <div className="flex items-center gap-2">
-            <Monitor size={14} className="text-blue-400" />
-            <span className="text-white text-sm font-medium">Card Layouts</span>
-            <span className="text-slate-500 text-xs">— controls how officials appear on the public site</span>
-          </div>
-          <LayoutPicker field="mayorLayout"   label="Mayor" />
-          <LayoutPicker field="councilLayout" label="Village Council" />
-          <LayoutPicker field="otherLayout"   label="Other Officials & Staff" />
-        </div>
-      )}
-
       <div className="flex items-center justify-between mb-2">
         <p className="text-slate-400 text-sm">
           Village officials appear on the "Get to Know Us" page.
