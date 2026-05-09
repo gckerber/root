@@ -144,6 +144,7 @@ export default function OrdinancesPage() {
     queryKey: ['ordinances'],
     queryFn: () =>
       axios.get(`${API}/api/ordinances`).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const filtered = useMemo(() => {

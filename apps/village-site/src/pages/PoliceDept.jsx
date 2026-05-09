@@ -102,13 +102,14 @@ const FALLBACK_FAQ = [
 export default function PoliceDept() {
   const [openFaq, setOpenFaq] = useState(null)
 
-  const { data: contactData  } = useQuery({ queryKey: ['pd-contact'],  queryFn: api.pdContact })
-  const { data: officialsData} = useQuery({ queryKey: ['officials'],   queryFn: api.officials })
-  const { data: courtData    } = useQuery({ queryKey: ['pd-court'],    queryFn: () => api.pdCourtSchedule(true) })
-  const { data: eventsData   } = useQuery({ queryKey: ['events'],      queryFn: () => api.events() })
-  const { data: faqData      } = useQuery({ queryKey: ['pd-faq'],      queryFn: api.pdFaq })
-  const { data: linksData    } = useQuery({ queryKey: ['pd-links'],    queryFn: api.pdLinks })
-  const { data: imagesData   } = useQuery({ queryKey: ['pd-images'],   queryFn: api.pdImages })
+  const ST = { staleTime: 5 * 60 * 1000 }
+  const { data: contactData  } = useQuery({ queryKey: ['pd-contact'],  queryFn: api.pdContact,                    ...ST })
+  const { data: officialsData} = useQuery({ queryKey: ['officials'],   queryFn: api.officials,                    ...ST })
+  const { data: courtData    } = useQuery({ queryKey: ['pd-court'],    queryFn: () => api.pdCourtSchedule(true),  ...ST })
+  const { data: eventsData   } = useQuery({ queryKey: ['events'],      queryFn: () => api.events(),               ...ST })
+  const { data: faqData      } = useQuery({ queryKey: ['pd-faq'],      queryFn: api.pdFaq,                        ...ST })
+  const { data: linksData    } = useQuery({ queryKey: ['pd-links'],    queryFn: api.pdLinks,                      ...ST })
+  const { data: imagesData   } = useQuery({ queryKey: ['pd-images'],   queryFn: api.pdImages,                     ...ST })
 
   const contact  = contactData || {}
   const officers = useMemo(() => (officialsData?.items || []).filter(o => o.department === 'police').sort((a, b) => a.order - b.order), [officialsData])

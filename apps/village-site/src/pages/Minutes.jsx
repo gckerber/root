@@ -163,6 +163,7 @@ export default function Minutes() {
     queryKey: ['minutes', year, search],
     queryFn: () => api.minutes(year !== 'all' ? `?year=${year}` : ''),
     placeholderData: { items: [] },
+    staleTime: 5 * 60 * 1000,
   })
 
   const allItems = data?.items || []

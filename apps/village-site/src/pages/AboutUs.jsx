@@ -133,7 +133,7 @@ function CommitteePanel({ name, members, index }) {
 }
 
 export default function Officials() {
-  const { data, isLoading } = useQuery({ queryKey: ['officials'], queryFn: api.officials })
+  const { data, isLoading } = useQuery({ queryKey: ['officials'], queryFn: api.officials, staleTime: 5 * 60 * 1000 })
 
   const officials = useMemo(
     () => (data?.items || []).filter(o => o.department !== 'police').sort((a, b) => a.order - b.order),

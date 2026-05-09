@@ -220,7 +220,7 @@ export default function Home() {
   const { data: bulletinData, isLoading: bulletinLoading } = useQuery({
     queryKey: ['bulletin', 'pinned'],
     queryFn: () => api.bulletin('?pinned=true'),
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
