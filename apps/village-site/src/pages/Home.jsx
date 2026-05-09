@@ -214,19 +214,19 @@ export default function Home() {
   const { data: imagesData } = useQuery({
     queryKey: ['village-images'],
     queryFn: () => api.villageImages(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
   })
 
   const { data: bulletinData, isLoading: bulletinLoading } = useQuery({
     queryKey: ['bulletin', 'pinned'],
     queryFn: () => api.bulletin('?pinned=true'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 1 * 60 * 1000,
   })
 
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ['events'],
     queryFn: () => api.events(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
   })
 
   // Resolve data

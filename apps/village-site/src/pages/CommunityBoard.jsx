@@ -14,7 +14,7 @@ function useBulletins() {
   return useQuery({
     queryKey: ['bulletins'],
     queryFn: () => api.bulletin(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
   })
 }
 
@@ -22,7 +22,7 @@ function useEvents() {
   return useQuery({
     queryKey: ['events'],
     queryFn: () => api.events(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
   })
 }
 

@@ -102,7 +102,7 @@ const FALLBACK_FAQ = [
 export default function PoliceDept() {
   const [openFaq, setOpenFaq] = useState(null)
 
-  const ST = { staleTime: 5 * 60 * 1000 }
+  const ST = { staleTime: 3 * 60 * 1000 }
   const { data: contactData  } = useQuery({ queryKey: ['pd-contact'],  queryFn: api.pdContact,                    ...ST })
   const { data: officialsData} = useQuery({ queryKey: ['officials'],   queryFn: api.officials,                    ...ST })
   const { data: courtData    } = useQuery({ queryKey: ['pd-court'],    queryFn: () => api.pdCourtSchedule(true),  ...ST })

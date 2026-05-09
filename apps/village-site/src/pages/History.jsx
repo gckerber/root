@@ -104,7 +104,7 @@ function EraSection({ section, index }) {
 }
 
 export default function History() {
-  const { data: historyData } = useQuery({ queryKey: ['history'], queryFn: api.history, staleTime: 5 * 60 * 1000 })
+  const { data: historyData } = useQuery({ queryKey: ['history'], queryFn: api.history, staleTime: 3 * 60 * 1000 })
 
   const { pageTitle, sections } = parseHistoryData(historyData?.text)
   const activeSections = sections.filter(s => s.enabled !== false).sort((a, b) => a.order - b.order)
