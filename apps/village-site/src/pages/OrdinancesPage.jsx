@@ -113,6 +113,13 @@ function DocumentRow({ item, index }) {
           {item.title}
         </div>
 
+        {/* Row 2b: summary/description */}
+        {item.summary && (
+          <div className="mt-0.5 text-[0.8125rem] text-[#64748b] leading-snug">
+            {item.summary}
+          </div>
+        )}
+
         {/* Row 3: date + file size */}
         <div className="mt-1 text-[0.8125rem] text-[#94a3b8]">
           {item.createdAt ? `Adopted ${fmtAdopted(item.createdAt)}` : item.year || ''}
