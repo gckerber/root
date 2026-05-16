@@ -19,9 +19,14 @@ import PDContactAdmin from './pages/PDContactAdmin'
 import PDLinksAdmin from './pages/PDLinksAdmin'
 import Layout from './components/Layout'
 
-function ProtectedRoute({ children }) {
-  const { isLoggedIn } = useAuth()
-  return isLoggedIn ? children : <Navigate to="/login" replace />
+const VILLAGE = ['admin', 'village']
+const POLICE  = ['admin', 'police']
+
+function ProtectedRoute({ children, allowedRoles }) {
+  const { isLoggedIn, role } = useAuth()
+  if (!isLoggedIn) return <Navigate to="/login" replace />
+  if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/" replace />
+  return children
 }
 
 export default function App() {
@@ -33,20 +38,22 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
-              <Route path="hero-images" element={<VillageImagesAdmin />} />
-              <Route path="officials" element={<Officials />} />
-              <Route path="minutes" element={<MinutesAdmin />} />
-              <Route path="bulletin" element={<BulletinAdmin />} />
-              <Route path="ordinances" element={<OrdinancesAdmin />} />
-              <Route path="calendar" element={<CalendarAdmin />} />
-              <Route path="history" element={<HistoryAdmin />} />
-              <Route path="pd-officials" element={<PDOfficialsAdmin />} />
-              <Route path="pd-calendar" element={<PDCalendarAdmin />} />
-              <Route path="court" element={<CourtAdmin />} />
-              <Route path="pd-hero" element={<PDHeroAdmin />} />
-              <Route path="pd-faq" element={<FAQAdmin />} />
-              <Route path="pd-contact" element={<PDContactAdmin />} />
-              <Route path="pd-links" element={<PDLinksAdmin />} />
+              {/* Village routes */}
+              <Route path="hero-images" element={<ProtectedRoute allowedRoles={VILLAGE}><VillageImagesAdmin /></ProtectedRoute>} />
+              <Route path="officials"   element={<ProtectedRoute allowedRoles={VILLAGE}><Officials /></ProtectedRoute>} />
+              <Route path="minutes"     element={<ProtectedRoute allowedRoles={VILLAGE}><MinutesAdmin /></ProtectedRoute>} />
+              <Route path="bulletin"    element={<ProtectedRoute allowedRoles={VILLAGE}><BulletinAdmin /></ProtectedRoute>} />
+              <Route path="ordinances"  element={<ProtectedRoute allowedRoles={VILLAGE}><OrdinancesAdmin /></ProtectedRoute>} />
+              <Route path="calendar"    element={<ProtectedRoute allowedRoles={VILLAGE}><CalendarAdmin /></ProtectedRoute>} />
+              <Route path="history"     element={<ProtectedRoute allowedRoles={VILLAGE}><HistoryAdmin /></ProtectedRoute>} />
+              {/* Police routes */}
+              <Route path="pd-officials" element={<ProtectedRoute allowedRoles={POLICE}><PDOfficialsAdmin /></ProtectedRoute>} />
+              <Route path="pd-calendar"  element={<ProtectedRoute allowedRoles={POLICE}><PDCalendarAdmin /></ProtectedRoute>} />
+              <Route path="court"        element={<ProtectedRoute allowedRoles={POLICE}><CourtAdmin /></ProtectedRoute>} />
+              <Route path="pd-hero"      element={<ProtectedRoute allowedRoles={POLICE}><PDHeroAdmin /></ProtectedRoute>} />
+              <Route path="pd-faq"       element={<ProtectedRoute allowedRoles={POLICE}><FAQAdmin /></ProtectedRoute>} />
+              <Route path="pd-contact"   element={<ProtectedRoute allowedRoles={POLICE}><PDContactAdmin /></ProtectedRoute>} />
+              <Route path="pd-links"     element={<ProtectedRoute allowedRoles={POLICE}><PDLinksAdmin /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

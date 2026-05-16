@@ -10,8 +10,8 @@ export function AuthProvider({ children }) {
     return stored ? JSON.parse(stored) : null
   })
 
-  const login = useCallback((key) => {
-    const data = { key, loggedInAt: Date.now() }
+  const login = useCallback((key, role = 'admin') => {
+    const data = { key, role, loggedInAt: Date.now() }
     sessionStorage.setItem('slv_admin', JSON.stringify(data))
     setAuth(data)
   }, [])
@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout, isLoggedIn: !!auth }}>
+    <AuthContext.Provider value={{ auth, login, logout, isLoggedIn: !!auth, role: auth?.role || 'admin' }}>
       {children}
     </AuthContext.Provider>
   )

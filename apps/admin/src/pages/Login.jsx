@@ -1,14 +1,35 @@
 // src/pages/Login.jsx
-// TEMPORARY DEBUG VERSION — shows what credentials were baked in at build time
-// Delete the debug box once login is working, then redeploy
-
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth, useToast } from '../utils/context'
 import { Lock, Eye, EyeOff, Shield } from 'lucide-react'
 
-const ADMIN_USERNAME = import.meta.env.VITE_ADMIN_USERNAME || 'admin'
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || ''
+// All valid accounts. Village and police users share the same backend API key.
+const API_KEY = import.meta.env.VITE_ADMIN_PASSWORD || ''
+
+const ACCOUNTS = [
+  {
+    username: import.meta.env.VITE_ADMIN_USERNAME || 'admin',
+    password: import.meta.env.VITE_ADMIN_PASSWORD || '',
+    role: 'admin',
+  },
+  {
+    username: import.meta.env.VITE_VILLAGE_USERNAME || '',
+    password: import.meta.env.VITE_VILLAGE_PASSWORD || '',
+    role: 'village',
+  },
+  {
+    username: import.meta.env.VITE_POLICE_USERNAME || '',
+    password: import.meta.env.VITE_POLICE_PASSWORD || '',
+    role: 'police',
+  },
+]
+
+const ROLE_GREETINGS = {
+  admin:   'Welcome back!',
+  village: 'Welcome, Village Admin!',
+  police:  'Welcome, Police Admin!',
+}
 
 export default function Login() {
   const { login } = useAuth()
@@ -25,9 +46,13 @@ export default function Login() {
     setLoading(true)
     await new Promise((r) => setTimeout(r, 300))
 
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      login(password)
-      toast('Welcome back!', 'success')
+    const match = ACCOUNTS.find(
+      (a) => a.username && a.password && a.username === username && a.password === password
+    )
+
+    if (match) {
+      login(API_KEY, match.role)
+      toast(ROLE_GREETINGS[match.role] || 'Welcome back!', 'success')
       navigate('/', { replace: true })
     } else {
       setShake(true)
@@ -63,17 +88,6 @@ export default function Login() {
           <p className="text-slate-500 text-sm mt-1">Village of Saint Louisville, Ohio</p>
         </div>
 
-        {/* ── TEMPORARY DEBUG BOX — remove after login works ── */}
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4 text-xs font-mono">
-          <div className="text-yellow-400 font-bold mb-2">🔍 Debug — what was baked in at build time:</div>
-          <div className="text-slate-300 space-y-1">
-            <div>VITE_ADMIN_USERNAME = <span className="text-green-400">"{ADMIN_USERNAME}"</span></div>
-            <div>VITE_ADMIN_PASSWORD = <span className="text-green-400">"{ADMIN_PASSWORD ? '***(' + ADMIN_PASSWORD.length + ' chars)' : '(EMPTY — secret missing!)'}"</span></div>
-          </div>
-          <div className="text-yellow-600 mt-2 text-xs">Delete this box from Login.jsx once you can log in.</div>
-        </div>
-        {/* ── END DEBUG BOX ── */}
-
         <div className={`card p-6 ${shake ? 'shake' : ''}`}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -83,7 +97,7 @@ export default function Login() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                placeholder="username"
                 className="input"
                 autoComplete="username"
                 autoFocus
