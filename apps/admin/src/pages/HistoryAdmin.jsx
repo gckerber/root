@@ -238,7 +238,7 @@ export default function HistoryAdmin() {
     setUploadingMain(sectionId)
     e.target.value = ''
     try {
-      const url = await uploadPhoto(file, 'history')
+      const url = await uploadPhoto(file, 'photos')
       setSections(prev => prev.map(s => s.id === sectionId ? { ...s, mainPhotoUrl: url } : s))
       toast('Photo uploaded!', 'success')
     } catch (err) {
@@ -253,7 +253,7 @@ export default function HistoryAdmin() {
     setUploadingGallery(sectionId)
     e.target.value = ''
     try {
-      const urls = await Promise.all(files.map(f => uploadPhoto(f, 'history')))
+      const urls = await Promise.all(files.map(f => uploadPhoto(f, 'photos')))
       setSections(prev => prev.map(s => s.id === sectionId
         ? { ...s, galleryPhotos: [...s.galleryPhotos, ...urls.map(u => ({ url: u, caption: '' }))] }
         : s

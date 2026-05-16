@@ -105,9 +105,11 @@ function EraSection({ section, index }) {
 
 export default function History() {
   const { data: historyData } = useQuery({ queryKey: ['history'], queryFn: api.history, staleTime: 3 * 60 * 1000 })
+  const { data: photosData } = useQuery({ queryKey: ['photos'], queryFn: api.photos, staleTime: 3 * 60 * 1000 })
 
   const { pageTitle, sections } = parseHistoryData(historyData?.text)
   const activeSections = sections.filter(s => s.enabled !== false).sort((a, b) => a.order - b.order)
+  const photos = photosData?.items || []
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
@@ -129,6 +131,14 @@ export default function History() {
       {activeSections.map((section, i) => (
         <EraSection key={section.id} section={section} index={i} />
       ))}
+
+      {/* Village Photos */}
+      {photos.length > 0 && (
+        <div style={{ borderTop: '1px solid #f1f5f9', padding: '3rem var(--px) 2rem' }}>
+          <p style={{ ...LABEL, marginBottom: '1.25rem' }}>Village Photos</p>
+          <PhotoMosaic photos={photos} />
+        </div>
+      )}
     </div>
   )
 }

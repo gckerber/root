@@ -397,6 +397,23 @@ export default function CommunityBoard() {
         <p style={{ color: '#94a3b8', fontSize: '0.9375rem', margin: 0 }}>{today}</p>
       </div>
 
+      {/* Community Center Rental */}
+      <div style={{ background: '#f8fafc', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '1.25rem var(--px)', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: '#1e3a5f', borderRadius: 4, flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </div>
+        <div>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e3a5f', margin: 0, textTransform: 'uppercase', letterSpacing: '.08em' }}>Community Center Rental</p>
+          <p style={{ fontSize: '0.9375rem', color: '#475569', margin: '0.125rem 0 0' }}>
+            To schedule the Community Center for rental, contact Janet at{' '}
+            <a href="tel:7403342407" style={{ color: '#1e3a5f', fontWeight: 700, textDecoration: 'none' }}>(740) 334-2407</a>.
+          </p>
+        </div>
+      </div>
+
       {/* Filter bar */}
       <div
         className="flex items-center gap-3 border-t border-b mob-scroll"
