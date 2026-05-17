@@ -145,6 +145,7 @@ function DocumentRow({ item, index }) {
 
 export default function OrdinancesPage() {
   const [cat, setCat] = useState('all')
+  const [year, setYear] = useState('all')
   const [search, setSearch] = useState('')
 
   const { data: ordinances, isLoading } = useQuery({
@@ -154,21 +155,29 @@ export default function OrdinancesPage() {
     staleTime: 3 * 60 * 1000,
   })
 
+  const availableYears = useMemo(() => {
+    const years = new Set((ordinances?.items || []).map(i => i.year || new Date(i.createdAt).getFullYear()))
+    return [...years].sort((a, b) => b - a)
+  }, [ordinances])
+
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
     let items = ordinances?.items || []
     if (cat !== 'all') items = items.filter(i => i.category?.toLowerCase() === cat)
-    if (search.trim())
+    if (year !== 'all') items = items.filter(i => (i.year || new Date(i.createdAt).getFullYear()) === year)
+    if (q)
       items = items.filter(
         i =>
-          i.title?.toLowerCase().includes(search.toLowerCase()) ||
-          i.number?.toLowerCase().includes(search.toLowerCase())
+          i.title?.toLowerCase().includes(q) ||
+          i.number?.toLowerCase().includes(q) ||
+          i.summary?.toLowerCase().includes(q)
       )
     return items.sort(
       (a, b) =>
         b.year - a.year ||
         (b.createdAt?.localeCompare(a.createdAt) ?? 0)
     )
-  }, [ordinances, cat, search])
+  }, [ordinances, cat, year, search])
 
   const byYear = useMemo(() => {
     const map = new Map()
@@ -217,11 +226,30 @@ export default function OrdinancesPage() {
 
         <input
           type="search"
-          placeholder="Search by title or number…"
+          placeholder="Search title, number, or summary…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="border border-[#e2e8f0] px-4 py-2 text-sm ml-auto outline-none"
         />
+      </div>
+
+      {/* Year filter tabs */}
+      <div className="flex items-center gap-0 border-b border-[#f1f5f9] bg-[#f8fafc] mob-scroll" style={{ paddingLeft: 'var(--px)' }}>
+        <button
+          onClick={() => setYear('all')}
+          className={year === 'all' ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-5 py-3 text-sm' : 'text-slate-500 px-5 py-3 text-sm hover:text-[#1e3a5f]'}
+        >
+          All Years
+        </button>
+        {availableYears.map(y => (
+          <button
+            key={y}
+            onClick={() => setYear(y)}
+            className={year === y ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-5 py-3 text-sm' : 'text-slate-500 px-5 py-3 text-sm hover:text-[#1e3a5f]'}
+          >
+            {y}
+          </button>
+        ))}
       </div>
 
       {/* Document list */}
