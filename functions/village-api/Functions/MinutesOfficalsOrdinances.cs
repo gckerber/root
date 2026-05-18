@@ -356,7 +356,7 @@ public class OrdinancesFunctions : FunctionBase
                 Summary = body.Summary?.Trim(),
                 FileUrl = body.FileUrl?.Trim() ?? existing.FileUrl,
                 Year = body.Year > 0 ? body.Year : existing.Year,
-                CreatedAt = existing.CreatedAt
+                CreatedAt = !string.IsNullOrEmpty(body.CreatedAt) ? body.CreatedAt : existing.CreatedAt
             };
             var created = await _cosmos.CreateAsync(Container, newItem, new PartitionKey(newItem.Category));
             return await OkJson(req, created);
@@ -368,6 +368,7 @@ public class OrdinancesFunctions : FunctionBase
         existing.Summary = body.Summary?.Trim();
         existing.FileUrl = body.FileUrl?.Trim() ?? existing.FileUrl;
         existing.Year = body.Year > 0 ? body.Year : existing.Year;
+        if (!string.IsNullOrEmpty(body.CreatedAt)) existing.CreatedAt = body.CreatedAt;
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Category));
         return await OkJson(req, updated);

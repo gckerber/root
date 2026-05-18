@@ -12,7 +12,7 @@ function OrdForm({ item, onSave, onCancel, adminKey }) {
   const toast = useToast()
   const fileRef = useRef()
   const [form, setForm] = useState(item || {
-    number: '', title: '', category: 'general', summary: '', year: new Date().getFullYear(), lastUpdated: '', fileUrl: ''
+    number: '', title: '', category: 'general', summary: '', year: new Date().getFullYear(), createdAt: '', fileUrl: ''
   })
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -41,7 +41,10 @@ function OrdForm({ item, onSave, onCancel, adminKey }) {
         })
         fileUrl = publicUrl
       }
-      await onSave({ ...form, fileUrl, year: parseInt(form.year) })
+      const createdAt = form.createdAt
+        ? (form.createdAt.length === 10 ? `${form.createdAt}T00:00:00Z` : form.createdAt)
+        : undefined
+      await onSave({ ...form, fileUrl, year: parseInt(form.year), ...(createdAt ? { createdAt } : {}) })
     } catch (err) {
       toast('Save failed: ' + err.message, 'error')
     }
@@ -80,8 +83,8 @@ function OrdForm({ item, onSave, onCancel, adminKey }) {
           placeholder="One or two sentences describing what this ordinance covers..." />
       </div>
       <div>
-        <label className="label">Last Updated Date (optional)</label>
-        <input className="input" type="date" value={form.lastUpdated?.slice(0, 10) || ''} onChange={f('lastUpdated')} />
+        <label className="label">Date Adopted (optional)</label>
+        <input className="input" type="date" value={form.createdAt?.slice(0, 10) || ''} onChange={f('createdAt')} />
       </div>
       <div>
         <label className="label">
