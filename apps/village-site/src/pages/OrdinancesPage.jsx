@@ -7,6 +7,7 @@ const API = 'https://func-village-prod.azurewebsites.net'
 
 const TABS = [
   { id: 'all',       label: 'All' },
+  { id: 'budget',    label: 'Budget' },
   { id: 'general',   label: 'General' },
   { id: 'zoning',    label: 'Zoning' },
   { id: 'traffic',   label: 'Traffic' },
@@ -16,6 +17,7 @@ const TABS = [
 ]
 
 const BADGE = {
+  budget:    'bg-[#faf5ff] text-[#6b21a8]',
   zoning:    'bg-[#eff6ff] text-[#1d4ed8]',
   police:    'bg-[#fef2f2] text-[#991b1b]',
   health:    'bg-[#f0fdf4] text-[#166534]',
