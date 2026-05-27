@@ -251,7 +251,7 @@ public class OrdinancesFunctions : FunctionBase
 {
     private readonly CosmosService _cosmos;
     private const string Container = "ordinances";
-    private static readonly string[] ValidCategories = ["zoning", "general", "traffic", "health", "utilities", "police", "budget"];
+    private static readonly string[] ValidCategories = ["zoning", "general", "traffic", "utilities", "police", "budget"];
 
     public OrdinancesFunctions(CosmosService cosmos, ILogger<OrdinancesFunctions> logger)
         : base(logger) => _cosmos = cosmos;

@@ -12,7 +12,6 @@ const TABS = [
   { id: 'zoning',    label: 'Zoning' },
   { id: 'traffic',   label: 'Traffic' },
   { id: 'police',    label: 'Police' },
-  { id: 'health',    label: 'Health' },
   { id: 'utilities', label: 'Utilities' },
 ]
 
@@ -20,7 +19,6 @@ const BADGE = {
   budget:    'bg-[#faf5ff] text-[#6b21a8]',
   zoning:    'bg-[#eff6ff] text-[#1d4ed8]',
   police:    'bg-[#fef2f2] text-[#991b1b]',
-  health:    'bg-[#f0fdf4] text-[#166534]',
   utilities: 'bg-[#fefce8] text-[#854d0e]',
   traffic:   'bg-[#fff7ed] text-[#9a3412]',
   general:   'bg-[#f1f5f9] text-[#475569]',
