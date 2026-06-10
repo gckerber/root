@@ -181,7 +181,7 @@ export default function Minutes() {
     ...Array(Math.max(0, 3 - upcoming.length)).fill(null),
   ]
 
-  // Past/current: filtered + sorted desc
+  // All records filtered + sorted ascending (Jan → Dec)
   const filtered = allItems
     .filter((m) => {
       if (!search.trim()) return true
@@ -191,7 +191,10 @@ export default function Minutes() {
         (m.description || '').toLowerCase().includes(q)
       )
     })
-    .sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate))
+    .sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate))
+
+  const pastDocs   = filtered.filter((m) => new Date(m.meetingDate) <= now)
+  const futureDocs = filtered.filter((m) => new Date(m.meetingDate) > now)
 
   const yearTabs = [currentYear, currentYear - 1, currentYear - 2, 'all']
 
@@ -340,9 +343,31 @@ export default function Minutes() {
           No minutes found for this period.
         </div>
       ) : (
-        filtered.map((doc, i) => (
-          <MinuteRow key={doc.id} doc={doc} altBg={i % 2 === 1} />
-        ))
+        <>
+          {pastDocs.map((doc, i) => (
+            <MinuteRow key={doc.id} doc={doc} altBg={i % 2 === 1} />
+          ))}
+
+          {futureDocs.length > 0 && (
+            <>
+              {/* Divider between past and upcoming */}
+              <div
+                className="flex items-center gap-4 border-t border-[#f1f5f9]"
+                style={{ padding: '1rem var(--px)', backgroundColor: '#f8fafc' }}
+              >
+                <div className="flex-1 h-px bg-[#e2e8f0]" />
+                <span style={{ ...LABEL_STYLE, color: '#f59e0b', fontSize: '10px' }}>
+                  Upcoming — Not Yet Approved
+                </span>
+                <div className="flex-1 h-px bg-[#e2e8f0]" />
+              </div>
+
+              {futureDocs.map((doc, i) => (
+                <MinuteRow key={doc.id} doc={doc} altBg={i % 2 === 1} />
+              ))}
+            </>
+          )}
+        </>
       )}
     </div>
   )
