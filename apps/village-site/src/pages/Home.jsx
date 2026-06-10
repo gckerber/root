@@ -27,7 +27,7 @@ const PLACEHOLDER_EVENTS = [
     id: 'ph-1',
     title: 'Village Council Meeting',
     date: new Date(Date.now() + 7 * 86400000).toISOString(),
-    location: 'Village Hall, 2 E. Main St.',
+    location: 'Village Hall, 1 School St.',
     time: '7:00 PM',
     imageUrl: null,
   },
@@ -421,7 +421,7 @@ export default function Home() {
               </div>
               <span style={{ color: 'rgba(255,255,255,.6)', fontSize: '0.8rem', ...LABEL_STYLE }}>Address</span>
               <span style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 600, textAlign: 'center' }}>
-                2 E. Main Street<br />Saint Louisville, OH 43071
+                1 School St., P.O. Box 149<br />Saint Louisville, OH 43071
               </span>
             </div>
 
@@ -434,10 +434,10 @@ export default function Home() {
               </div>
               <span style={{ ...LABEL_STYLE, color: 'rgba(255,255,255,.6)' }}>Phone</span>
               <a
-                href="tel:7408675000"
+                href="tel:+17407453401"
                 style={{ color: '#fff', fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem' }}
               >
-                (740) 867-5000
+                (740) 745-3401
               </a>
             </div>
 

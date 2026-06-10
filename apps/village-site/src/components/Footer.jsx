@@ -32,13 +32,14 @@ export default function Footer() {
             </div>
           </div>
           <div className="text-sm leading-[1.85] text-slate-500">
-            <p>Village Hall</p>
+            <p>1 School St., P.O. Box 149</p>
             <p>Saint Louisville, OH 43071</p>
             <p className="mt-2">
-              <a href="tel:+17405687800" className="text-[#93c5fd] font-bold hover:text-blue-300 transition-colors">
-                (740) 568-7800
+              <a href="tel:+17407453401" className="text-[#93c5fd] font-bold hover:text-blue-300 transition-colors">
+                (740) 745-3401
               </a>
             </p>
+            <p className="text-slate-600 text-xs">Fax: (740) 745-1283</p>
           </div>
         </div>
 
