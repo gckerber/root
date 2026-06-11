@@ -20,8 +20,8 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   name: siteName
   location: location
   sku: {
-    name: 'Standard'
-    tier: 'Standard'
+    name: 'Free'
+    tier: 'Free'
   }
   properties: {
     stagingEnvironmentPolicy: 'Disabled'
