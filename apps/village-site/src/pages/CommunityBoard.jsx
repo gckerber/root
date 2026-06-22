@@ -408,8 +408,8 @@ export default function CommunityBoard() {
         <div>
           <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e3a5f', margin: 0, textTransform: 'uppercase', letterSpacing: '.08em' }}>Community Center Rental</p>
           <p style={{ fontSize: '0.9375rem', color: '#475569', margin: '0.125rem 0 0' }}>
-            To schedule the Community Center for rental, contact Janet at{' '}
-            <a href="tel:7403342407" style={{ color: '#1e3a5f', fontWeight: 700, textDecoration: 'none' }}>(740) 334-2407</a>.
+            To schedule the Community Center for rental, contact Gwen at{' '}
+            <a href="tel:7407452996" style={{ color: '#1e3a5f', fontWeight: 700, textDecoration: 'none' }}>(740) 745-2996</a>.
           </p>
         </div>
       </div>
