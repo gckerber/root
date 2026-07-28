@@ -49,4 +49,3 @@ jobs:
           app_location: apps/admin
           api_location: ''
           output_location: dist
-          skip_app_build: true
