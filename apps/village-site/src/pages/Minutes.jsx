@@ -14,12 +14,13 @@ function fmtSize(bytes) {
 
 function fmtDate(iso) {
   const d = new Date(iso)
+  const tz = { timeZone: 'UTC' }
   return {
-    day: d.getDate(),
-    month: d.toLocaleString('en-US', { month: 'short' }).toUpperCase(),
-    year: d.getFullYear(),
-    weekday: d.toLocaleString('en-US', { weekday: 'long' }),
-    full: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    day: d.toLocaleDateString('en-US', { day: 'numeric', ...tz }),
+    month: d.toLocaleString('en-US', { month: 'short', ...tz }).toUpperCase(),
+    year: d.toLocaleDateString('en-US', { year: 'numeric', ...tz }),
+    weekday: d.toLocaleString('en-US', { weekday: 'long', ...tz }),
+    full: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', ...tz }),
   }
 }
 

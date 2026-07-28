@@ -24,12 +24,12 @@ const LABEL_STYLE = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDay(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric' })
+  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' })
 }
 
 function formatMonthYear(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  return new Date(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
