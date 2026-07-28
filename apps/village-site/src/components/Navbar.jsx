@@ -54,10 +54,12 @@ export default function Navbar() {
             </NavLink>
           ))}
           <a
-            href="/#contact"
-            className="ml-4 px-4 py-2 bg-[#1e3a5f] text-white text-[13px] font-bold hover:bg-[#162d4a] transition-colors"
+            href="https://pay.bridgepayment.com/82ee67f6-5a8f-4f89-810d-8fd686a7c235/Independent.aspx"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-4 px-4 py-2 bg-blue-600 text-white text-[13px] font-bold hover:bg-blue-700 transition-colors"
           >
-            Contact
+            Pay Water Bill
           </a>
         </div>
 
@@ -92,11 +94,13 @@ export default function Navbar() {
             </NavLink>
           ))}
           <a
-            href="/#contact"
+            href="https://pay.bridgepayment.com/82ee67f6-5a8f-4f89-810d-8fd686a7c235/Independent.aspx"
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => setOpen(false)}
-            className="block px-3 py-2 mt-2 bg-[#1e3a5f] text-white text-[13px] font-bold text-center hover:bg-[#162d4a] transition-colors"
+            className="block px-3 py-2 mt-2 bg-blue-600 text-white text-[13px] font-bold text-center hover:bg-blue-700 transition-colors"
           >
-            Contact
+            Pay Water Bill
           </a>
         </div>
       )}
