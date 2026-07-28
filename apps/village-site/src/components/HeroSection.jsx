@@ -56,7 +56,7 @@ export default function HeroSection() {
             Council Meeting Minutes
           </a>
           <a
-            href="https://water.saintlouisvilleohio.gov"
+            href="https://pay.bridgepayment.com/82ee67f6-5a8f-4f89-810d-8fd686a7c235/Independent.aspx"
             className="px-6 py-3 bg-blue-600/80 text-white font-semibold rounded-lg border border-blue-400/50 hover:bg-blue-500/80 transition-colors backdrop-blur-sm text-sm sm:text-base"
           >
             Pay Water Bill
