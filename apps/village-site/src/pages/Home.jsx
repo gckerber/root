@@ -21,26 +21,6 @@ const LABEL_STYLE = {
   color: MUTED,
 }
 
-// ─── Placeholder event data shown when API returns nothing ────────────────────
-const PLACEHOLDER_EVENTS = [
-  {
-    id: 'ph-1',
-    title: 'Village Council Meeting',
-    date: new Date(Date.now() + 7 * 86400000).toISOString(),
-    location: 'Village Hall, 1 School St.',
-    time: '7:00 PM',
-    imageUrl: null,
-  },
-  {
-    id: 'ph-2',
-    title: 'Community Clean-Up Day',
-    date: new Date(Date.now() + 14 * 86400000).toISOString(),
-    location: 'Central Park',
-    time: '9:00 AM',
-    imageUrl: null,
-  },
-]
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDay(iso) {
   if (!iso) return '—'
@@ -235,9 +215,8 @@ export default function Home() {
   const eventsRaw = eventsData?.items || eventsData || []
   const now = new Date()
   const upcomingEvents = eventsRaw.filter((e) => e.date && new Date(e.date) >= now)
-  const events = upcomingEvents.length > 0 ? upcomingEvents : PLACEHOLDER_EVENTS
-  const event1 = events[0] || null
-  const event2 = events[1] || null
+  const event1 = upcomingEvents[0] || null
+  const event2 = upcomingEvents[1] || null
 
   return (
     <div>
@@ -317,42 +296,44 @@ export default function Home() {
         <PinnedBand items={pinnedItems} />
       )}
 
-      {/* ── Calendar heading ── */}
-      <div style={{ padding: '2.5rem var(--px) 1.5rem', borderTop: `1px solid ${DIV}` }}>
-        <p style={LABEL_STYLE}>On the Calendar</p>
-        <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.375rem' }}>Upcoming Events</h2>
-      </div>
-
-      {/* ── Event strip 1 (photo left) ── */}
-      {eventsLoading ? (
-        <div className="flex" style={{ minHeight: '380px' }}>
-          <Pulse style={{ flex: '0 0 46%', borderRadius: 0 }} />
-          <div style={{ flex: '0 0 54%', padding: 'clamp(1.5rem, 4vw, 3rem) var(--px)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Pulse style={{ height: '12px', width: '80px' }} />
-            <Pulse style={{ height: '64px', width: '60px' }} />
-            <Pulse style={{ height: '28px', width: '70%' }} />
-            <Pulse style={{ height: '16px', width: '50%' }} />
-            <Pulse style={{ height: '16px', width: '40%' }} />
+      {/* ── Calendar section — hidden when no events ── */}
+      {(eventsLoading || event1) && (
+        <>
+          <div style={{ padding: '2.5rem var(--px) 1.5rem', borderTop: `1px solid ${DIV}` }}>
+            <p style={LABEL_STYLE}>On the Calendar</p>
+            <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginTop: '.375rem' }}>Upcoming Events</h2>
           </div>
-        </div>
-      ) : (
-        <EventStrip event={event1} reversed={false} bgColor="#fff" />
+
+          {eventsLoading ? (
+            <div className="flex" style={{ minHeight: '380px' }}>
+              <Pulse style={{ flex: '0 0 46%', borderRadius: 0 }} />
+              <div style={{ flex: '0 0 54%', padding: 'clamp(1.5rem, 4vw, 3rem) var(--px)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <Pulse style={{ height: '12px', width: '80px' }} />
+                <Pulse style={{ height: '64px', width: '60px' }} />
+                <Pulse style={{ height: '28px', width: '70%' }} />
+                <Pulse style={{ height: '16px', width: '50%' }} />
+                <Pulse style={{ height: '16px', width: '40%' }} />
+              </div>
+            </div>
+          ) : (
+            <EventStrip event={event1} reversed={false} bgColor="#fff" />
+          )}
+
+          {eventsLoading ? (
+            <div className="flex" style={{ minHeight: '380px', background: BGALT }}>
+              <div style={{ flex: '0 0 54%', padding: 'clamp(1.5rem, 4vw, 3rem) var(--px)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <Pulse style={{ height: '12px', width: '80px' }} />
+                <Pulse style={{ height: '64px', width: '60px' }} />
+                <Pulse style={{ height: '28px', width: '70%' }} />
+                <Pulse style={{ height: '16px', width: '50%' }} />
+              </div>
+              <Pulse style={{ flex: '0 0 46%', borderRadius: 0 }} />
+            </div>
+          ) : event2 ? (
+            <EventStrip event={event2} reversed={true} bgColor={BGALT} />
+          ) : null}
+        </>
       )}
-
-      {/* ── Event strip 2 (photo right, reversed) ── */}
-      {eventsLoading ? (
-        <div className="flex" style={{ minHeight: '380px', background: BGALT }}>
-          <div style={{ flex: '0 0 54%', padding: 'clamp(1.5rem, 4vw, 3rem) var(--px)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <Pulse style={{ height: '12px', width: '80px' }} />
-            <Pulse style={{ height: '64px', width: '60px' }} />
-            <Pulse style={{ height: '28px', width: '70%' }} />
-            <Pulse style={{ height: '16px', width: '50%' }} />
-          </div>
-          <Pulse style={{ flex: '0 0 46%', borderRadius: 0 }} />
-        </div>
-      ) : event2 ? (
-        <EventStrip event={event2} reversed={true} bgColor={BGALT} />
-      ) : null}
 
       {/* ── Quick links row ── */}
       <div
