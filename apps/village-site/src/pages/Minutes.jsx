@@ -159,6 +159,7 @@ function MinuteRow({ doc, altBg }) {
 export default function Minutes() {
   const [year, setYear] = useState(currentYear)
   const [search, setSearch] = useState('')
+  const [hideDraftPast, setHideDraftPast] = useState(true)
 
   const { data, isLoading } = useQuery({
     queryKey: ['minutes', year, search],
@@ -194,7 +195,9 @@ export default function Minutes() {
     })
     .sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate))
 
-  const pastDocs   = filtered.filter((m) => new Date(m.meetingDate) <= now)
+  const pastDocs   = filtered
+    .filter((m) => new Date(m.meetingDate) <= now)
+    .filter((m) => !hideDraftPast || m.approved)
   const futureDocs = filtered.filter((m) => new Date(m.meetingDate) > now)
 
   const yearTabs = [currentYear, currentYear - 1, currentYear - 2, 'all']
@@ -259,6 +262,14 @@ export default function Minutes() {
               >
                 {m ? (
                   <>
+                    {m.type && (
+                      <div
+                        className="inline-block mb-2 px-2 py-0.5 uppercase tracking-wide"
+                        style={{ fontSize: '9px', fontWeight: 700, background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}
+                      >
+                        {m.type}
+                      </div>
+                    )}
                     <div
                       className="text-white font-black"
                       style={{ fontSize: '1.875rem', lineHeight: 1.1 }}
@@ -309,12 +320,25 @@ export default function Minutes() {
           )
         })}
 
+        <label
+          className="flex items-center gap-2 ml-auto cursor-pointer select-none text-sm text-slate-500 hover:text-slate-700"
+          style={{ marginRight: '1rem' }}
+        >
+          <input
+            type="checkbox"
+            checked={hideDraftPast}
+            onChange={(e) => setHideDraftPast(e.target.checked)}
+            className="accent-[#1e3a5f]"
+          />
+          Hide unapproved past
+        </label>
+
         <input
           type="search"
           placeholder="Search minutes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-[#e2e8f0] px-4 py-2 text-sm ml-auto outline-none"
+          className="border border-[#e2e8f0] px-4 py-2 text-sm outline-none"
           style={{ marginRight: 'var(--px)' }}
         />
       </div>
