@@ -267,7 +267,7 @@ export default function Minutes() {
                         className="inline-block mb-2 px-2 py-0.5 uppercase tracking-wide"
                         style={{ fontSize: '9px', fontWeight: 700, background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}
                       >
-                        {m.type}
+                        {m.type} Meeting
                       </div>
                     )}
                     <div
