@@ -362,9 +362,8 @@ public class PollResponseFunctions : FunctionBase
 
     [Function("DeletePollResponse")]
     public async Task<HttpResponseData> Delete(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", "options", Route = "poll-responses")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "poll-responses")] HttpRequestData req)
     {
-        if (req.Method == "OPTIONS") return Cors(req);
         if (!_cosmos.IsAvailable)
             return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
 
