@@ -22,5 +22,11 @@ export const api = {
   pdContact:()               => get('pd-contact'),
   pdFaq:    ()               => get('pd-faq'),
   pdImages: ()               => get('pd-images'),
-  pdLinks:  ()               => get('pd-links'),
+  pdLinks:          ()               => get('pd-links'),
+  pollResponses:    (pollId)         => get(`poll-responses?pollId=${pollId}`),
+  submitPollVote:   (data)           => fetch(`${BASE}/api/poll-responses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }),
 }

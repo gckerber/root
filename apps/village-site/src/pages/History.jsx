@@ -1,57 +1,36 @@
-// apps/village-site/src/pages/History.jsx
+// apps/village-site/src/pages/History.jsx  (Fun Stuff page)
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
 
-const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
+const BASE = import.meta.env.VITE_API_BASE_URL || 'https://func-village-prod.azurewebsites.net'
 
-// Parse JSON stored in text field, fall back to static defaults
+const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
+const BLUE  = '#1e3a5f'
+const GOLD  = '#f59e0b'
+
+// ── Data helpers ──────────────────────────────────────────────────────────────
+
 function parseHistoryData(raw) {
   try {
     const parsed = JSON.parse(raw || '{}')
     if (Array.isArray(parsed.sections)) return parsed
   } catch {}
   return {
-    pageTitle: 'History',
+    pageTitle: 'Fun Stuff',
     sections: [
       {
-        id: 's-default-1',
-        title: 'Founded on the frontier',
-        subtitle: 'Early History · 1837–1880',
-        body: raw || 'Saint Louisville was platted in 1837 along the eastern Ohio frontier, settled by families drawn by the promise of fertile farmland and strong community roots.',
-        body2: 'By 1860 the village had its own constable, a small tavern, and regular mail service. Several Saint Louisville men served in the Union Army during the Civil War.',
-        mainPhotoUrl: '',
-        galleryPhotos: [],
-        enabled: true,
-        order: 0,
-        photoSide: 'left',
-      },
-      {
-        id: 's-default-2',
-        title: 'Into the modern age',
-        subtitle: 'Growth & Change · 1880–1950',
-        body: 'The late 19th and early 20th centuries brought change to Saint Louisville. The arrival of improved roads and later the automobile transformed how residents connected to the wider world.',
-        body2: 'The Great Depression tested the community, but neighbors supported one another through hard times. By the postwar era, the village was growing steadily.',
-        mainPhotoUrl: '',
-        galleryPhotos: [],
-        enabled: true,
-        order: 1,
-        photoSide: 'right',
-      },
-      {
-        id: 's-default-3',
-        title: 'A community that endures',
-        subtitle: 'Today · 1950–Present',
-        body: 'Through the postwar boom, shifting agricultural trends, and the challenges of the modern economy, Saint Louisville has remained a place where neighbors know each other\'s names.',
-        body2: 'The village today carries its history lightly — proud of the past, focused on the future. Community events, a dedicated police department, and an engaged village council keep the spirit alive.',
-        mainPhotoUrl: '',
-        galleryPhotos: [],
-        enabled: true,
-        order: 2,
-        photoSide: 'left',
+        id: 's-default-1', type: 'era',
+        title: 'Founded on the frontier', subtitle: 'Early History · 1837–1880',
+        body: raw || 'Saint Louisville was platted in 1837 along the eastern Ohio frontier.',
+        body2: 'By 1860 the village had its own constable, a small tavern, and regular mail service.',
+        mainPhotoUrl: '', galleryPhotos: [], enabled: true, order: 0, photoSide: 'left',
       },
     ],
   }
 }
+
+// ── Era section ───────────────────────────────────────────────────────────────
 
 function PhotoMosaic({ photos = [] }) {
   if (!photos.length) return null
@@ -69,26 +48,21 @@ function PhotoMosaic({ photos = [] }) {
 function EraSection({ section, index }) {
   const photoLeft = section.photoSide !== 'right'
   const bg = index % 2 === 1 ? '#f8fafc' : '#fff'
-
   const textBlock = (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '3.5rem var(--px)' }}>
       {section.subtitle && <p style={{ ...LABEL, marginBottom: '.875rem' }}>{section.subtitle}</p>}
-      <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>{section.title}</h2>
-      {section.body && <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>{section.body}</p>}
+      <h2 style={{ fontSize: 'clamp(1.75rem,5vw,2.25rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '1rem', color: '#0f172a' }}>{section.title}</h2>
+      {section.body  && <p style={{ color: '#374151', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440, marginBottom: '1rem' }}>{section.body}</p>}
       {section.body2 && <p style={{ color: '#64748b', fontSize: '.9375rem', lineHeight: 1.9, maxWidth: 440 }}>{section.body2}</p>}
     </div>
   )
-
   const photoBlock = (
-    <div style={{ width: 'min(46%, 100%)', overflow: 'hidden', flexShrink: 0 }}>
-      {section.mainPhotoUrl ? (
-        <img src={section.mainPhotoUrl} alt={section.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
-        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)', minHeight: 300 }} />
-      )}
+    <div style={{ width: 'min(46%,100%)', overflow: 'hidden', flexShrink: 0 }}>
+      {section.mainPhotoUrl
+        ? <img src={section.mainPhotoUrl} alt={section.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a5f 0%,#0f172a 100%)', minHeight: 300 }} />}
     </div>
   )
-
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 420, background: bg, borderTop: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
@@ -103,32 +77,244 @@ function EraSection({ section, index }) {
   )
 }
 
+// ── Poll section ──────────────────────────────────────────────────────────────
+
+function PollSection({ section }) {
+  const storageKey = `poll-voted-${section.id}`
+  const [voted, setVoted]             = useState(() => localStorage.getItem(storageKey))
+  const [results, setResults]         = useState(null)
+  const [loadingResults, setLoadingResults] = useState(true)
+  const [submitting, setSubmitting]   = useState(false)
+  const [customText, setCustomText]   = useState('')
+  const [name, setName]               = useState('')
+  const [isPublic, setIsPublic]       = useState(true)
+
+  const options = section.options || []
+  const total   = results ? results.total : 0
+
+  useEffect(() => {
+    setLoadingResults(true)
+    fetch(`${BASE}/api/poll-responses?pollId=${section.id}`)
+      .then(r => r.json())
+      .then(d => setResults(d))
+      .catch(() => setResults(null))
+      .finally(() => setLoadingResults(false))
+  }, [section.id])
+
+  async function handleOptionVote(idx) {
+    if (voted || submitting) return
+    setSubmitting(true)
+    try {
+      await api.submitPollVote({ pollId: section.id, optionIndex: idx, isPublic: false })
+      localStorage.setItem(storageKey, String(idx))
+      setVoted(String(idx))
+      const d = await fetch(`${BASE}/api/poll-responses?pollId=${section.id}`).then(r => r.json())
+      setResults(d)
+    } catch {}
+    setSubmitting(false)
+  }
+
+  async function handleCustomSubmit(e) {
+    e.preventDefault()
+    if (!customText.trim() || voted || submitting) return
+    setSubmitting(true)
+    try {
+      await api.submitPollVote({
+        pollId: section.id,
+        optionIndex: -1,
+        customAnswer: customText.trim(),
+        name: name.trim() || null,
+        isPublic,
+      })
+      localStorage.setItem(storageKey, 'custom')
+      setVoted('custom')
+      const d = await fetch(`${BASE}/api/poll-responses?pollId=${section.id}`).then(r => r.json())
+      setResults(d)
+    } catch {}
+    setSubmitting(false)
+  }
+
+  const votedIdx = voted !== null && voted !== 'custom' ? parseInt(voted) : null
+
+  return (
+    <div style={{ borderTop: '1px solid #f1f5f9', background: '#fff', padding: '3.5rem var(--px)' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto' }}>
+
+        {/* Label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.5rem' }}>
+          <div style={{ ...LABEL, color: GOLD }}>Community Poll</div>
+          {total > 0 && !loadingResults && (
+            <span style={{ ...LABEL, color: '#94a3b8' }}>· {total} {total === 1 ? 'response' : 'responses'}</span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          {/* Optional photo */}
+          {section.photoUrl && (
+            <div style={{ flexShrink: 0, width: 'min(240px,100%)' }}>
+              <img src={section.photoUrl} alt="" style={{ width: '100%', borderRadius: 8, objectFit: 'cover' }} />
+            </div>
+          )}
+
+          <div style={{ flex: 1, minWidth: 260 }}>
+            {/* Question */}
+            <h2 style={{ fontSize: 'clamp(1.25rem,3vw,1.75rem)', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginBottom: '1.5rem', lineHeight: 1.2 }}>
+              {section.question || 'What do you think?'}
+            </h2>
+
+            {/* Options */}
+            {!voted ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {options.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleOptionVote(i)}
+                    disabled={submitting}
+                    style={{
+                      textAlign: 'left', padding: '0.75rem 1.125rem',
+                      border: `2px solid #e2e8f0`, borderRadius: 8, background: '#fff',
+                      fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b',
+                      cursor: submitting ? 'wait' : 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = BLUE; e.currentTarget.style.background = '#f0f4ff' }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff' }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              /* Results */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {options.map((opt, i) => {
+                  const count  = results?.voteCounts?.[i] ?? 0
+                  const pct    = total > 0 ? Math.round((count / total) * 100) : 0
+                  const isMyVote = votedIdx === i
+                  return (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: isMyVote ? 700 : 500, color: isMyVote ? BLUE : '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {isMyVote && <span style={{ color: GOLD }}>✓</span>}
+                          {opt}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>{pct}% ({count})</span>
+                      </div>
+                      <div style={{ height: 8, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: isMyVote ? BLUE : '#94a3b8', borderRadius: 99, transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+                {voted === 'custom' && (
+                  <p style={{ fontSize: '0.875rem', color: '#64748b', fontStyle: 'italic', marginTop: 4 }}>
+                    Thanks for sharing your thoughts!
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Custom answer section */}
+            {section.allowCustom && !voted && (
+              <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px dashed #e2e8f0' }}>
+                <p style={{ ...LABEL, color: '#64748b', marginBottom: '0.75rem' }}>Or, share your own thoughts</p>
+                <form onSubmit={handleCustomSubmit}>
+                  <textarea
+                    value={customText}
+                    onChange={e => setCustomText(e.target.value)}
+                    placeholder="Type your response here…"
+                    maxLength={500}
+                    rows={3}
+                    style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: '0.9rem', lineHeight: 1.6, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+                    onFocus={e => e.target.style.borderColor = BLUE}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <input
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="Your name (optional)"
+                      maxLength={100}
+                      style={{ flex: 1, minWidth: 140, padding: '0.5rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: '0.875rem', outline: 'none' }}
+                      onFocus={e => e.target.style.borderColor = BLUE}
+                      onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem', color: '#475569', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <input type="checkbox" checked={isPublic} onChange={e => setIsPublic(e.target.checked)} style={{ accentColor: BLUE }} />
+                      Share publicly on site
+                    </label>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 8, lineHeight: 1.5 }}>
+                    Please keep responses kind and considerate — this is a community space for all ages. 💛
+                  </p>
+                  <button
+                    type="submit"
+                    disabled={!customText.trim() || submitting}
+                    style={{
+                      marginTop: 10, padding: '0.625rem 1.25rem', background: BLUE, color: '#fff',
+                      border: 'none', borderRadius: 8, fontSize: '0.875rem', fontWeight: 700,
+                      cursor: !customText.trim() || submitting ? 'not-allowed' : 'pointer',
+                      opacity: !customText.trim() || submitting ? 0.5 : 1,
+                    }}
+                  >
+                    {submitting ? 'Submitting…' : 'Submit my answer'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Public custom responses */}
+            {results?.publicCustom?.length > 0 && (
+              <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
+                <p style={{ ...LABEL, color: '#64748b', marginBottom: '0.875rem' }}>Community responses</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {results.publicCustom.map((r, i) => (
+                    <div key={i} style={{ padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: 8, borderLeft: `3px solid ${GOLD}` }}>
+                      <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: 1.6, margin: 0 }}>"{r.text}"</p>
+                      <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0', fontWeight: 600 }}>— {r.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function History() {
   const { data: historyData } = useQuery({ queryKey: ['history'], queryFn: api.history, staleTime: 3 * 60 * 1000 })
-
   const { pageTitle, sections } = parseHistoryData(historyData?.text)
   const activeSections = sections.filter(s => s.enabled !== false).sort((a, b) => a.order - b.order)
 
+  // Separate era sections from poll sections for the "between" layout
+  // Era sections render first, then polls, preserving order within each type
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
       {/* Heading */}
       <div style={{ position: 'relative', padding: '5rem var(--px) 4rem', overflow: 'hidden', borderBottom: '1px solid #f1f5f9' }}>
         <div style={{ position: 'absolute', right: '3rem', top: '50%', transform: 'translateY(-50%)', fontSize: '16rem', fontWeight: 900, color: '#f1f5f9', lineHeight: 1, pointerEvents: 'none', userSelect: 'none', letterSpacing: '-.06em' }}>
-          1837
+          SL
         </div>
-        <p style={{ ...LABEL, marginBottom: '.875rem', position: 'relative' }}>Incorporated 1837 · Knox County, Ohio</p>
-        <h1 style={{ fontSize: 'clamp(1.75rem, 5vw, 3.75rem)', fontWeight: 900, letterSpacing: '-.04em', lineHeight: 1.05, maxWidth: 560, position: 'relative', color: '#0f172a' }}>
-          {pageTitle || 'History'}
+        <p style={{ ...LABEL, marginBottom: '.875rem', position: 'relative' }}>Saint Louisville, Ohio · Village of Licking County</p>
+        <h1 style={{ fontSize: 'clamp(1.75rem,5vw,3.75rem)', fontWeight: 900, letterSpacing: '-.04em', lineHeight: 1.05, maxWidth: 560, position: 'relative', color: '#0f172a' }}>
+          {pageTitle || 'Fun Stuff'}
         </h1>
         <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.875, maxWidth: 540, marginTop: '1.125rem', position: 'relative' }}>
-          From its earliest days as a small farming settlement along the Ohio frontier to the tight-knit village it is today — this is the history of Saint Louisville.
+          History, community polls, and local photos from Saint Louisville.
         </p>
       </div>
 
-      {/* Dynamic sections */}
-      {activeSections.map((section, i) => (
-        <EraSection key={section.id} section={section} index={i} />
-      ))}
+      {/* Sections — rendered in order */}
+      {activeSections.map((section, i) => {
+        const type = section.type || 'era'
+        if (type === 'poll') return <PollSection key={section.id} section={section} />
+        return <EraSection key={section.id} section={section} index={i} />
+      })}
     </div>
   )
 }

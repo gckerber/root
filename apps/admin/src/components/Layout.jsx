@@ -16,7 +16,7 @@ const NAV = [
   { to: '/bulletin',    icon: Megaphone,       label: 'Bulletin Board',  color: 'text-yellow-400',  desc: 'Announcements',       roles: ['admin', 'village'] },
   { to: '/ordinances',  icon: BookOpen,        label: 'Ordinances',      color: 'text-orange-400',  desc: 'Village laws & PDFs', roles: ['admin', 'village'] },
   { to: '/calendar',    icon: Calendar,        label: 'Calendar',        color: 'text-pink-400',    desc: 'Events & meetings',   roles: ['admin', 'village'] },
-  { to: '/history',     icon: Camera,          label: 'History & Photos',color: 'text-teal-400',    desc: 'Gallery & text',      roles: ['admin', 'village'] },
+  { to: '/history',     icon: Camera,          label: 'Fun Stuff & Polls',color: 'text-teal-400',   desc: 'Polls, history & gallery', roles: ['admin', 'village'] },
 ]
 
 const PD_NAV = [

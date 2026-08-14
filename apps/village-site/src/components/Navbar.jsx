@@ -10,7 +10,7 @@ const links = [
   { to: '/officials',  label: 'Officials' },
   { to: '/police',     label: 'Police' },
   { to: '/ordinances', label: 'Ordinances' },
-  { to: '/history',    label: 'History' },
+  { to: '/fun-stuff',  label: 'Fun Stuff' },
 ]
 
 export default function Navbar() {

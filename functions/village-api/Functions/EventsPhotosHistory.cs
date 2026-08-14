@@ -296,6 +296,69 @@ public class HistoryFunctions : FunctionBase
     }
 }
 
+public class PollResponseFunctions : FunctionBase
+{
+    private readonly CosmosService _cosmos;
+    private const string Container = "pollResponses";
+
+    public PollResponseFunctions(CosmosService cosmos, ILogger<PollResponseFunctions> logger)
+        : base(logger) => _cosmos = cosmos;
+
+    [Function("GetPollResponses")]
+    public async Task<HttpResponseData> Get(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "poll-responses")] HttpRequestData req)
+    {
+        if (req.Method == "OPTIONS") return Cors(req);
+        var pollId = req.Query["pollId"];
+        if (string.IsNullOrEmpty(pollId))
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "pollId required");
+        if (!_cosmos.IsAvailable)
+            return await OkJson(req, new { voteCounts = new int[0], total = 0, publicCustom = new object[0] });
+        try
+        {
+            var items = await _cosmos.QueryAsync<PollResponse>(Container,
+                new QueryDefinition("SELECT * FROM c WHERE c.pollId = @pid").WithParameter("@pid", pollId));
+            var voteCounts = new int[20];
+            var publicCustom = new List<object>();
+            foreach (var r in items)
+            {
+                if (r.OptionIndex >= 0 && r.OptionIndex < 20) voteCounts[r.OptionIndex]++;
+                if (r.OptionIndex < 0 && r.IsPublic && !string.IsNullOrWhiteSpace(r.CustomAnswer))
+                    publicCustom.Add(new { name = r.Name ?? "Anonymous", text = r.CustomAnswer });
+            }
+            return await OkJson(req, new { voteCounts, total = items.Count, publicCustom });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetPollResponses error: {msg}", ex.Message);
+            return await OkJson(req, new { voteCounts = new int[0], total = 0, publicCustom = new object[0] });
+        }
+    }
+
+    [Function("SubmitPollResponse")]
+    public async Task<HttpResponseData> Post(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "poll-responses")] HttpRequestData req)
+    {
+        if (!_cosmos.IsAvailable)
+            return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+        var body = await ReadBodyAsync<PollResponse>(req);
+        if (body == null || string.IsNullOrEmpty(body.PollId))
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "pollId required");
+        var item = new PollResponse
+        {
+            Id = Guid.NewGuid().ToString(),
+            PollId = body.PollId,
+            OptionIndex = body.OptionIndex,
+            CustomAnswer = string.IsNullOrWhiteSpace(body.CustomAnswer) ? null : body.CustomAnswer.Trim()[..Math.Min(body.CustomAnswer.Trim().Length, 500)],
+            Name = string.IsNullOrWhiteSpace(body.Name) ? null : body.Name.Trim()[..Math.Min(body.Name.Trim().Length, 100)],
+            IsPublic = body.IsPublic,
+            CreatedAt = DateTime.UtcNow.ToString("o")
+        };
+        await _cosmos.CreateAsync(Container, item, new PartitionKey(item.PollId));
+        return await CreatedJson(req, new { success = true });
+    }
+}
+
 public class UploadUrlFunctions : FunctionBase
 {
     private readonly StorageService _storage;

@@ -342,6 +342,24 @@ public class FinePaymentRequest
     public decimal Amount { get; set; }
 }
 
+public class PollResponse
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    [JsonPropertyName("pollId")]
+    public string PollId { get; set; } = string.Empty;
+    [JsonPropertyName("optionIndex")]
+    public int OptionIndex { get; set; } = -1;
+    [JsonPropertyName("customAnswer")]
+    public string? CustomAnswer { get; set; }
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+    [JsonPropertyName("isPublic")]
+    public bool IsPublic { get; set; }
+    [JsonPropertyName("createdAt")]
+    public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
+}
+
 public class PdLink
 {
     [JsonPropertyName("id")]

@@ -31,10 +31,11 @@ export default function App() {
               <Route path="/officials" element={<Officials />} />
               <Route path="/police" element={<PoliceDept />} />
               <Route path="/ordinances" element={<OrdinancesPage />} />
-              <Route path="/history" element={<History />} />
+              <Route path="/fun-stuff" element={<History />} />
 
               {/* Redirects from old routes */}
-              <Route path="/about" element={<Navigate to="/officials" replace />} />
+              <Route path="/history"  element={<Navigate to="/fun-stuff" replace />} />
+              <Route path="/about"    element={<Navigate to="/officials" replace />} />
               <Route path="/bulletin" element={<Navigate to="/community" replace />} />
               <Route path="/calendar" element={<Navigate to="/community" replace />} />
             </Routes>
