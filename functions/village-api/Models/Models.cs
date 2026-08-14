@@ -54,6 +54,8 @@ public class Minutes
     public long? FileSize { get; set; }
     [JsonPropertyName("fileName")]
     public string? FileName { get; set; }
+    [JsonPropertyName("transcript")]
+    public string? Transcript { get; set; }
     [JsonPropertyName("createdAt")]
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }

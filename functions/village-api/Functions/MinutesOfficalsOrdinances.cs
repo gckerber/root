@@ -38,7 +38,9 @@ public class MinutesFunctions : FunctionBase
             if (!string.IsNullOrEmpty(search))
                 items = items.Where(m =>
                     m.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    m.Type.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                    m.Type.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    (m.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Transcript?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
             items = items.OrderByDescending(m => m.MeetingDate).ToList();
             return await OkJson(req, new ApiResponse<Minutes> { Items = items });
@@ -113,6 +115,7 @@ public class MinutesFunctions : FunctionBase
         existing.FileUrl = body.FileUrl ?? existing.FileUrl;
         existing.FileName = body.FileName ?? existing.FileName;
         existing.FileSize = body.FileSize ?? existing.FileSize;
+        if (body.Transcript != null) existing.Transcript = body.Transcript.Trim();
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Year));
         return await OkJson(req, updated);

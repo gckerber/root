@@ -36,7 +36,7 @@ const currentYear = new Date().getFullYear()
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
-function PdfIcon() {
+function DocIcon() {
   return (
     <svg
       width="32"
@@ -52,104 +52,152 @@ function PdfIcon() {
         fill="#cbd5e1"
       />
       <path d="M19 10l5 5h-5V10z" fill="#94a3b8" />
-      <rect x="6" y="22" width="20" height="10" rx="2" fill="#94a3b8" />
-      <text x="16" y="30" textAnchor="middle" fill="white" fontSize="6" fontWeight="700">
-        PDF
+      <rect x="6" y="22" width="20" height="10" rx="2" fill="#1e3a5f" />
+      <text x="16" y="30" textAnchor="middle" fill="white" fontSize="5.5" fontWeight="700">
+        DOC
       </text>
     </svg>
   )
 }
 
 function MinuteRow({ doc, altBg }) {
+  const [open, setOpen] = useState(false)
   const d = fmtDate(doc.meetingDate)
   const size = fmtSize(doc.fileSize)
 
   return (
     <div
-      className="flex items-start gap-4 border-t border-[#f1f5f9] flex-wrap"
-      style={{
-        padding: '1.5rem var(--px)',
-        backgroundColor: altBg ? '#f8fafc' : '#ffffff',
-      }}
+      className="border-t border-[#f1f5f9]"
+      style={{ backgroundColor: altBg ? '#f8fafc' : '#ffffff' }}
     >
-      {/* Date column */}
-      <div className="flex-shrink-0 w-16 text-center">
+      <div
+        className="flex items-start gap-4 flex-wrap"
+        style={{ padding: '1.5rem var(--px)' }}
+      >
+        {/* Date column */}
+        <div className="flex-shrink-0 w-16 text-center">
+          <div
+            className="leading-none"
+            style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1e3a5f' }}
+          >
+            {d.day}
+          </div>
+          <div style={LABEL_STYLE}>
+            {d.month} {d.year}
+          </div>
+        </div>
+
+        {/* Doc icon */}
+        <div className="flex-shrink-0 mt-1">
+          <DocIcon />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Row 1: title + badge */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{doc.title}</span>
+            {doc.approved ? (
+              <span
+                className="bg-[#f0fdf4] text-[#166534] px-2 py-0.5 uppercase tracking-wide"
+                style={{ fontSize: '10px', fontWeight: 700 }}
+              >
+                Approved
+              </span>
+            ) : (
+              <span
+                className="bg-[#fef3c7] text-[#92400e] px-2 py-0.5 uppercase tracking-wide"
+                style={{ fontSize: '10px', fontWeight: 700 }}
+              >
+                Pending Approval
+              </span>
+            )}
+          </div>
+
+          {/* Row 2: description */}
+          {doc.description && (
+            <p
+              className="text-slate-500 leading-relaxed mt-1 max-w-xl"
+              style={{ fontSize: '0.875rem' }}
+            >
+              {doc.description}
+            </p>
+          )}
+
+          {/* Row 3: meta + transcript toggle */}
+          <div className="flex items-center gap-4 mt-1 flex-wrap">
+            <span className="text-slate-400" style={{ fontSize: '0.8125rem' }}>
+              {doc.fileUrl ? (
+                <>
+                  {doc.type || 'Regular Session'}
+                  {size ? ` · ${size}` : ''}
+                </>
+              ) : (
+                'Draft · No file yet'
+              )}
+            </span>
+            {doc.transcript && (
+              <button
+                onClick={() => setOpen((v) => !v)}
+                className="flex items-center gap-1 font-semibold hover:underline"
+                style={{ fontSize: '0.8125rem', color: '#1e3a5f' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transition: 'transform 0.15s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                  <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {open ? 'Hide transcript' : 'View full transcript'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Download */}
+        <div className="flex-shrink-0 self-center">
+          {doc.fileUrl && (
+            <a
+              href={doc.fileUrl}
+              download={doc.fileName || true}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-bold hover:underline"
+              style={{ color: '#1e3a5f' }}
+            >
+              Download
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Transcript panel */}
+      {open && doc.transcript && (
         <div
-          className="leading-none"
-          style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1e3a5f' }}
+          style={{
+            margin: '0 var(--px) 1.5rem',
+            borderLeft: '3px solid #f59e0b',
+            background: '#f8fafc',
+            borderRadius: '0 6px 6px 0',
+            padding: '1.25rem 1.5rem',
+            maxHeight: '28rem',
+            overflowY: 'auto',
+          }}
         >
-          {d.day}
-        </div>
-        <div style={LABEL_STYLE}>
-          {d.month} {d.year}
-        </div>
-      </div>
-
-      {/* PDF icon */}
-      <div className="flex-shrink-0 mt-1">
-        <PdfIcon />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Row 1: title + badge */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{doc.title}</span>
-          {doc.approved ? (
-            <span
-              className="bg-[#f0fdf4] text-[#166534] px-2 py-0.5 uppercase tracking-wide"
-              style={{ fontSize: '10px', fontWeight: 700 }}
-            >
-              Approved
-            </span>
-          ) : (
-            <span
-              className="bg-[#fef3c7] text-[#92400e] px-2 py-0.5 uppercase tracking-wide"
-              style={{ fontSize: '10px', fontWeight: 700 }}
-            >
-              Pending Approval
-            </span>
-          )}
-        </div>
-
-        {/* Row 2: description */}
-        {doc.description && (
-          <p
-            className="text-slate-500 leading-relaxed mt-1 max-w-xl"
-            style={{ fontSize: '0.875rem' }}
+          <div style={{ ...LABEL_STYLE, color: '#1e3a5f', marginBottom: '0.75rem' }}>
+            Full Transcript of Proceedings
+          </div>
+          <pre
+            style={{
+              fontFamily: 'Georgia, serif',
+              fontSize: '0.8125rem',
+              lineHeight: 1.7,
+              whiteSpace: 'pre-wrap',
+              color: '#334155',
+              margin: 0,
+            }}
           >
-            {doc.description}
-          </p>
-        )}
-
-        {/* Row 3: meta */}
-        <div className="text-slate-400 mt-1" style={{ fontSize: '0.8125rem' }}>
-          {doc.fileUrl ? (
-            <>
-              {doc.type || 'Regular Session'}
-              {size ? ` · ${size}` : ''}
-            </>
-          ) : (
-            'Draft · No file yet'
-          )}
+            {doc.transcript}
+          </pre>
         </div>
-      </div>
-
-      {/* Download */}
-      <div className="flex-shrink-0 self-center">
-        {doc.fileUrl && (
-          <a
-            href={doc.fileUrl}
-            download={doc.fileName || true}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-bold hover:underline"
-            style={{ color: '#1e3a5f' }}
-          >
-            Download
-          </a>
-        )}
-      </div>
+      )}
     </div>
   )
 }
@@ -190,7 +238,8 @@ export default function Minutes() {
       const q = search.toLowerCase()
       return (
         (m.title || '').toLowerCase().includes(q) ||
-        (m.description || '').toLowerCase().includes(q)
+        (m.description || '').toLowerCase().includes(q) ||
+        (m.transcript || '').toLowerCase().includes(q)
       )
     })
     .sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate))
