@@ -316,17 +316,18 @@ public class PollResponseFunctions : FunctionBase
             return await OkJson(req, new { voteCounts = new int[0], total = 0, publicCustom = new object[0] });
         try
         {
+            var admin = IsAdmin(req);
             var items = await _cosmos.QueryAsync<PollResponse>(Container,
                 new QueryDefinition("SELECT * FROM c WHERE c.pollId = @pid").WithParameter("@pid", pollId));
             var voteCounts = new int[20];
-            var publicCustom = new List<object>();
+            var customResponses = new List<object>();
             foreach (var r in items)
             {
                 if (r.OptionIndex >= 0 && r.OptionIndex < 20) voteCounts[r.OptionIndex]++;
-                if (r.OptionIndex < 0 && r.IsPublic && !string.IsNullOrWhiteSpace(r.CustomAnswer))
-                    publicCustom.Add(new { name = r.Name ?? "Anonymous", text = r.CustomAnswer });
+                if (r.OptionIndex < 0 && !string.IsNullOrWhiteSpace(r.CustomAnswer) && (r.IsPublic || admin))
+                    customResponses.Add(new { name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic });
             }
-            return await OkJson(req, new { voteCounts, total = items.Count, publicCustom });
+            return await OkJson(req, new { voteCounts, total = items.Count, publicCustom = customResponses });
         }
         catch (Exception ex)
         {
@@ -355,7 +356,43 @@ public class PollResponseFunctions : FunctionBase
             CreatedAt = DateTime.UtcNow.ToString("o")
         };
         await _cosmos.CreateAsync(Container, item, new PartitionKey(item.PollId));
-        return await CreatedJson(req, new { success = true });
+        // Return the ID so the client can store it and undo the vote later
+        return await CreatedJson(req, new { id = item.Id, success = true });
+    }
+
+    [Function("DeletePollResponse")]
+    public async Task<HttpResponseData> Delete(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", "options", Route = "poll-responses")] HttpRequestData req)
+    {
+        if (req.Method == "OPTIONS") return Cors(req);
+        if (!_cosmos.IsAvailable)
+            return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+
+        var id = req.Query["id"];
+        var pollId = req.Query["pollId"];
+
+        // Single-vote undo: public but requires knowing the GUID
+        if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(pollId))
+        {
+            try { await _cosmos.DeleteAsync(Container, id, new PartitionKey(pollId)); }
+            catch { /* already gone */ }
+            return await OkJson(req, new { success = true });
+        }
+
+        // Full reset: admin only
+        if (!string.IsNullOrEmpty(pollId) && IsAdmin(req))
+        {
+            var items = await _cosmos.QueryAsync<PollResponse>(Container,
+                new QueryDefinition("SELECT * FROM c WHERE c.pollId = @pid").WithParameter("@pid", pollId));
+            foreach (var r in items)
+            {
+                try { await _cosmos.DeleteAsync(Container, r.Id, new PartitionKey(pollId)); }
+                catch { /* best-effort */ }
+            }
+            return await OkJson(req, new { success = true, deleted = items.Count });
+        }
+
+        return await ErrorJson(req, HttpStatusCode.BadRequest, "id+pollId required, or admin key + pollId for full reset");
     }
 }
 

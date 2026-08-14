@@ -79,12 +79,27 @@ function EraSection({ section, index }) {
 
 // ── Poll section ──────────────────────────────────────────────────────────────
 
+function readVoteState(pollId) {
+  try {
+    const raw = localStorage.getItem(`poll-vote-${pollId}`) || localStorage.getItem(`poll-voted-${pollId}`)
+    if (!raw) return { voted: null, voteId: null }
+    try {
+      const p = JSON.parse(raw)
+      if (p && typeof p === 'object') return { voted: p.opted ?? null, voteId: p.voteId ?? null }
+    } catch {}
+    return { voted: raw, voteId: null }  // legacy plain-string format
+  } catch { return { voted: null, voteId: null } }
+}
+
 function PollSection({ section }) {
-  const storageKey = `poll-voted-${section.id}`
-  const [voted, setVoted]             = useState(() => localStorage.getItem(storageKey))
+  const storageKey = `poll-vote-${section.id}`
+  const init = readVoteState(section.id)
+  const [voted, setVoted]             = useState(init.voted)
+  const [voteId, setVoteId]           = useState(init.voteId)
   const [results, setResults]         = useState(null)
   const [loadingResults, setLoadingResults] = useState(true)
   const [submitting, setSubmitting]   = useState(false)
+  const [undoing, setUndoing]         = useState(false)
   const [customText, setCustomText]   = useState('')
   const [name, setName]               = useState('')
   const [isPublic, setIsPublic]       = useState(true)
@@ -92,24 +107,29 @@ function PollSection({ section }) {
   const options = section.options || []
   const total   = results ? results.total : 0
 
-  useEffect(() => {
-    setLoadingResults(true)
-    fetch(`${BASE}/api/poll-responses?pollId=${section.id}`)
+  function fetchResults() {
+    return fetch(`${BASE}/api/poll-responses?pollId=${section.id}`)
       .then(r => r.json())
       .then(d => setResults(d))
       .catch(() => setResults(null))
-      .finally(() => setLoadingResults(false))
+  }
+
+  useEffect(() => {
+    setLoadingResults(true)
+    fetchResults().finally(() => setLoadingResults(false))
   }, [section.id])
 
   async function handleOptionVote(idx) {
     if (voted || submitting) return
     setSubmitting(true)
     try {
-      await api.submitPollVote({ pollId: section.id, optionIndex: idx, isPublic: false })
-      localStorage.setItem(storageKey, String(idx))
+      const res = await api.submitPollVote({ pollId: section.id, optionIndex: idx, isPublic: false })
+      const data = await res.json()
+      const newVoteId = data.id ?? null
+      localStorage.setItem(storageKey, JSON.stringify({ opted: String(idx), voteId: newVoteId }))
       setVoted(String(idx))
-      const d = await fetch(`${BASE}/api/poll-responses?pollId=${section.id}`).then(r => r.json())
-      setResults(d)
+      setVoteId(newVoteId)
+      await fetchResults()
     } catch {}
     setSubmitting(false)
   }
@@ -119,19 +139,35 @@ function PollSection({ section }) {
     if (!customText.trim() || voted || submitting) return
     setSubmitting(true)
     try {
-      await api.submitPollVote({
-        pollId: section.id,
-        optionIndex: -1,
-        customAnswer: customText.trim(),
-        name: name.trim() || null,
-        isPublic,
+      const res = await api.submitPollVote({
+        pollId: section.id, optionIndex: -1,
+        customAnswer: customText.trim(), name: name.trim() || null, isPublic,
       })
-      localStorage.setItem(storageKey, 'custom')
+      const data = await res.json()
+      const newVoteId = data.id ?? null
+      localStorage.setItem(storageKey, JSON.stringify({ opted: 'custom', voteId: newVoteId }))
       setVoted('custom')
-      const d = await fetch(`${BASE}/api/poll-responses?pollId=${section.id}`).then(r => r.json())
-      setResults(d)
+      setVoteId(newVoteId)
+      await fetchResults()
     } catch {}
     setSubmitting(false)
+  }
+
+  async function handleChangeVote() {
+    if (undoing) return
+    setUndoing(true)
+    try {
+      if (voteId) {
+        await fetch(`${BASE}/api/poll-responses?id=${voteId}&pollId=${section.id}`, { method: 'DELETE' })
+      }
+      localStorage.removeItem(storageKey)
+      localStorage.removeItem(`poll-voted-${section.id}`)  // clear legacy key too
+      setVoted(null)
+      setVoteId(null)
+      setCustomText('')
+      await fetchResults()
+    } catch {}
+    setUndoing(false)
   }
 
   const votedIdx = voted !== null && voted !== 'custom' ? parseInt(voted) : null
@@ -211,6 +247,15 @@ function PollSection({ section }) {
                     Thanks for sharing your thoughts!
                   </p>
                 )}
+
+                {/* Undo vote */}
+                <button
+                  onClick={handleChangeVote}
+                  disabled={undoing}
+                  style={{ marginTop: 14, background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#94a3b8', cursor: undoing ? 'wait' : 'pointer', textDecoration: 'underline' }}
+                >
+                  {undoing ? 'Removing…' : '← Change my answer'}
+                </button>
               </div>
             )}
 

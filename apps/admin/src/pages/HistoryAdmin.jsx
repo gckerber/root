@@ -151,8 +151,95 @@ function EraEditor({ section, onChange, onUploadMain, onUploadGallery, uploading
   )
 }
 
+// ── Poll responses viewer (admin) ────────────────────────────────────────────
+function PollResponses({ section, adminKey }) {
+  const [responses, setResponses] = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [resetting, setResetting] = useState(false)
+
+  function load() {
+    setLoading(true)
+    fetch(`${API}/api/poll-responses?pollId=${section.id}`, {
+      headers: { 'x-admin-key': adminKey },
+    })
+      .then(r => r.json())
+      .then(d => setResponses(d))
+      .catch(() => setResponses(null))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { load() }, [section.id])
+
+  async function handleReset() {
+    if (!confirm(`Reset all votes for this poll? This cannot be undone.`)) return
+    setResetting(true)
+    try {
+      const res = await fetch(`${API}/api/poll-responses?pollId=${section.id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-key': adminKey },
+      })
+      if (!res.ok) throw new Error('Reset failed')
+      load()
+    } catch {}
+    setResetting(false)
+  }
+
+  const total   = responses?.total ?? 0
+  const counts  = responses?.voteCounts ?? []
+  const custom  = responses?.publicCustom ?? []
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-700 space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="label text-slate-400">Poll Responses · {loading ? '…' : total} total</span>
+        <div className="flex gap-2">
+          <button onClick={load} className="btn-ghost text-xs py-1 px-2">Refresh</button>
+          <button onClick={handleReset} disabled={resetting || total === 0} className="btn-danger text-xs py-1 px-2 disabled:opacity-40">
+            {resetting ? 'Resetting…' : 'Reset Poll'}
+          </button>
+        </div>
+      </div>
+
+      {/* Vote counts */}
+      {!loading && (
+        <div className="space-y-2">
+          {(section.options || []).map((opt, i) => {
+            const count = counts[i] ?? 0
+            const pct   = total > 0 ? Math.round((count / total) * 100) : 0
+            return (
+              <div key={i}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-300">{opt}</span>
+                  <span className="text-slate-500">{pct}% ({count})</span>
+                </div>
+                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            )
+          })}
+          {custom.length > 0 && (
+            <div className="pt-2 space-y-2">
+              <p className="label text-slate-500">Written answers ({custom.length})</p>
+              {custom.map((r, i) => (
+                <div key={i} className="bg-slate-800 rounded-lg p-3 border-l-2 border-yellow-500">
+                  <p className="text-slate-300 text-sm">"{r.text}"</p>
+                  <p className="text-slate-600 text-xs mt-1">
+                    — {r.name} · {r.isPublic ? 'public' : 'private'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+          {total === 0 && <p className="text-slate-600 text-xs">No votes yet.</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Poll section editor ───────────────────────────────────────────────────────
-function PollEditor({ section, onChange, onUploadPollPhoto, uploadingPollPhoto }) {
+function PollEditor({ section, onChange, onUploadPollPhoto, uploadingPollPhoto, adminKey }) {
   const photoRef = useRef()
 
   function setQuestion(e) { onChange({ ...section, question: e.target.value }) }
@@ -236,6 +323,8 @@ function PollEditor({ section, onChange, onUploadPollPhoto, uploadingPollPhoto }
           Visitors can optionally include their name and choose to share their response publicly on the page.
         </p>
       )}
+
+      <PollResponses section={section} adminKey={adminKey} />
     </div>
   )
 }
@@ -502,6 +591,7 @@ export default function HistoryAdmin() {
                     onChange={updateSection}
                     onUploadPollPhoto={handleUploadPollPhoto}
                     uploadingPollPhoto={uploadingPollPhoto === section.id}
+                    adminKey={auth.key}
                   />
                 ) : (
                   <EraEditor
