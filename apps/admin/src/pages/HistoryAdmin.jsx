@@ -27,7 +27,7 @@ function newPollSection(order) {
     id: `p${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     type: 'poll',
     question: '',
-    options: ['', ''],
+    options: [''],
     photoUrl: '',
     allowCustom: false,
     enabled: true,
@@ -253,7 +253,7 @@ function PollEditor({ section, onChange, onUploadPollPhoto, uploadingPollPhoto, 
     onChange({ ...section, options: [...section.options, ''] })
   }
   function removeOption(i) {
-    if (section.options.length <= 2) return
+    if (section.options.length <= 1) return
     onChange({ ...section, options: section.options.filter((_, idx) => idx !== i) })
   }
 
@@ -265,7 +265,7 @@ function PollEditor({ section, onChange, onUploadPollPhoto, uploadingPollPhoto, 
       </div>
 
       <div>
-        <label className="label">Answer Options (2–8)</label>
+        <label className="label">Answer Options (1–8, or 0 if written-only)</label>
         <div className="space-y-2 mt-1">
           {section.options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
