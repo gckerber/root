@@ -172,92 +172,112 @@ function PollSection({ section }) {
 
   const votedIdx = voted !== null && voted !== 'custom' ? parseInt(voted) : null
 
+  const optionVoteTotal = options.reduce((sum, _, i) => sum + (results?.voteCounts?.[i] ?? 0), 0)
+  const customCount = Math.max(0, total - optionVoteTotal)
+
   return (
     <div style={{ borderTop: '1px solid #f1f5f9', background: '#fff', padding: '3.5rem var(--px)' }}>
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
 
+        {/* Optional banner photo — full-width above question */}
+        {section.photoUrl && (
+          <div style={{ marginBottom: '2rem', borderRadius: 12, overflow: 'hidden', maxHeight: 320 }}>
+            <img src={section.photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          </div>
+        )}
+
         {/* Label */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.25rem' }}>
           <div style={{ ...LABEL, color: GOLD }}>Community Poll</div>
           {total > 0 && !loadingResults && (
             <span style={{ ...LABEL, color: '#94a3b8' }}>· {total} {total === 1 ? 'response' : 'responses'}</span>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          {/* Optional photo */}
-          {section.photoUrl && (
-            <div style={{ flexShrink: 0, width: 'min(240px,100%)' }}>
-              <img src={section.photoUrl} alt="" style={{ width: '100%', borderRadius: 8, objectFit: 'cover' }} />
-            </div>
-          )}
+        {/* Question */}
+        <h2 style={{ fontSize: 'clamp(1.25rem,3vw,1.75rem)', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginBottom: '1.5rem', lineHeight: 1.2 }}>
+          {section.question || 'What do you think?'}
+        </h2>
 
-          <div style={{ flex: 1, minWidth: 260 }}>
-            {/* Question */}
-            <h2 style={{ fontSize: 'clamp(1.25rem,3vw,1.75rem)', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginBottom: '1.5rem', lineHeight: 1.2 }}>
-              {section.question || 'What do you think?'}
-            </h2>
+        {/* Options */}
+        {!voted ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {options.map((opt, i) => (
+              <button
+                key={i}
+                onClick={() => handleOptionVote(i)}
+                disabled={submitting}
+                style={{
+                  textAlign: 'left', padding: '0.75rem 1.125rem',
+                  border: `2px solid #e2e8f0`, borderRadius: 8, background: '#fff',
+                  fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b',
+                  cursor: submitting ? 'wait' : 'pointer',
+                  transition: 'all 0.15s',
+                }}
+                onMouseOver={e => { e.currentTarget.style.borderColor = BLUE; e.currentTarget.style.background = '#f0f4ff' }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff' }}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        ) : (
+          /* Results */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {options.map((opt, i) => {
+              const count    = results?.voteCounts?.[i] ?? 0
+              const pct      = total > 0 ? Math.round((count / total) * 100) : 0
+              const isMyVote = votedIdx === i
+              return (
+                <div key={i}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: isMyVote ? 700 : 500, color: isMyVote ? BLUE : '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {isMyVote && <span style={{ color: GOLD }}>✓</span>}
+                      {opt}
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>{pct}% ({count})</span>
+                  </div>
+                  <div style={{ height: 8, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: isMyVote ? BLUE : '#94a3b8', borderRadius: 99, transition: 'width 0.6s ease' }} />
+                  </div>
+                </div>
+              )
+            })}
 
-            {/* Options */}
-            {!voted ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {options.map((opt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleOptionVote(i)}
-                    disabled={submitting}
-                    style={{
-                      textAlign: 'left', padding: '0.75rem 1.125rem',
-                      border: `2px solid #e2e8f0`, borderRadius: 8, background: '#fff',
-                      fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b',
-                      cursor: submitting ? 'wait' : 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseOver={e => { e.currentTarget.style.borderColor = BLUE; e.currentTarget.style.background = '#f0f4ff' }}
-                    onMouseOut={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff' }}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              /* Results */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {options.map((opt, i) => {
-                  const count  = results?.voteCounts?.[i] ?? 0
-                  const pct    = total > 0 ? Math.round((count / total) * 100) : 0
-                  const isMyVote = votedIdx === i
-                  return (
-                    <div key={i}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ fontSize: '0.9rem', fontWeight: isMyVote ? 700 : 500, color: isMyVote ? BLUE : '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {isMyVote && <span style={{ color: GOLD }}>✓</span>}
-                          {opt}
-                        </span>
-                        <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>{pct}% ({count})</span>
-                      </div>
-                      <div style={{ height: 8, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: isMyVote ? BLUE : '#94a3b8', borderRadius: 99, transition: 'width 0.6s ease' }} />
-                      </div>
-                    </div>
-                  )
-                })}
-                {voted === 'custom' && (
-                  <p style={{ fontSize: '0.875rem', color: '#64748b', fontStyle: 'italic', marginTop: 4 }}>
-                    Thanks for sharing your thoughts!
-                  </p>
-                )}
-
-                {/* Undo vote */}
-                <button
-                  onClick={handleChangeVote}
-                  disabled={undoing}
-                  style={{ marginTop: 14, background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#94a3b8', cursor: undoing ? 'wait' : 'pointer', textDecoration: 'underline' }}
-                >
-                  {undoing ? 'Removing…' : '← Change my answer'}
-                </button>
+            {/* Custom / written answer count row */}
+            {section.allowCustom && customCount > 0 && (
+              <div style={{ marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: voted === 'custom' ? 700 : 500, color: voted === 'custom' ? BLUE : '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {voted === 'custom' && <span style={{ color: GOLD }}>✓</span>}
+                    Written responses
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                    {total > 0 ? Math.round((customCount / total) * 100) : 0}% ({customCount})
+                  </span>
+                </div>
+                <div style={{ height: 8, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${total > 0 ? Math.round((customCount / total) * 100) : 0}%`, background: voted === 'custom' ? BLUE : '#94a3b8', borderRadius: 99, transition: 'width 0.6s ease' }} />
+                </div>
               </div>
             )}
+
+            {voted === 'custom' && (
+              <p style={{ fontSize: '0.875rem', color: '#64748b', fontStyle: 'italic', marginTop: 4 }}>
+                Thanks for sharing your thoughts!
+              </p>
+            )}
+
+            {/* Undo vote */}
+            <button
+              onClick={handleChangeVote}
+              disabled={undoing}
+              style={{ marginTop: 14, background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#94a3b8', cursor: undoing ? 'wait' : 'pointer', textDecoration: 'underline' }}
+            >
+              {undoing ? 'Removing…' : '← Change my answer'}
+            </button>
+          </div>
+        )}
 
             {/* Custom answer section */}
             {section.allowCustom && !voted && (
@@ -322,8 +342,6 @@ function PollSection({ section }) {
                 </div>
               </div>
             )}
-          </div>
-        </div>
       </div>
     </div>
   )
