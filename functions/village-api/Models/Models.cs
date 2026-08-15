@@ -360,6 +360,18 @@ public class PollResponse
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }
 
+public class PageCounter
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "counter-fun-stuff";
+    [JsonPropertyName("partitionKey")]
+    public string PartitionKey { get; set; } = "settings";
+    [JsonPropertyName("count")]
+    public long Count { get; set; }
+    [JsonPropertyName("updatedAt")]
+    public string UpdatedAt { get; set; } = DateTime.UtcNow.ToString("o");
+}
+
 public class PdLink
 {
     [JsonPropertyName("id")]

@@ -436,3 +436,43 @@ public class UploadUrlFunctions : FunctionBase
         }
     }
 }
+
+public class VisitCounterFunctions : FunctionBase
+{
+    private readonly CosmosService _cosmos;
+    private const string Container = "settings";
+
+    public VisitCounterFunctions(CosmosService cosmos, ILogger<VisitCounterFunctions> logger)
+        : base(logger) => _cosmos = cosmos;
+
+    [Function("IncrementVisitCounter")]
+    public async Task<HttpResponseData> Post(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "visit-counter")] HttpRequestData req)
+    {
+        if (req.Method == "OPTIONS") return Cors(req);
+        var page = req.Query["page"] ?? "fun-stuff";
+        var id = $"counter-{page}";
+        try
+        {
+            PageCounter record;
+            try
+            {
+                record = await _cosmos.ReadAsync<PageCounter>(Container, id, new PartitionKey("settings"))
+                         ?? new PageCounter { Id = id };
+            }
+            catch
+            {
+                record = new PageCounter { Id = id };
+            }
+            record.Count++;
+            record.UpdatedAt = DateTime.UtcNow.ToString("o");
+            await _cosmos.UpsertAsync(Container, record, new PartitionKey("settings"));
+            return await OkJson(req, new { count = record.Count });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "VisitCounter error: {msg}", ex.Message);
+            return await OkJson(req, new { count = 0 });
+        }
+    }
+}

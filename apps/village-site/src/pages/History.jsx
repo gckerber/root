@@ -347,6 +347,75 @@ function PollSection({ section }) {
   )
 }
 
+// ── Site Counter ──────────────────────────────────────────────────────────────
+
+function SiteCounter() {
+  const [count, setCount] = useState(null)
+
+  useEffect(() => {
+    fetch(`${BASE}/api/visit-counter?page=fun-stuff`, { method: 'POST' })
+      .then(r => r.json())
+      .then(d => setCount(d.count))
+      .catch(() => setCount(null))
+  }, [])
+
+  const digits = count !== null ? String(count).padStart(7, '0') : '0000000'
+
+  return (
+    <div style={{ padding: '3rem var(--px) 4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, borderTop: '1px solid #f1f5f9' }}>
+      {/* Win95-style raised widget */}
+      <div style={{
+        display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+        padding: '14px 22px 12px',
+        background: '#c0c0c0',
+        border: '2px solid',
+        borderColor: '#ffffff #808080 #808080 #ffffff',
+        boxShadow: '2px 2px 0 #000',
+        userSelect: 'none',
+      }}>
+        {/* Title bar */}
+        <div style={{
+          width: '100%', background: '#000080', color: '#fff',
+          fontFamily: '"Arial", sans-serif', fontSize: '11px', fontWeight: 700,
+          padding: '2px 6px', letterSpacing: '0.02em',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <span>🏰</span>
+          <span>Ye Olde Site Counter v1.0</span>
+        </div>
+
+        {/* LED digit display */}
+        <div style={{
+          background: '#000', border: '2px solid', borderColor: '#808080 #ffffff #ffffff #808080',
+          padding: '6px 10px', display: 'flex', gap: 3, alignItems: 'center',
+        }}>
+          {digits.split('').map((d, i) => (
+            <span key={i} style={{
+              display: 'inline-block', width: 20, textAlign: 'center',
+              fontFamily: '"Courier New", Courier, monospace',
+              fontSize: '28px', fontWeight: 'bold', lineHeight: 1.15,
+              color: count !== null ? '#00ff41' : '#004400',
+              textShadow: count !== null ? '0 0 10px #00ff41, 0 0 20px #00aa22' : 'none',
+              transition: 'color 0.5s, text-shadow 0.5s',
+            }}>{d}</span>
+          ))}
+        </div>
+
+        {/* Footer label */}
+        <div style={{
+          fontFamily: '"Arial", sans-serif', fontSize: '10px', color: '#444',
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>
+          visitors since MMXXVI
+        </div>
+      </div>
+      <p style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>
+        Best viewed in Internet Explorer 6 at 800×600
+      </p>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function History() {
@@ -378,6 +447,8 @@ export default function History() {
         if (type === 'poll') return <PollSection key={section.id} section={section} />
         return <EraSection key={section.id} section={section} index={i} />
       })}
+
+      <SiteCounter />
     </div>
   )
 }
