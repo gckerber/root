@@ -346,6 +346,14 @@ function PollSection({ section }) {
                     <div key={i} style={{ padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: 8, borderLeft: `3px solid ${GOLD}` }}>
                       <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: 1.6, margin: 0 }}>"{r.text}"</p>
                       <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0', fontWeight: 600 }}>— {r.name}</p>
+                      {r.adminReply && (
+                        <div style={{ marginTop: '0.625rem', paddingLeft: '0.75rem', borderLeft: `2px solid ${BLUE}` }}>
+                          <p style={{ fontSize: '0.8125rem', color: '#1e3a5f', lineHeight: 1.5, margin: 0 }}>
+                            <strong style={{ fontWeight: 700, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Village reply: </strong>
+                            {r.adminReply}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

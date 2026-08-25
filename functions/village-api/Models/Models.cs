@@ -356,6 +356,8 @@ public class PollResponse
     public string? Name { get; set; }
     [JsonPropertyName("isPublic")]
     public bool IsPublic { get; set; }
+    [JsonPropertyName("adminReply")]
+    public string? AdminReply { get; set; }
     [JsonPropertyName("createdAt")]
     public string CreatedAt { get; set; } = DateTime.UtcNow.ToString("o");
 }

@@ -158,6 +158,9 @@ function PollResponses({ section, adminKey }) {
   const [loading, setLoading]     = useState(true)
   const [resetting, setResetting] = useState(false)
   const [deleting, setDeleting]   = useState(null)
+  const [replyingTo, setReplyingTo] = useState(null)
+  const [replyText, setReplyText]   = useState('')
+  const [savingReply, setSavingReply] = useState(false)
 
   function load() {
     setLoading(true)
@@ -194,6 +197,21 @@ function PollResponses({ section, adminKey }) {
       load()
     } catch {}
     setDeleting(null)
+  }
+
+  async function handleSaveReply(id) {
+    setSavingReply(true)
+    try {
+      await fetch(`${API}/api/poll-responses?id=${id}&pollId=${section.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ adminReply: replyText.trim() || null }),
+      })
+      setReplyingTo(null)
+      setReplyText('')
+      load()
+    } catch {}
+    setSavingReply(false)
   }
 
   const total  = responses?.total ?? 0
@@ -234,24 +252,57 @@ function PollResponses({ section, adminKey }) {
             <div className="pt-2 space-y-2">
               <p className="label text-slate-500">Written answers ({custom.length})</p>
               {custom.map((r, i) => (
-                <div key={r.id ?? i} className="bg-slate-800 rounded-lg p-3 border-l-2 border-yellow-500">
+                <div key={r.id ?? i} className="bg-slate-800 rounded-lg p-3 border-l-2 border-yellow-500 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-slate-300 text-sm">"{r.text}"</p>
                     {r.id && (
-                      <button
-                        onClick={() => handleDeleteResponse(r.id)}
-                        disabled={deleting === r.id}
-                        className="btn-danger text-xs py-0.5 px-1.5 flex-shrink-0 disabled:opacity-40"
-                        title="Delete this response"
-                      >
-                        {deleting === r.id ? '…' : '✕'}
-                      </button>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => { setReplyingTo(r.id); setReplyText(r.adminReply ?? '') }}
+                          className="btn-ghost text-xs py-0.5 px-1.5"
+                          title="Reply"
+                        >↩ Reply</button>
+                        <button
+                          onClick={() => handleDeleteResponse(r.id)}
+                          disabled={deleting === r.id}
+                          className="btn-danger text-xs py-0.5 px-1.5 disabled:opacity-40"
+                          title="Delete"
+                        >{deleting === r.id ? '…' : '✕'}</button>
+                      </div>
                     )}
                   </div>
-                  <p className="text-slate-600 text-xs mt-1">
+                  <p className="text-slate-600 text-xs">
                     — {r.name} · {r.isPublic ? 'public' : 'private'}
                     {r.createdAt && <span className="ml-2 text-slate-700">{new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>}
                   </p>
+                  {/* Existing reply */}
+                  {r.adminReply && replyingTo !== r.id && (
+                    <div className="ml-3 pl-3 border-l border-teal-700 text-xs text-teal-400">
+                      <span className="font-semibold text-teal-500">Village: </span>{r.adminReply}
+                    </div>
+                  )}
+                  {/* Reply editor */}
+                  {replyingTo === r.id && (
+                    <div className="ml-3 space-y-2">
+                      <textarea
+                        className="input text-xs resize-none w-full"
+                        rows={3}
+                        value={replyText}
+                        onChange={e => setReplyText(e.target.value)}
+                        placeholder="Type your reply…"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={() => handleSaveReply(r.id)} disabled={savingReply} className="btn-primary text-xs py-1 px-3 disabled:opacity-40">
+                          {savingReply ? 'Saving…' : 'Save Reply'}
+                        </button>
+                        <button onClick={() => { setReplyingTo(null); setReplyText('') }} className="btn-ghost text-xs py-1 px-3">Cancel</button>
+                        {r.adminReply && (
+                          <button onClick={() => { setReplyText(''); handleSaveReply(r.id) }} className="btn-danger text-xs py-1 px-3 ml-auto">Remove Reply</button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

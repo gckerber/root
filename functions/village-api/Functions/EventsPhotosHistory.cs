@@ -327,9 +327,9 @@ public class PollResponseFunctions : FunctionBase
                 if (r.OptionIndex < 0 && !string.IsNullOrWhiteSpace(r.CustomAnswer) && (r.IsPublic || admin))
                 {
                     if (admin)
-                        customResponses.Add(new { id = r.Id, name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic, createdAt = r.CreatedAt });
+                        customResponses.Add(new { id = r.Id, name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic, adminReply = r.AdminReply, createdAt = r.CreatedAt });
                     else
-                        customResponses.Add(new { name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic });
+                        customResponses.Add(new { name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic, adminReply = r.AdminReply });
                 }
             }
             return await OkJson(req, new { voteCounts, total = items.Count, publicCustom = customResponses });
@@ -397,6 +397,31 @@ public class PollResponseFunctions : FunctionBase
         }
 
         return await ErrorJson(req, HttpStatusCode.BadRequest, "id+pollId required, or admin key + pollId for full reset");
+    }
+
+    [Function("ReplyToPollResponse")]
+    public async Task<HttpResponseData> Patch(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "poll-responses")] HttpRequestData req)
+    {
+        if (!IsAdmin(req)) return await ErrorJson(req, HttpStatusCode.Unauthorized, "Unauthorized");
+        if (!_cosmos.IsAvailable) return await ErrorJson(req, HttpStatusCode.ServiceUnavailable, "Database not available");
+
+        var id = req.Query["id"];
+        var pollId = req.Query["pollId"];
+        if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(pollId))
+            return await ErrorJson(req, HttpStatusCode.BadRequest, "id and pollId required");
+
+        var body = await ReadBodyAsync<System.Text.Json.JsonElement>(req);
+        string? reply = null;
+        if (body.TryGetProperty("adminReply", out var replyProp))
+            reply = replyProp.ValueKind == System.Text.Json.JsonValueKind.Null ? null : replyProp.GetString();
+
+        var item = await _cosmos.ReadAsync<PollResponse>(Container, id, new PartitionKey(pollId));
+        if (item == null) return await ErrorJson(req, HttpStatusCode.NotFound, "Response not found");
+
+        item.AdminReply = string.IsNullOrWhiteSpace(reply) ? null : reply.Trim()[..Math.Min(reply.Trim().Length, 1000)];
+        await _cosmos.ReplaceAsync(Container, id, item, new PartitionKey(pollId));
+        return await OkJson(req, new { success = true });
     }
 }
 
