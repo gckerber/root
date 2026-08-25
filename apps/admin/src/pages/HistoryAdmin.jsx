@@ -30,6 +30,7 @@ function newPollSection(order) {
     options: [''],
     photoUrl: '',
     allowCustom: false,
+    adminNote: '',
     enabled: true,
     order,
   }
@@ -156,6 +157,7 @@ function PollResponses({ section, adminKey }) {
   const [responses, setResponses] = useState(null)
   const [loading, setLoading]     = useState(true)
   const [resetting, setResetting] = useState(false)
+  const [deleting, setDeleting]   = useState(null)
 
   function load() {
     setLoading(true)
@@ -184,9 +186,19 @@ function PollResponses({ section, adminKey }) {
     setResetting(false)
   }
 
-  const total   = responses?.total ?? 0
-  const counts  = responses?.voteCounts ?? []
-  const custom  = responses?.publicCustom ?? []
+  async function handleDeleteResponse(id) {
+    if (!confirm('Delete this response?')) return
+    setDeleting(id)
+    try {
+      await fetch(`${API}/api/poll-responses?id=${id}&pollId=${section.id}`, { method: 'DELETE' })
+      load()
+    } catch {}
+    setDeleting(null)
+  }
+
+  const total  = responses?.total ?? 0
+  const counts = responses?.voteCounts ?? []
+  const custom = responses?.publicCustom ?? []
 
   return (
     <div className="mt-4 pt-4 border-t border-slate-700 space-y-4">
@@ -222,10 +234,23 @@ function PollResponses({ section, adminKey }) {
             <div className="pt-2 space-y-2">
               <p className="label text-slate-500">Written answers ({custom.length})</p>
               {custom.map((r, i) => (
-                <div key={i} className="bg-slate-800 rounded-lg p-3 border-l-2 border-yellow-500">
-                  <p className="text-slate-300 text-sm">"{r.text}"</p>
+                <div key={r.id ?? i} className="bg-slate-800 rounded-lg p-3 border-l-2 border-yellow-500">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-slate-300 text-sm">"{r.text}"</p>
+                    {r.id && (
+                      <button
+                        onClick={() => handleDeleteResponse(r.id)}
+                        disabled={deleting === r.id}
+                        className="btn-danger text-xs py-0.5 px-1.5 flex-shrink-0 disabled:opacity-40"
+                        title="Delete this response"
+                      >
+                        {deleting === r.id ? '…' : '✕'}
+                      </button>
+                    )}
+                  </div>
                   <p className="text-slate-600 text-xs mt-1">
                     — {r.name} · {r.isPublic ? 'public' : 'private'}
+                    {r.createdAt && <span className="ml-2 text-slate-700">{new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>}
                   </p>
                 </div>
               ))}
@@ -307,6 +332,17 @@ function PollEditor({ section, onChange, onUploadPollPhoto, uploadingPollPhoto, 
           </button>
           <input ref={photoRef} type="file" accept="image/*" onChange={(e) => onUploadPollPhoto(e, section.id)} className="hidden" />
         </div>
+      </div>
+
+      <div>
+        <label className="label">Admin Note <span className="text-slate-600 normal-case font-normal">(optional — shown publicly on the poll)</span></label>
+        <textarea
+          className="input mt-1 resize-none"
+          rows={2}
+          value={section.adminNote ?? ''}
+          onChange={e => onChange({ ...section, adminNote: e.target.value })}
+          placeholder="e.g. Thanks for the great feedback! We'll share results at the next council meeting."
+        />
       </div>
 
       <label className="flex items-center gap-3 cursor-pointer select-none">

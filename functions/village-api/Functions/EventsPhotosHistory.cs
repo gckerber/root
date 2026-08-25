@@ -325,7 +325,12 @@ public class PollResponseFunctions : FunctionBase
             {
                 if (r.OptionIndex >= 0 && r.OptionIndex < 20) voteCounts[r.OptionIndex]++;
                 if (r.OptionIndex < 0 && !string.IsNullOrWhiteSpace(r.CustomAnswer) && (r.IsPublic || admin))
-                    customResponses.Add(new { name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic });
+                {
+                    if (admin)
+                        customResponses.Add(new { id = r.Id, name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic, createdAt = r.CreatedAt });
+                    else
+                        customResponses.Add(new { name = r.Name ?? "Anonymous", text = r.CustomAnswer, isPublic = r.IsPublic });
+                }
             }
             return await OkJson(req, new { voteCounts, total = items.Count, publicCustom = customResponses });
         }

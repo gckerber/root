@@ -195,9 +195,18 @@ function PollSection({ section }) {
         </div>
 
         {/* Question */}
-        <h2 style={{ fontSize: 'clamp(1.25rem,3vw,1.75rem)', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginBottom: '1.5rem', lineHeight: 1.2 }}>
+        <h2 style={{ fontSize: 'clamp(1.25rem,3vw,1.75rem)', fontWeight: 900, letterSpacing: '-.03em', color: '#0f172a', marginBottom: section.adminNote ? '1rem' : '1.5rem', lineHeight: 1.2 }}>
           {section.question || 'What do you think?'}
         </h2>
+
+        {/* Admin note */}
+        {section.adminNote && (
+          <div style={{ marginBottom: '1.5rem', padding: '0.875rem 1rem', background: '#fefce8', border: '1px solid #fde68a', borderLeft: `3px solid ${GOLD}`, borderRadius: 8 }}>
+            <p style={{ fontSize: '0.875rem', color: '#92400e', lineHeight: 1.6, margin: 0 }}>
+              <strong style={{ fontWeight: 700 }}>From the Village: </strong>{section.adminNote}
+            </p>
+          </div>
+        )}
 
         {/* Options */}
         {!voted ? (
