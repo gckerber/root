@@ -1,4 +1,4 @@
-// apps/admin/src/pages/CalendarAdmin.jsx
+﻿// apps/admin/src/pages/CalendarAdmin.jsx
 // Manage village calendar events (excludes Police Department events — managed under PD section).
 // Supports multiple photos per event.
 import { useState, useEffect, useRef } from 'react'
@@ -53,13 +53,12 @@ function EventForm({ item, onSave, onCancel, adminKey }) {
       let finalPhotoUrl = photoUrl
       if (pendingFile) finalPhotoUrl = await uploadFile(pendingFile)
 
-      const dateObj = new Date(form.date)
-      const month = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`
+      const month = form.date.slice(0, 7)
 
       await onSave({
         ...form,
         month,
-        date: dateObj.toISOString(),
+        date: form.date + 'T12:00:00.000Z',
         photoUrl: finalPhotoUrl,
         department: 'village',
       })
@@ -248,10 +247,10 @@ export default function CalendarAdmin() {
                 <div className="p-4 flex gap-4">
                   <div className="w-12 h-12 bg-pink-600/20 rounded-xl flex flex-col items-center justify-center flex-shrink-0">
                     <span className="text-pink-400 text-xs font-medium leading-none">
-                      {format(parseISO(event.date), 'MMM')}
+                      {format(parseISO(event.date.slice(0, 10)), 'MMM')}
                     </span>
                     <span className="text-white font-bold text-lg leading-none">
-                      {format(parseISO(event.date), 'd')}
+                      {format(parseISO(event.date.slice(0, 10)), 'd')}
                     </span>
                   </div>
                   <div className="flex-grow min-w-0">
@@ -292,7 +291,7 @@ export default function CalendarAdmin() {
                 {past.map((event) => (
                   <div key={event.id} className="card p-3 flex gap-3 items-center">
                     <div className="text-slate-500 text-xs w-20 flex-shrink-0">
-                      {format(parseISO(event.date), 'MMM d, yyyy')}
+                      {format(parseISO(event.date.slice(0, 10)), 'MMM d, yyyy')}
                     </div>
                     <div className="text-slate-400 text-sm flex-grow truncate">{event.title}</div>
                     <button onClick={() => handleDelete(event)} className="btn-danger py-1 px-2 text-xs">

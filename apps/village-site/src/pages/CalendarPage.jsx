@@ -1,4 +1,4 @@
-// apps/village-site/src/pages/CalendarPage.jsx
+﻿// apps/village-site/src/pages/CalendarPage.jsx
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { MapPin, Clock, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react'
@@ -16,7 +16,7 @@ function useAllEvents() {
 }
 
 function EventCard({ event }) {
-  const date = parseISO(event.date)
+  const date = parseISO(event.date.slice(0, 10))
   // Support multiple photos: use first from photoUrls[], fallback to legacy photoUrl
   const thumbUrl = event.photoUrls?.[0] || event.photoUrl || null
   const extraCount = (event.photoUrls?.length || 0) > 1 ? event.photoUrls.length - 1 : 0
@@ -86,7 +86,7 @@ function EventCard({ event }) {
 }
 
 function PastEventRow({ event }) {
-  const date = parseISO(event.date)
+  const date = parseISO(event.date.slice(0, 10))
   return (
     <div className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
       <div className="w-12 text-center flex-shrink-0">
@@ -148,7 +148,7 @@ export default function CalendarPage() {
     const past = []
 
     events.forEach((e) => {
-      const d = parseISO(e.date)
+      const d = parseISO(e.date.slice(0, 10))
       if (d < today) {
         past.push(e)
       } else if (d < cutoff) {
