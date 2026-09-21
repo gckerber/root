@@ -9,17 +9,21 @@ const LABEL_STYLE = {
   color: '#94a3b8',
 }
 
+const STALE_TIME = 5 * 60 * 1000
+
 function useBulletins() {
   return useQuery({
     queryKey: ['bulletins'],
     queryFn: () => fetch('/api/bulletin').then((r) => r.json()),
+    staleTime: STALE_TIME,
   })
 }
 
 function useEvents() {
   return useQuery({
-    queryKey: ['events'],
+    queryKey: ['events', 'all'],
     queryFn: () => fetch('/api/events').then((r) => r.json()),
+    staleTime: STALE_TIME,
   })
 }
 
@@ -296,7 +300,7 @@ export default function CommunityBoard() {
   const { data: bulletins, isLoading: loadingBulletins } = useBulletins()
   const { data: events, isLoading: loadingEvents } = useEvents()
 
-  const isLoading = loadingBulletins || loadingEvents
+  const isLoading = loadingBulletins && loadingEvents
 
   const allItems = useMemo(() => {
     const bItems = (bulletins?.items || []).map((i) => ({ ...i, _type: i.category }))
