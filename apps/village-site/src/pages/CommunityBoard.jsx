@@ -300,7 +300,7 @@ export default function CommunityBoard() {
   const { data: bulletins, isLoading: loadingBulletins } = useBulletins()
   const { data: events, isLoading: loadingEvents } = useEvents()
 
-  const isLoading = loadingBulletins && loadingEvents
+  const isLoading = loadingBulletins || loadingEvents
 
   const allItems = useMemo(() => {
     const bItems = (bulletins?.items || []).map((i) => ({ ...i, _type: i.category }))
