@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '../api'
 
 const LABEL_STYLE = {
   fontSize: '10px',
@@ -13,23 +12,21 @@ const LABEL_STYLE = {
 function useBulletins() {
   return useQuery({
     queryKey: ['bulletins'],
-    queryFn: () => api.bulletin(),
-    staleTime: 3 * 60 * 1000,
+    queryFn: () => fetch('/api/bulletin').then((r) => r.json()),
   })
 }
 
 function useEvents() {
   return useQuery({
     queryKey: ['events'],
-    queryFn: () => api.events(),
-    staleTime: 3 * 60 * 1000,
+    queryFn: () => fetch('/api/events').then((r) => r.json()),
   })
 }
 
 function formatDay(dateStr) {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
-  return isNaN(d) ? '—' : d.getDate()
+  return isNaN(d) ? '—' : d.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' })
 }
 
 function formatMonthShort(dateStr) {
@@ -37,7 +34,7 @@ function formatMonthShort(dateStr) {
   const d = new Date(dateStr)
   return isNaN(d)
     ? ''
-    : d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()
+    : d.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' }).toUpperCase()
 }
 
 function formatDateMuted(dateStr) {
@@ -45,7 +42,7 @@ function formatDateMuted(dateStr) {
   const d = new Date(dateStr)
   return isNaN(d)
     ? ''
-    : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
 }
 
 // ---------------------------------------------------------------------------
@@ -59,20 +56,21 @@ function UrgentRow({ item }) {
       style={{
         background: '#7f1d1d',
         color: 'white',
-        padding: '1.25rem var(--px)',
+        padding: '1.25rem 4.5rem',
       }}
     >
-      {/* Tag + optional pinned */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
-        <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', background: '#991b1b', color: '#fca5a5', padding: '3px 8px', borderRadius: 2 }}>
-          URGENT
-        </span>
-        {item.pinned && (
-          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '3px' }}>
-            📌 Pinned
-          </span>
-        )}
-      </div>
+      <span
+        style={{
+          ...LABEL_STYLE,
+          color: '#fca5a5',
+          background: '#991b1b',
+          padding: '2px 8px',
+          borderRadius: 2,
+          flexShrink: 0,
+        }}
+      >
+        URGENT
+      </span>
       <span style={{ fontWeight: 700, fontSize: '1rem', color: 'white', flexGrow: 1 }}>
         {item.title}
       </span>
@@ -90,63 +88,58 @@ function EventPhotoRow({ item, index }) {
   const day = formatDay(item.date)
   const month = formatMonthShort(item.date)
   const bg = index % 2 === 0 ? 'white' : '#f8fafc'
-  const reversed = index % 2 === 1
-
-  const photo = (
-    <div className="mob-photo" style={{ width: '40%', flexShrink: 0, overflow: 'hidden' }}>
-      <img
-        src={photoUrl}
-        alt={item.title}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
-    </div>
-  )
-
-  const content = (
-    <div className="mob-full" style={{ flex: 1, padding: '2rem 3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
-      <span style={LABEL_STYLE}>EVENT</span>
-
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-        <span style={{ fontSize: '3rem', fontWeight: 900, color: '#1e3a5f', lineHeight: 1 }}>
-          {day}
-        </span>
-        <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>{month}</span>
-      </div>
-
-      <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-        {item.title}
-      </h2>
-
-      {(item.location || item.time) && (
-        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: '#64748b' }}>
-          {item.location && <span>{item.location}</span>}
-          {item.time && <span>{item.time}</span>}
-        </div>
-      )}
-
-      {item.description && (
-        <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0, lineHeight: 1.6, WebkitLineClamp: 3, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {item.description}
-        </p>
-      )}
-
-      {item.link && (
-        <a
-          href={item.link}
-          style={{ fontSize: '0.875rem', color: '#1e3a5f', fontWeight: 600, marginTop: '0.25rem', textDecoration: 'none' }}
-        >
-          Learn more →
-        </a>
-      )}
-    </div>
-  )
 
   return (
     <div
-      className="flex items-stretch border-t mob-stack"
+      className="flex items-stretch border-t"
       style={{ borderColor: '#f1f5f9', minHeight: 280, background: bg }}
     >
-      {reversed ? <>{content}{photo}</> : <>{photo}{content}</>}
+      {/* Photo */}
+      <div style={{ width: '40%', flexShrink: 0, overflow: 'hidden' }}>
+        <img
+          src={photoUrl}
+          alt={item.title}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: '2rem 3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
+        <span style={LABEL_STYLE}>EVENT</span>
+
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+          <span style={{ fontSize: '3rem', fontWeight: 900, color: '#1e3a5f', lineHeight: 1 }}>
+            {day}
+          </span>
+          <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>{month}</span>
+        </div>
+
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+          {item.title}
+        </h2>
+
+        {(item.location || item.time) && (
+          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: '#64748b' }}>
+            {item.location && <span>{item.location}</span>}
+            {item.time && <span>{item.time}</span>}
+          </div>
+        )}
+
+        {item.description && (
+          <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0, lineHeight: 1.6, WebkitLineClamp: 3, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {item.description}
+          </p>
+        )}
+
+        {item.link && (
+          <a
+            href={item.link}
+            style={{ fontSize: '0.875rem', color: '#1e3a5f', fontWeight: 600, marginTop: '0.25rem', textDecoration: 'none' }}
+          >
+            Learn more →
+          </a>
+        )}
+      </div>
     </div>
   )
 }
@@ -159,7 +152,7 @@ function EventNoPhotoRow({ item, index }) {
   return (
     <div
       className="flex items-center border-t"
-      style={{ borderColor: '#f1f5f9', padding: '1.5rem var(--px)', gap: '2rem', background: bg }}
+      style={{ borderColor: '#f1f5f9', padding: '1.5rem 4.5rem', gap: '2rem', background: bg }}
     >
       {/* Big date */}
       <div style={{ textAlign: 'center', flexShrink: 0, width: 56 }}>
@@ -212,30 +205,25 @@ function NoticeRow({ item }) {
   return (
     <div
       className="flex items-start border-t"
-      style={{ borderColor: '#f1f5f9', padding: '1.25rem var(--px)', gap: '1.5rem' }}
+      style={{ borderColor: '#f1f5f9', padding: '1.25rem 4.5rem', gap: '1.5rem' }}
     >
-      {/* Category tag + pinned badge */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0, marginTop: 2 }}>
-        <span
-          style={{
-            fontSize: '10px',
-            fontWeight: 700,
-            letterSpacing: '.1em',
-            textTransform: 'uppercase',
-            background: catColor.bg,
-            color: catColor.text,
-            padding: '3px 8px',
-            borderRadius: 3,
-          }}
-        >
-          {catLabel}
-        </span>
-        {item.pinned && (
-          <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '3px' }}>
-            📌 Pinned
-          </span>
-        )}
-      </div>
+      {/* Category tag */}
+      <span
+        style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          letterSpacing: '.1em',
+          textTransform: 'uppercase',
+          background: catColor.bg,
+          color: catColor.text,
+          padding: '3px 8px',
+          borderRadius: 3,
+          flexShrink: 0,
+          marginTop: 2,
+        }}
+      >
+        {catLabel}
+      </span>
 
       {/* Content */}
       <div style={{ flexGrow: 1 }}>
@@ -283,7 +271,7 @@ function SkeletonRows() {
         <div
           key={n}
           className="flex items-center border-t animate-pulse"
-          style={{ borderColor: '#f1f5f9', padding: '1.5rem var(--px)', gap: '2rem' }}
+          style={{ borderColor: '#f1f5f9', padding: '1.5rem 4.5rem', gap: '2rem' }}
         >
           <div style={{ width: 48, height: 56, background: '#e2e8f0', borderRadius: 4, flexShrink: 0 }} />
           <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -303,6 +291,7 @@ function SkeletonRows() {
 
 export default function CommunityBoard() {
   const [filter, setFilter] = useState('all')
+  const [sort, setSort] = useState('newest')
 
   const { data: bulletins, isLoading: loadingBulletins } = useBulletins()
   const { data: events, isLoading: loadingEvents } = useEvents()
@@ -313,14 +302,13 @@ export default function CommunityBoard() {
     const bItems = (bulletins?.items || []).map((i) => ({ ...i, _type: i.category }))
     const eItems = (events?.items || []).map((i) => ({ ...i, _type: 'event' }))
     const merged = [...bItems, ...eItems]
-    merged.sort((a, b) => {
-      const aUrgent = a.category === 'urgent' ? 1 : 0
-      const bUrgent = b.category === 'urgent' ? 1 : 0
-      if (bUrgent !== aUrgent) return bUrgent - aUrgent
-      return new Date(b.date) - new Date(a.date)
-    })
+    merged.sort((a, b) =>
+      sort === 'newest'
+        ? new Date(b.date) - new Date(a.date)
+        : new Date(a.date) - new Date(b.date)
+    )
     return merged
-  }, [bulletins, events])
+  }, [bulletins, events, sort])
 
   const visibleItems = useMemo(() => {
     if (filter === 'all') return allItems
@@ -380,7 +368,7 @@ export default function CommunityBoard() {
   return (
     <div>
       {/* Section heading */}
-      <div style={{ padding: '2.5rem var(--px)' }}>
+      <div style={{ padding: '2.5rem 4.5rem' }}>
         <p style={LABEL_STYLE}>COMMUNITY &middot; VILLAGE OF OHIO</p>
         <h1
           style={{
@@ -397,31 +385,13 @@ export default function CommunityBoard() {
         <p style={{ color: '#94a3b8', fontSize: '0.9375rem', margin: 0 }}>{today}</p>
       </div>
 
-      {/* Community Center Rental */}
-      <div style={{ background: '#f8fafc', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '1.25rem var(--px)', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: '#1e3a5f', borderRadius: 4, flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-        </div>
-        <div>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1e3a5f', margin: 0, textTransform: 'uppercase', letterSpacing: '.08em' }}>Community Center Rental</p>
-          <p style={{ fontSize: '0.9375rem', color: '#475569', margin: '0.125rem 0 0' }}>
-            To schedule the Community Center for rental, contact Gwen at{' '}
-            <a href="tel:7407452996" style={{ color: '#1e3a5f', fontWeight: 700, textDecoration: 'none' }}>(740) 745-2996</a>.
-          </p>
-        </div>
-      </div>
-
       {/* Filter bar */}
       <div
-        className="flex items-center gap-3 border-t border-b mob-scroll"
+        className="flex items-center gap-3 border-t border-b"
         style={{
-          padding: '1rem var(--px)',
+          padding: '1rem 4.5rem',
           borderColor: '#f1f5f9',
           background: '#f8fafc',
-          minWidth: 0,
         }}
       >
         <button
@@ -461,6 +431,38 @@ export default function CommunityBoard() {
           Notices ({noticeCount})
         </button>
 
+        {/* Sort toggle — pushed to the right */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+          <button
+            onClick={() => setSort('newest')}
+            style={{
+              padding: '0.5rem 1rem',
+              fontSize: '0.8125rem',
+              fontWeight: sort === 'newest' ? 700 : 500,
+              color: sort === 'newest' ? '#fff' : '#475569',
+              background: sort === 'newest' ? '#1e3a5f' : '#fff',
+              border: 'none',
+              cursor: 'pointer',
+              borderRight: '1px solid #e2e8f0',
+            }}
+          >
+            ↓ Newest
+          </button>
+          <button
+            onClick={() => setSort('oldest')}
+            style={{
+              padding: '0.5rem 1rem',
+              fontSize: '0.8125rem',
+              fontWeight: sort === 'oldest' ? 700 : 500,
+              color: sort === 'oldest' ? '#fff' : '#475569',
+              background: sort === 'oldest' ? '#1e3a5f' : '#fff',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            ↑ Oldest
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -468,52 +470,15 @@ export default function CommunityBoard() {
         <SkeletonRows />
       ) : visibleItems.length === 0 ? (
         <div
-          style={{ textAlign: 'center', padding: '4rem var(--px)', color: '#64748b', fontSize: '1rem' }}
+          style={{ textAlign: 'center', padding: '4rem 4.5rem', color: '#64748b', fontSize: '1rem' }}
         >
           No items to show.
         </div>
       ) : (
         <div>
-          {(() => {
-            const now = new Date()
-            const urgent = visibleItems.filter((i) => i.category === 'urgent')
-            const nonUrgent = visibleItems.filter((i) => i.category !== 'urgent')
-            const upcoming = nonUrgent
-              .filter((i) => !i.date || new Date(i.date) >= now)
-              .sort((a, b) => new Date(a.date) - new Date(b.date))
-            const past = nonUrgent.filter((i) => i.date && new Date(i.date) < now)
-            return (
-              <>
-                {urgent.map((item, index) => (
-                  <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={index} />
-                ))}
-                {upcoming.map((item, index) => (
-                  <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={urgent.length + index} />
-                ))}
-                {past.length > 0 && (
-                  <>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      padding: '1.25rem var(--px)',
-                      background: '#f8fafc',
-                      borderTop: '1px solid #e2e8f0',
-                      borderBottom: '1px solid #e2e8f0',
-                    }}>
-                      <span style={{ ...LABEL_STYLE, color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                        Past Events &amp; Notices
-                      </span>
-                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
-                    </div>
-                    {past.map((item, index) => (
-                      <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={urgent.length + upcoming.length + index} />
-                    ))}
-                  </>
-                )}
-              </>
-            )
-          })()}
+          {visibleItems.map((item, index) => (
+            <ItemRow key={`${item._type || item.category}-${item.id}`} item={item} index={index} />
+          ))}
         </div>
       )}
     </div>
