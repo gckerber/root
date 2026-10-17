@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
 
-const NAVY = '#1e3a5f'
+const NAVY = 'var(--c-primary)'
 const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
 
 function initials(name) {
@@ -175,7 +175,7 @@ export default function Officials() {
 
       {/* Hero */}
       <div style={{ position: 'relative', minHeight: 300, display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--c-primary) 0%, #0f172a 100%)' }} />
         <img src="https://picsum.photos/seed/officials-hero/1600/700" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: .2 }} />
         <div style={{ position: 'relative', padding: '3.5rem var(--px)', zIndex: 1 }}>
           <p style={{ ...LABEL, color: '#93c5fd', marginBottom: '1rem' }}>Your elected leaders</p>

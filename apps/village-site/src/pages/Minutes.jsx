@@ -52,7 +52,7 @@ function DocIcon() {
         fill="#cbd5e1"
       />
       <path d="M19 10l5 5h-5V10z" fill="#94a3b8" />
-      <rect x="6" y="22" width="20" height="10" rx="2" fill="#1e3a5f" />
+      <rect x="6" y="22" width="20" height="10" rx="2" style={{ fill: 'var(--c-primary)' }} />
       <text x="16" y="30" textAnchor="middle" fill="white" fontSize="5.5" fontWeight="700">
         DOC
       </text>
@@ -78,7 +78,7 @@ function MinuteRow({ doc, altBg }) {
         <div className="flex-shrink-0 w-16 text-center">
           <div
             className="leading-none"
-            style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1e3a5f' }}
+            style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--c-primary)' }}
           >
             {d.day}
           </div>
@@ -140,7 +140,7 @@ function MinuteRow({ doc, altBg }) {
               <button
                 onClick={() => setOpen((v) => !v)}
                 className="flex items-center gap-1 font-semibold hover:underline"
-                style={{ fontSize: '0.8125rem', color: '#1e3a5f' }}
+                style={{ fontSize: '0.8125rem', color: 'var(--c-primary)' }}
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transition: 'transform 0.15s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>
                   <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -160,7 +160,7 @@ function MinuteRow({ doc, altBg }) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-bold hover:underline"
-              style={{ color: '#1e3a5f' }}
+              style={{ color: 'var(--c-primary)' }}
             >
               Download
             </a>
@@ -181,7 +181,7 @@ function MinuteRow({ doc, altBg }) {
             overflowY: 'auto',
           }}
         >
-          <div style={{ ...LABEL_STYLE, color: '#1e3a5f', marginBottom: '0.75rem' }}>
+          <div style={{ ...LABEL_STYLE, color: 'var(--c-primary)', marginBottom: '0.75rem' }}>
             Full Transcript of Proceedings
           </div>
           <pre
@@ -263,7 +263,7 @@ export default function Minutes() {
         </div>
         <h1
           className="tracking-tight"
-          style={{ fontSize: '3rem', fontWeight: 900, color: '#1e3a5f', lineHeight: 1.05 }}
+          style={{ fontSize: '3rem', fontWeight: 900, color: 'var(--c-primary)', lineHeight: 1.05 }}
         >
           Council Minutes &amp; Records
         </h1>
@@ -274,7 +274,7 @@ export default function Minutes() {
       </div>
 
       {/* 2. Upcoming meetings band */}
-      <div style={{ backgroundColor: '#1e3a5f', padding: '2rem var(--px)' }}>
+      <div style={{ backgroundColor: 'var(--c-primary)', padding: '2rem var(--px)' }}>
         <div
           style={{
             fontSize: '10px',
@@ -359,8 +359,8 @@ export default function Minutes() {
               onClick={() => setYear(y)}
               className={
                 active
-                  ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-6 py-4 text-sm'
-                  : 'text-slate-500 px-6 py-4 text-sm hover:text-[#1e3a5f]'
+                  ? 'border-b-2 border-[color:var(--c-primary)] text-[color:var(--c-primary)] font-bold px-6 py-4 text-sm'
+                  : 'text-slate-500 px-6 py-4 text-sm hover:text-[color:var(--c-primary)]'
               }
               style={{ paddingLeft: y === yearTabs[0] ? 'var(--px)' : undefined }}
             >
@@ -377,7 +377,7 @@ export default function Minutes() {
             type="checkbox"
             checked={hideDraftPast}
             onChange={(e) => setHideDraftPast(e.target.checked)}
-            className="accent-[#1e3a5f]"
+            className="accent-[color:var(--c-primary)]"
           />
           Hide unapproved past
         </label>

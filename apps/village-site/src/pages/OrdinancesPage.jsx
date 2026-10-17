@@ -109,7 +109,7 @@ function DocumentRow({ item, index }) {
         </div>
 
         {/* Row 2: title */}
-        <div className="font-bold text-[0.9375rem] text-[#1e3a5f] leading-snug">
+        <div className="font-bold text-[0.9375rem] text-[color:var(--c-primary)] leading-snug">
           {item.title}
         </div>
 
@@ -134,7 +134,7 @@ function DocumentRow({ item, index }) {
           target="_blank"
           rel="noopener noreferrer"
           download
-          className="text-[#1e3a5f] text-sm font-bold hover:underline flex-shrink-0"
+          className="text-[color:var(--c-primary)] text-sm font-bold hover:underline flex-shrink-0"
         >
           Download
         </a>
@@ -198,7 +198,7 @@ export default function OrdinancesPage() {
       <div className="py-[2.5rem] border-b border-[#f1f5f9]" style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}>
         <p style={LABEL_STYLE} className="mb-3">Official Records</p>
         <h1
-          className="font-black tracking-tight text-[#1e3a5f] leading-none mb-3"
+          className="font-black tracking-tight text-[color:var(--c-primary)] leading-none mb-3"
           style={{ fontSize: 'clamp(1.75rem, 5vw, 3rem)' }}
         >
           Ordinances &amp; Documents
@@ -216,8 +216,8 @@ export default function OrdinancesPage() {
             onClick={() => setCat(id)}
             className={
               cat === id
-                ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-5 py-4 text-sm'
-                : 'text-slate-500 px-5 py-4 text-sm hover:text-[#1e3a5f]'
+                ? 'border-b-2 border-[color:var(--c-primary)] text-[color:var(--c-primary)] font-bold px-5 py-4 text-sm'
+                : 'text-slate-500 px-5 py-4 text-sm hover:text-[color:var(--c-primary)]'
             }
           >
             {label}
@@ -237,7 +237,7 @@ export default function OrdinancesPage() {
       <div className="flex items-center gap-0 border-b border-[#f1f5f9] bg-[#f8fafc] mob-scroll" style={{ paddingLeft: 'var(--px)' }}>
         <button
           onClick={() => setYear('all')}
-          className={year === 'all' ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-5 py-3 text-sm' : 'text-slate-500 px-5 py-3 text-sm hover:text-[#1e3a5f]'}
+          className={year === 'all' ? 'border-b-2 border-[color:var(--c-primary)] text-[color:var(--c-primary)] font-bold px-5 py-3 text-sm' : 'text-slate-500 px-5 py-3 text-sm hover:text-[color:var(--c-primary)]'}
         >
           All Years
         </button>
@@ -245,7 +245,7 @@ export default function OrdinancesPage() {
           <button
             key={y}
             onClick={() => setYear(y)}
-            className={year === y ? 'border-b-2 border-[#1e3a5f] text-[#1e3a5f] font-bold px-5 py-3 text-sm' : 'text-slate-500 px-5 py-3 text-sm hover:text-[#1e3a5f]'}
+            className={year === y ? 'border-b-2 border-[color:var(--c-primary)] text-[color:var(--c-primary)] font-bold px-5 py-3 text-sm' : 'text-slate-500 px-5 py-3 text-sm hover:text-[color:var(--c-primary)]'}
           >
             {y}
           </button>
@@ -266,7 +266,7 @@ export default function OrdinancesPage() {
             <div className="py-3 bg-[#f8fafc] border-t border-[#f1f5f9]" style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}>
               <span
                 className="text-xs font-bold tracking-wider uppercase"
-                style={{ color: '#1e3a5f' }}
+                style={{ color: 'var(--c-primary)' }}
               >
                 {year}
               </span>

@@ -8,6 +8,7 @@ export default function HeroCarousel({
   children,             // overlay content (text, CTAs, header, etc.)
   heightClass = 'h-[65vh] min-h-[480px] max-h-[800px]',
   gradient = 'bg-gradient-to-t from-blue-950/80 via-blue-900/30 to-transparent',
+  gradientStyle = undefined,   // optional inline gradient (seasonal themes)
 }) {
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -52,7 +53,7 @@ export default function HeroCarousel({
       ) : null}
 
       {/* Gradient overlay */}
-      <div className={`absolute inset-0 ${gradient}`} />
+      <div className={gradientStyle ? 'absolute inset-0' : `absolute inset-0 ${gradient}`} style={gradientStyle ? { background: gradientStyle } : undefined} />
 
       {/* Overlay content */}
       {children && (

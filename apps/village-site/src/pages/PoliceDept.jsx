@@ -4,8 +4,8 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api'
 import HeroCarousel from '../components/HeroCarousel'
 
-const NAVY  = '#1e3a5f'
-const GOLD  = '#fbbf24'
+const NAVY  = 'var(--c-primary)'
+const GOLD  = 'var(--c-accent)'
 const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
 
 // ─── small helpers ────────────────────────────────────────────────────────────

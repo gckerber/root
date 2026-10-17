@@ -6,8 +6,8 @@ import { api } from '../api'
 const BASE = import.meta.env.VITE_API_BASE_URL || 'https://func-village-prod.azurewebsites.net'
 
 const LABEL = { fontSize: '10px', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#94a3b8' }
-const BLUE  = '#1e3a5f'
-const GOLD  = '#f59e0b'
+const BLUE  = 'var(--c-primary)'
+const GOLD  = 'var(--c-accent)'
 
 // ── Data helpers ──────────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ function EraSection({ section, index }) {
     <div style={{ width: 'min(46%,100%)', overflow: 'hidden', flexShrink: 0 }}>
       {section.mainPhotoUrl
         ? <img src={section.mainPhotoUrl} alt={section.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a5f 0%,#0f172a 100%)', minHeight: 300 }} />}
+        : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,var(--c-primary) 0%,#0f172a 100%)', minHeight: 300 }} />}
     </div>
   )
   return (
@@ -348,7 +348,7 @@ function PollSection({ section }) {
                       <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '4px 0 0', fontWeight: 600 }}>— {r.name}</p>
                       {r.adminReply && (
                         <div style={{ marginTop: '0.625rem', paddingLeft: '0.75rem', borderLeft: `2px solid ${BLUE}` }}>
-                          <p style={{ fontSize: '0.8125rem', color: '#1e3a5f', lineHeight: 1.5, margin: 0 }}>
+                          <p style={{ fontSize: '0.8125rem', color: 'var(--c-primary)', lineHeight: 1.5, margin: 0 }}>
                             <strong style={{ fontWeight: 700, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Village reply: </strong>
                             {r.adminReply}
                           </p>

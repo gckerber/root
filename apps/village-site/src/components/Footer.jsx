@@ -1,19 +1,24 @@
 // apps/village-site/src/components/Footer.jsx
 import { Link } from 'react-router-dom'
+import { SeasonStrip } from '../theme/SeasonDecor'
+import { useSeason } from '../theme/ThemeProvider'
 
 const pageLinks = [
   { to: '/',           label: 'Home' },
-  { to: '/community',  label: 'Community Board' },
+  { to: '/#happening', label: 'Events' },
+  { to: '/#notices',   label: 'Notices' },
   { to: '/minutes',    label: 'Council Minutes' },
   { to: '/officials',  label: 'Officials' },
   { to: '/police',     label: 'Police Dept.' },
   { to: '/ordinances', label: 'Ordinances' },
-  { to: '/history',    label: 'History' },
+  { to: '/fun-stuff',  label: 'Fun Stuff' },
 ]
 
 export default function Footer() {
+  const season = useSeason()
   return (
-    <footer className="bg-[#0f172a]">
+    <footer className="bg-[color:var(--c-ink)]">
+      <SeasonStrip flip height={26} />
       <div
         className="flex flex-wrap gap-10 py-12"
         style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}
@@ -21,7 +26,7 @@ export default function Footer() {
         {/* Column 1 — Brand + address */}
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 bg-[#1e3a5f] flex items-center justify-center text-white text-sm font-black flex-shrink-0">
+            <div className="w-9 h-9 bg-[color:var(--c-primary)] flex items-center justify-center text-white text-sm font-black flex-shrink-0">
               SL
             </div>
             <div>
@@ -84,7 +89,7 @@ export default function Footer() {
         className="border-t border-slate-800 mt-0 pt-6 pb-6 flex flex-wrap gap-2 justify-between text-xs text-slate-600"
         style={{ paddingLeft: 'var(--px)', paddingRight: 'var(--px)' }}
       >
-        <span>© 2026 Village of Saint Louisville, Ohio. All rights reserved.</span>
+        <span>© 2026 Village of Saint Louisville, Ohio. All rights reserved. {season.greeting}.</span>
         <span>Built &amp; maintained by George Kerber, Tech Czar</span>
       </div>
     </footer>
