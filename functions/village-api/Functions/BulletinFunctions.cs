@@ -18,6 +18,12 @@ public class BulletinFunctions : FunctionBase
     public BulletinFunctions(CosmosService cosmos, ILogger<BulletinFunctions> logger)
         : base(logger) => _cosmos = cosmos;
 
+    // Expiry is a calendar date (yyyy-MM-dd); the notice is shown through the end of that day.
+    private static string? NormalizeExpiry(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && DateOnly.TryParse(value.Trim()[..Math.Min(10, value.Trim().Length)], out var d)
+            ? d.ToString("yyyy-MM-dd")
+            : null;
+
     [Function("GetBulletins")]
     public async Task<HttpResponseData> Get(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "options", Route = "bulletin")] HttpRequestData req)
@@ -80,6 +86,7 @@ public class BulletinFunctions : FunctionBase
             Category = category,
             Pinned = body.Pinned,
             Link = body.Link?.Trim(),
+            ExpiresAt = NormalizeExpiry(body.ExpiresAt),
             Date = DateTime.UtcNow.ToString("o"),
             CreatedAt = DateTime.UtcNow.ToString("o")
         };
@@ -126,6 +133,7 @@ public class BulletinFunctions : FunctionBase
                 Category = newCategory,
                 Pinned = body.Pinned,
                 Link = body.Link?.Trim(),
+            ExpiresAt = NormalizeExpiry(body.ExpiresAt),
                 Date = existing.Date,
                 CreatedAt = existing.CreatedAt
             };
@@ -138,6 +146,7 @@ public class BulletinFunctions : FunctionBase
         existing.Body = body.Body?.Trim() ?? existing.Body;
         existing.Pinned = body.Pinned;
         existing.Link = body.Link?.Trim();
+        existing.ExpiresAt = NormalizeExpiry(body.ExpiresAt);
 
         var updated = await _cosmos.ReplaceAsync(Container, id, existing, new PartitionKey(existing.Category));
         return await OkJson(req, updated);

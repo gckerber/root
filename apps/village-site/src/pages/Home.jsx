@@ -1,14 +1,16 @@
 // apps/village-site/src/pages/Home.jsx
-// Home + Community Board in one page: hero, urgent notices, seasonal events, notice board, contact.
+// Home + Community in one page: hero, village bulletin board, seasonal events, contact.
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { MapPin, Phone, Mail, ArrowRight, Clock, ChevronDown, ChevronUp, Pin } from 'lucide-react'
+import { MapPin, Phone, Mail, ArrowRight, Clock, ChevronDown, ChevronUp } from 'lucide-react'
 import { api } from '../api'
 import HeroCarousel from '../components/HeroCarousel'
 import { useSeason } from '../theme/ThemeProvider'
 import { HeroScene } from '../theme/SeasonDecor'
 import { seasonEndDate } from '../theme/seasons'
+import BulletinBoard from '../components/BulletinBoard'
+import { activeNotices } from '../utils/bulletin'
 
 // ─── Design tokens (all driven by the active season, see src/theme/seasons.js) ──
 const PRIMARY = 'var(--c-primary)'
@@ -79,32 +81,6 @@ function SectionHeader({ id, eyebrow, title, right }) {
         </h2>
       </div>
       {right}
-    </div>
-  )
-}
-
-function UrgentBand({ items }) {
-  if (!items.length) return null
-  return (
-    <div style={{ background: '#7f1d1d' }}>
-      {items.map((item, i) => (
-        <div
-          key={item.id}
-          className="flex flex-wrap items-center gap-x-4 gap-y-1"
-          style={{ padding: '0.875rem var(--px)', borderTop: i ? '1px solid rgba(255,255,255,.12)' : 'none' }}
-        >
-          <span style={{ ...LABEL_STYLE, color: '#fca5a5', background: '#991b1b', padding: '2px 8px', borderRadius: 2, flexShrink: 0 }}>
-            Urgent
-          </span>
-          <span style={{ fontWeight: 700, color: '#fff', fontSize: '.95rem' }}>{item.title}</span>
-          {item.body && <span style={{ color: '#fecaca', fontSize: '.85rem' }}>{item.body}</span>}
-          {item.link && (
-            <a href={item.link} style={{ color: '#fff', fontWeight: 700, fontSize: '.8125rem', textDecoration: 'underline' }}>
-              Details
-            </a>
-          )}
-        </div>
-      ))}
     </div>
   )
 }
@@ -225,36 +201,6 @@ function EventRow({ event, muted = false }) {
   )
 }
 
-function NoticeRow({ item }) {
-  const cat = (item.category || 'general').toLowerCase()
-  const tag = cat === 'notice' ? { bg: '#eff6ff', text: '#1d4ed8' } : { bg: '#f1f5f9', text: '#475569' }
-  return (
-    <div className="flex flex-wrap items-start" style={{ borderTop: `1px solid ${DIV}`, padding: '1.25rem var(--px)', gap: '.75rem 1.5rem' }}>
-      <span
-        style={{
-          fontSize: '10px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
-          background: tag.bg, color: tag.text, padding: '3px 8px', borderRadius: 3, flexShrink: 0, marginTop: 3,
-        }}
-      >
-        {cat}
-      </span>
-      <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-        <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: '0 0 .25rem' }}>
-          {item.pinned && <Pin size={13} style={{ display: 'inline', marginRight: 6, color: 'var(--c-brand)', verticalAlign: '-1px' }} />}
-          {item.title}
-        </h3>
-        {item.body && <p style={{ fontSize: '.9rem', color: SLATE, margin: '0 0 .5rem', lineHeight: 1.6 }}>{item.body}</p>}
-        {item.link && (
-          <a href={item.link} style={{ fontSize: '.8125rem', color: PRIMARY, fontWeight: 700 }}>
-            {item.link.startsWith('mailto:') ? 'Send an email' : 'Learn more'} →
-          </a>
-        )}
-      </div>
-      <span style={{ ...LABEL_STYLE, flexShrink: 0, marginTop: 4 }}>{formatLong(item.date)}</span>
-    </div>
-  )
-}
-
 // ─── Main page ───────────────────────────────────────────────────────────────
 export default function Home() {
   const season = useSeason()
@@ -278,13 +224,7 @@ export default function Home() {
     [imagesData]
   )
 
-  const { urgent, notices } = useMemo(() => {
-    const all = bulletinData?.items || []
-    return {
-      urgent: all.filter((i) => i.category === 'urgent'),
-      notices: all.filter((i) => i.category !== 'urgent'),
-    }
-  }, [bulletinData])
+  const notices = useMemo(() => activeNotices(bulletinData?.items), [bulletinData])
 
   const { seasonEvents, laterEvents, pastEvents } = useMemo(() => {
     const today = localISO(new Date())
@@ -358,7 +298,7 @@ export default function Home() {
         </div>
       </HeroCarousel>
 
-      <UrgentBand items={urgent} />
+      <BulletinBoard items={notices} loading={bulletinLoading} error={bulletinError} />
 
       {/* ── Events ── */}
       <SectionHeader
@@ -426,22 +366,6 @@ export default function Home() {
           {showPast && pastEvents.map((e) => <EventRow key={e.id} event={e} muted />)}
         </div>
       )}
-
-      {/* ── Notices ── */}
-      <SectionHeader id="notices" eyebrow="From the Village" title="Notice Board" />
-
-      {bulletinLoading && (
-        <div style={{ padding: '0 var(--px) 2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <Pulse style={{ height: 18, width: '55%' }} /><Pulse style={{ height: 13, width: '80%' }} /><Pulse style={{ height: 18, width: '45%' }} />
-        </div>
-      )}
-      {bulletinError && (
-        <p style={{ padding: '0 var(--px) 2.5rem', color: SLATE }}>Notices are temporarily unavailable. Please check back soon.</p>
-      )}
-      {!bulletinLoading && !bulletinError && notices.length === 0 && (
-        <p style={{ padding: '0 var(--px) 2.5rem', color: SLATE }}>No notices right now.</p>
-      )}
-      {notices.map((item) => <NoticeRow key={item.id} item={item} />)}
 
       {/* ── Quick links row ── */}
       <div className="flex flex-wrap" style={{ borderTop: `1px solid ${DIV}`, borderBottom: `1px solid ${DIV}`, marginTop: '2.5rem' }}>

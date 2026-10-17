@@ -6,8 +6,8 @@ import { SeasonStrip } from '../theme/SeasonDecor'
 
 const links = [
   { to: '/',           label: 'Home',       end: true },
-  { to: '/#happening', label: 'Events',     hash: true },
   { to: '/#notices',   label: 'Notices',    hash: true },
+  { to: '/#happening', label: 'Events',     hash: true },
   { to: '/minutes',    label: 'Minutes' },
   { to: '/officials',  label: 'Officials' },
   { to: '/police',     label: 'Police' },

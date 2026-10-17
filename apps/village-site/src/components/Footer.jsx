@@ -5,8 +5,8 @@ import { useSeason } from '../theme/ThemeProvider'
 
 const pageLinks = [
   { to: '/',           label: 'Home' },
-  { to: '/#happening', label: 'Events' },
   { to: '/#notices',   label: 'Notices' },
+  { to: '/#happening', label: 'Events' },
   { to: '/minutes',    label: 'Council Minutes' },
   { to: '/officials',  label: 'Officials' },
   { to: '/police',     label: 'Police Dept.' },

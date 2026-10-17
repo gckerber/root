@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Save, X, Pin, Megaphone } from 'lucide-react'
 import { useAuth, useToast } from '../utils/context'
-import { formatDistanceToNow, parseISO } from 'date-fns'
+import { formatDistanceToNow, parseISO, addDays, format } from 'date-fns'
 
 const API = 'https://func-village-prod.azurewebsites.net'
 
@@ -14,8 +14,15 @@ const CAT_COLORS = {
   urgent: 'bg-red-600/20 text-red-400',
 }
 
+// Expiration is a calendar date; the notice stays on the home page bulletin board through the end of that day.
+const todayISO = () => format(new Date(), 'yyyy-MM-dd')
+const isExpired = (item) => !!item.expiresAt && item.expiresAt.slice(0, 10) < todayISO()
+
 function BulletinForm({ item, onSave, onCancel }) {
-  const [form, setForm] = useState(item || { title: '', body: '', category: 'notice', pinned: false, link: '' })
+  const [form, setForm] = useState(item || {
+    title: '', body: '', category: 'notice', pinned: false, link: '',
+    expiresAt: format(addDays(new Date(), 14), 'yyyy-MM-dd'),
+  })
   const f = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }))
 
   return (
@@ -48,6 +55,16 @@ function BulletinForm({ item, onSave, onCancel }) {
           <input className="input" type="url" value={form.link || ''} onChange={f('link')}
             placeholder="https://..." />
         </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label className="label">Take down after (optional)</label>
+          <input className="input" type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ''}
+            onChange={f('expiresAt')} />
+        </div>
+        <p className="text-slate-500 text-xs self-end pb-2">
+          Leave blank to keep it up until you remove it. The home page board shows the 3 most important active notices.
+        </p>
       </div>
       <label className="flex items-center gap-3 cursor-pointer">
         <input type="checkbox" checked={form.pinned}
@@ -158,7 +175,7 @@ export default function BulletinAdmin() {
           editingId === item.id ? (
             <BulletinForm key={item.id} item={item} onSave={handleSave} onCancel={() => setEditingId(null)} />
           ) : (
-            <div key={item.id} className={`card p-4 ${item.pinned ? 'border-yellow-600/30' : ''}`}>
+            <div key={item.id} className={`card p-4 ${item.pinned ? 'border-yellow-600/30' : ''} ${isExpired(item) ? 'opacity-60' : ''}`}>
               <div className="flex items-start gap-3">
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -169,6 +186,11 @@ export default function BulletinAdmin() {
                     <span className="text-slate-600 text-xs">
                       {formatDistanceToNow(parseISO(item.date), { addSuffix: true })}
                     </span>
+                    {item.expiresAt && (
+                      <span className={`badge ${isExpired(item) ? 'bg-red-600/20 text-red-400' : 'bg-slate-600/20 text-slate-400'}`}>
+                        {isExpired(item) ? 'Expired' : 'Expires'} {format(parseISO(item.expiresAt.slice(0, 10)), 'MMM d')}
+                      </span>
+                    )}
                   </div>
                   <div className="text-white font-medium">{item.title}</div>
                   <div className="text-slate-400 text-sm mt-0.5 line-clamp-2">{item.body}</div>

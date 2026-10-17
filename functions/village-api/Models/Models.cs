@@ -26,6 +26,8 @@ public class Bulletin
     public bool Pinned { get; set; }
     [JsonPropertyName("link")]
     public string? Link { get; set; }
+    [JsonPropertyName("expiresAt")]
+    public string? ExpiresAt { get; set; }
     [JsonPropertyName("date")]
     public string Date { get; set; } = DateTime.UtcNow.ToString("o");
     [JsonPropertyName("createdAt")]
