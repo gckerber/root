@@ -17,8 +17,6 @@ const STAR_POINTS = '12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 
 
 function Glyph({ kind, color }) {
   switch (kind) {
-    case 'bat':
-      return <svg viewBox="0 0 60 30" width="100%" height="100%"><path d={BAT_PATH} fill="#1a0b2e" /></svg>
     case 'leaf':
       return (
         <svg viewBox="0 0 24 24" width="100%" height="100%">
@@ -89,26 +87,7 @@ function buildParticles(kind) {
   if (kind === 'snow') falling(28, 'snow', ['#fff'], 8, 18, 'slv-fall')
   if (kind === 'petal') falling(14, 'petal', PETAL_COLORS, 10, 20, 'slv-fall')
   if (kind === 'star') falling(14, 'star', STAR_COLORS, 12, 22, 'slv-rise')
-  if (kind === 'bat') {
-    falling(10, 'ember', EMBER_COLORS, 4, 8, 'slv-rise')
-    for (let i = 0; i < 5; i++) {
-      const dur = 16 + rnd(i, 8) * 14
-      const w = 34 + rnd(i, 9) * 26
-      list.push({
-        key: `bat-${i}`,
-        glyph: 'bat',
-        flap: true,
-        style: {
-          left: 0,
-          top: `${6 + rnd(i, 10) * 46}vh`,
-          width: w,
-          height: w / 2,
-          '--dip': `${(rnd(i, 11) - 0.5) * 90}px`,
-          animation: `slv-fly ${dur}s linear ${-rnd(i, 12) * dur}s infinite`,
-        },
-      })
-    }
-  }
+  if (kind === 'ember') falling(14, 'ember', EMBER_COLORS, 4, 9, 'slv-rise')
   return list
 }
 
@@ -119,13 +98,7 @@ export function Particles() {
     <div className="slv-particles" aria-hidden="true">
       {items.map((p) => (
         <span key={p.key} style={p.style}>
-          {p.flap ? (
-            <span style={{ display: 'block', width: '100%', height: '100%', animation: 'slv-flap .38s ease-in-out infinite' }}>
-              <Glyph kind={p.glyph} color={p.color} />
-            </span>
-          ) : (
-            <Glyph kind={p.glyph} color={p.color} />
-          )}
+          <Glyph kind={p.glyph} color={p.color} />
         </span>
       ))}
     </div>

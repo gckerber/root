@@ -12,7 +12,7 @@ export const SEASONS = {
     colors: { primary: '#2a1245', brand: '#c2410c', accent: '#fb923c', surface: '#faf5ff', ink: '#120a1f' },
     hero: 'linear-gradient(105deg, rgba(26,8,48,.88) 0%, rgba(58,18,84,.62) 45%, rgba(194,65,12,.22) 100%)',
     font: '"Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif',
-    particles: 'bat',
+    particles: 'ember',
   },
   autumn: {
     id: 'autumn',
