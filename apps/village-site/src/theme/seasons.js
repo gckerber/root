@@ -92,8 +92,8 @@ const mmdd = (d) => (d.getMonth() + 1) * 100 + d.getDate()
 
 export function seasonForDate(date = new Date()) {
   const n = mmdd(date)
-  if (n >= 1001 && n <= 1101) return 'halloween'
-  if (n >= 1102 && n <= 1130) return 'thanksgiving'
+  if (n >= 1001 && n <= 1031) return 'halloween'
+  if (n >= 1101 && n <= 1130) return 'thanksgiving'
   if (n >= 1201 && n <= 1226) return 'christmas'
   if (n >= 1227 || n <= 229) return 'winter'
   if (n >= 301 && n <= 524) return 'spring'

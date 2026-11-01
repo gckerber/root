@@ -106,7 +106,7 @@ function EventMeta({ event }) {
 }
 
 /** Big featured event (photo on one side, details on the other) */
-function EventStrip({ event, reversed = false, bgColor = '#fff', seasonName }) {
+function EventStrip({ event, reversed = false, bgColor = '#fff' }) {
   const photo = event.photoUrl || event.photoUrls?.[0]
 
   const textBlock = (
@@ -125,7 +125,7 @@ function EventStrip({ event, reversed = false, bgColor = '#fff', seasonName }) {
           marginBottom: '1rem',
         }}
       >
-        {seasonName}
+        Coming up
       </span>
       <div className="flex items-baseline gap-3 mb-3">
         <span className="font-black leading-none" style={{ fontSize: '4rem', color: PRIMARY, lineHeight: 1 }}>
@@ -336,7 +336,6 @@ export default function Home() {
           event={event}
           reversed={i % 2 === 1}
           bgColor={i % 2 === 1 ? SURFACE : '#fff'}
-          seasonName={season.name}
         />
       ))}
 
