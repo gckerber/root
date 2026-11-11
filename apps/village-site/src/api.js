@@ -24,7 +24,7 @@ export const api = {
   pdImages: ()               => get('pd-images'),
   pdLinks:          ()               => get('pd-links'),
   pollResponses:    (pollId)         => get(`poll-responses?pollId=${pollId}`),
-  submitSurvey: (data) => fetch(`/api/survey`, {
+  submitSurvey: (data) => fetch(`${BASE}/api/survey`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

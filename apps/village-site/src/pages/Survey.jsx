@@ -409,7 +409,7 @@ export default function Survey() {
       <form onSubmit={submit} noValidate>
         {/* Honeypot: hidden from people, tempting to bots */}
         <input
-          type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
+          type="text" name="slv-ref-code" tabIndex={-1} autoComplete="off" aria-hidden="true"
           value={website} onChange={(e) => setWebsite(e.target.value)}
           style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
         />
