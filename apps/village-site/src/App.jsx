@@ -9,6 +9,8 @@ import Minutes from './pages/Minutes'
 import OrdinancesPage from './pages/OrdinancesPage'
 import History from './pages/History'
 import PoliceDept from './pages/PoliceDept'
+import Survey from './pages/Survey'
+import { SurveyBanner } from './survey/SurveyBanner'
 import { ThemeProvider } from './theme/ThemeProvider'
 import { Particles } from './theme/SeasonDecor'
 
@@ -24,6 +26,7 @@ export default function App() {
       <ThemeProvider>
         <BrowserRouter>
           <div className="min-h-screen flex flex-col bg-white">
+            <SurveyBanner />
             <Navbar />
             <Particles />
             <main className="flex-grow">
@@ -34,6 +37,7 @@ export default function App() {
                 <Route path="/police" element={<PoliceDept />} />
                 <Route path="/ordinances" element={<OrdinancesPage />} />
                 <Route path="/fun-stuff" element={<History />} />
+                <Route path="/survey" element={<Survey />} />
 
                 {/* Community board and calendar now live on the home page */}
                 <Route path="/community" element={<Navigate to="/#happening" replace />} />

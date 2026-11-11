@@ -2,7 +2,7 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../utils/context'
 import {
-  LayoutDashboard, Image, Users, FileText, Megaphone,
+  LayoutDashboard, Image, Users, FileText, Megaphone, ClipboardList,
   BookOpen, Calendar, Camera, LogOut, Menu, X, ChevronRight,
   Shield, Gavel, HelpCircle, Phone, Link2
 } from 'lucide-react'
@@ -14,6 +14,7 @@ const NAV = [
   { to: '/officials',   icon: Users,           label: 'Officials',       color: 'text-blue-400',    desc: 'Mayor & Council',     roles: ['admin', 'village'] },
   { to: '/minutes',     icon: FileText,        label: 'Council Minutes', color: 'text-green-400',   desc: 'Meetings & files',    roles: ['admin', 'village'] },
   { to: '/bulletin',    icon: Megaphone,       label: 'Bulletin Board',  color: 'text-yellow-400',  desc: 'Announcements',       roles: ['admin', 'village'] },
+  { to: '/survey',      icon: ClipboardList,   label: 'Survey Results',  color: 'text-cyan-400',    desc: 'Community survey',    roles: ['admin', 'village'] },
   { to: '/ordinances',  icon: BookOpen,        label: 'Ordinances',      color: 'text-orange-400',  desc: 'Village laws & PDFs', roles: ['admin', 'village'] },
   { to: '/calendar',    icon: Calendar,        label: 'Calendar',        color: 'text-pink-400',    desc: 'Events & meetings',   roles: ['admin', 'village'] },
   { to: '/history',     icon: Camera,          label: 'Fun Stuff & Polls',color: 'text-teal-400',   desc: 'Polls, history & gallery', roles: ['admin', 'village'] },

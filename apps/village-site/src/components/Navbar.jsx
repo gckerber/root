@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { SeasonStrip } from '../theme/SeasonDecor'
+import { isSurveyOpen } from '../survey/surveyData'
 
 const links = [
   { to: '/',           label: 'Home',       end: true },
   { to: '/#notices',   label: 'Notices',    hash: true },
   { to: '/#happening', label: 'Events',     hash: true },
+  ...(isSurveyOpen() ? [{ to: '/survey', label: 'Survey' }] : []),
   { to: '/minutes',    label: 'Minutes' },
   { to: '/officials',  label: 'Officials' },
   { to: '/police',     label: 'Police' },

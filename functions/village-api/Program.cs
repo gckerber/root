@@ -16,6 +16,9 @@ var host = new HostBuilder()
         // Register Blob Storage service as singleton
         services.AddSingleton<StorageService>();
 
+        // Emails survey responses through Azure Communication Services
+        services.AddSingleton<SurveyMailer>();
+
         // Add CORS support
         services.AddCors(options =>
         {

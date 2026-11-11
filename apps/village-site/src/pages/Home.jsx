@@ -10,6 +10,7 @@ import { useSeason } from '../theme/ThemeProvider'
 import { HeroScene } from '../theme/SeasonDecor'
 import { seasonEndDate } from '../theme/seasons'
 import BulletinBoard from '../components/BulletinBoard'
+import { SurveyPromo } from '../survey/SurveyBanner'
 import { activeNotices } from '../utils/bulletin'
 
 // ─── Design tokens (all driven by the active season, see src/theme/seasons.js) ──
@@ -297,6 +298,8 @@ export default function Home() {
           </div>
         </div>
       </HeroCarousel>
+
+      <SurveyPromo />
 
       <BulletinBoard items={notices} loading={bulletinLoading} error={bulletinError} />
 

@@ -106,3 +106,28 @@
   .slv-particles { display: none; }
   .slv-twinkle, .slv-float { animation: none; }
 }
+/* ── Survey ──────────────────────────────────────────────────────────── */
+@keyframes slv-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%      { transform: scale(1.5); opacity: .55; }
+}
+.slv-opt {
+  display: flex; align-items: flex-start; gap: .75rem;
+  padding: .7rem .9rem; border: 1px solid #e2e8f0; border-radius: 10px;
+  background: #fff; cursor: pointer; transition: border-color .12s, background .12s;
+}
+.slv-opt:hover { border-color: var(--c-brand); }
+.slv-opt[data-on="true"] { border-color: var(--c-brand); background: var(--c-surface); }
+.slv-opt > input { margin-top: .2rem; width: 1.05rem; height: 1.05rem; flex-shrink: 0; accent-color: var(--c-brand); }
+.slv-rate { position: relative; display: block; width: 44px; height: 44px; cursor: pointer; }
+.slv-rate input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.slv-rate span {
+  display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+  border-radius: 50%; border: 2px solid #cbd5e1; background: #fff; color: #475569;
+  font-weight: 700; transition: background .12s, border-color .12s, color .12s;
+}
+.slv-rate:hover span { border-color: var(--c-brand); }
+.slv-rate input:checked + span { background: var(--c-brand); border-color: var(--c-brand); color: #fff; }
+.slv-rate input:focus-visible + span { outline: 3px solid var(--c-accent); outline-offset: 2px; }
+@media (max-width: 400px) { .slv-rate, .slv-rate span { width: 40px; height: 40px; } }
+@media (prefers-reduced-motion: reduce) { [style*="slv-pulse"] { animation: none !important; } }

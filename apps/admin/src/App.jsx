@@ -8,6 +8,7 @@ import Officials from './pages/Officials'
 import PDOfficialsAdmin from './pages/PDOfficialsAdmin'
 import MinutesAdmin from './pages/MinutesAdmin'
 import BulletinAdmin from './pages/BulletinAdmin'
+import SurveyAdmin from './pages/SurveyAdmin'
 import OrdinancesAdmin from './pages/OrdinancesAdmin'
 import CalendarAdmin from './pages/CalendarAdmin'
 import PDCalendarAdmin from './pages/PDCalendarAdmin'
@@ -43,6 +44,7 @@ export default function App() {
               <Route path="officials"   element={<ProtectedRoute allowedRoles={VILLAGE}><Officials /></ProtectedRoute>} />
               <Route path="minutes"     element={<ProtectedRoute allowedRoles={VILLAGE}><MinutesAdmin /></ProtectedRoute>} />
               <Route path="bulletin"    element={<ProtectedRoute allowedRoles={VILLAGE}><BulletinAdmin /></ProtectedRoute>} />
+              <Route path="survey"      element={<ProtectedRoute allowedRoles={VILLAGE}><SurveyAdmin /></ProtectedRoute>} />
               <Route path="ordinances"  element={<ProtectedRoute allowedRoles={VILLAGE}><OrdinancesAdmin /></ProtectedRoute>} />
               <Route path="calendar"    element={<ProtectedRoute allowedRoles={VILLAGE}><CalendarAdmin /></ProtectedRoute>} />
               <Route path="history"     element={<ProtectedRoute allowedRoles={VILLAGE}><HistoryAdmin /></ProtectedRoute>} />

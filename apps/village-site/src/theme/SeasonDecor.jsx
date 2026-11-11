@@ -1,6 +1,7 @@
 // apps/village-site/src/theme/SeasonDecor.jsx
 // Seasonal decoration: floating particles, a border strip, and hero scenery. All decorative (aria-hidden).
 import { useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useSeason } from './ThemeProvider'
 
 // Deterministic pseudo-random so particles don't reshuffle on every render
@@ -93,7 +94,10 @@ function buildParticles(kind) {
 
 export function Particles() {
   const season = useSeason()
+  const { pathname } = useLocation()
   const items = useMemo(() => buildParticles(season.particles), [season.particles])
+  // Keep the survey calm and readable: no drifting decoration over the questions
+  if (pathname === '/survey') return null
   return (
     <div className="slv-particles" aria-hidden="true">
       {items.map((p) => (
