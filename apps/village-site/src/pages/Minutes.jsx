@@ -231,7 +231,7 @@ export default function Minutes() {
     ...Array(Math.max(0, 3 - upcoming.length)).fill(null),
   ]
 
-  // All records filtered + sorted ascending (Jan → Dec)
+  // All records filtered + sorted newest first
   const filtered = allItems
     .filter((m) => {
       if (!search.trim()) return true
@@ -242,12 +242,15 @@ export default function Minutes() {
         (m.transcript || '').toLowerCase().includes(q)
       )
     })
-    .sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate))
+    .sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate))
 
   const pastDocs   = filtered
     .filter((m) => new Date(m.meetingDate) <= now)
     .filter((m) => !hideDraftPast || m.approved)
-  const futureDocs = filtered.filter((m) => new Date(m.meetingDate) > now)
+  // Scheduled meetings stay soonest-first even though the main list is newest-first
+  const futureDocs = filtered
+    .filter((m) => new Date(m.meetingDate) > now)
+    .sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate))
 
   const yearTabs = [currentYear, currentYear - 1, currentYear - 2, 'all']
 
